@@ -150,8 +150,8 @@ function LoginContent() {
                             all in one place.
                         </h1>
                         <p className="text-sm leading-relaxed text-white/50 xl:text-base">
-                            Study groups, dorm events, and everything
-                            happening around you — log back in and catch up.
+                            Study groups, dorm events, and everything happening
+                            around you — log back in and catch up.
                         </p>
                     </div>
 
@@ -223,7 +223,7 @@ function LoginContent() {
                     </div>
 
                     <div className="mt-8 space-y-5">
-                        {/* <GoogleSignInButton /> */}
+                        <GoogleSignInButton />
                         <form onSubmit={handleSubmit} className="space-y-5">
                             <div className="space-y-1.5">
                                 <Label htmlFor="email">Email</Label>
@@ -281,8 +281,7 @@ function LoginContent() {
                                         onBlur={handleBlur}
                                         className={
                                             "h-11 pl-9" +
-                                            (touched.password &&
-                                            errors.password
+                                            (touched.password && errors.password
                                                 ? " border-destructive focus-visible:ring-destructive"
                                                 : "")
                                         }
@@ -293,8 +292,7 @@ function LoginContent() {
                                             )
                                         }
                                         aria-describedby={
-                                            touched.password &&
-                                            errors.password
+                                            touched.password && errors.password
                                                 ? "password-error"
                                                 : undefined
                                         }
@@ -315,9 +313,7 @@ function LoginContent() {
                             {error && (
                                 <Alert variant="destructive">
                                     <AlertTitle>Error</AlertTitle>
-                                    <AlertDescription>
-                                        {error}
-                                    </AlertDescription>
+                                    <AlertDescription>{error}</AlertDescription>
                                 </Alert>
                             )}
 
