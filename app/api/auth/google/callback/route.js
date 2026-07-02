@@ -4,6 +4,7 @@ import User from "@/models/User";
 import config from "@/lib/config";
 import { signToken, setAuthCookie } from "@/lib/auth";
 import bcrypt from "bcryptjs";
+import { notifyAdminNewUser } from "@/lib/admin-notify";
 
 async function getGoogleTokens(code) {
     const response = await fetch("https://oauth2.googleapis.com/token", {
@@ -120,6 +121,7 @@ export async function GET(request) {
                 isVerified: false,
                 verificationStatus: "none",
                 gender: "unspecified",
+                isOnboarded: true,
             });
 
             // Auto-follow founder
@@ -144,6 +146,19 @@ export async function GET(request) {
             } catch (err) {
                 console.error("Auto-follow founder failed:", err.message);
             }
+
+            // Send admin notification
+            notifyAdminNewUser(user).catch((err) =>
+                console.error("Admin notify failed:", err),
+            );
+
+            import("@/lib/globalGroup")
+                .then(({ autoJoinGlobalGroup }) => {
+                    autoJoinGlobalGroup(user._id).catch((err) =>
+                        console.error("Operation failed:", err),
+                    );
+                })
+                .catch((err) => console.error("Operation failed:", err));
         }
 
         // Sign JWT and set cookie
@@ -151,6 +166,7 @@ export async function GET(request) {
             userId: user._id.toString(),
             username: user.username,
         });
+        // Redirect to feed directly
         const response = NextResponse.redirect(`${origin}/feed`);
         await setAuthCookie(response, token);
 
