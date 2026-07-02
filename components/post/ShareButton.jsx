@@ -10,7 +10,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://campuszen.in'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://campuszen.tech'
 
 export default function ShareButton({ post, size = "sm" }) {
   const [open, setOpen] = useState(false)
