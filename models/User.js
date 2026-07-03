@@ -267,6 +267,15 @@ const userSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        isBot: {
+            type: Boolean,
+            default: false,
+        },
+        botType: {
+            type: String,
+            trim: true,
+            default: "",
+        },
     },
     { timestamps: true },
 );
@@ -281,8 +290,6 @@ userSchema.methods.toSafeObject = function () {
     return userObject;
 };
 
-userSchema.index({ username: 1 }, { unique: true });
-userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ college: 1 });
 userSchema.index({ followers: 1 });
 userSchema.index({ following: 1 });
