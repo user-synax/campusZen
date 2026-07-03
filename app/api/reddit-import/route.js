@@ -16,6 +16,60 @@ import Post from "../../../models/Post.js";
 // Helper function to add delay
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Sample fallback posts if Reddit is blocked
+function getSamplePosts() {
+    return [
+        {
+            title: "Welcome to CampusZen!",
+            selftext:
+                "This is a sample post to keep the feed active while we work on fixing the Reddit import. Stay tuned for more content!",
+            score: 100,
+            botType: "Dev Daily",
+            subreddit: "programming",
+            sourceId: "sample-post-1",
+            sourceUrl: "https://campuszen.app",
+            author: "campuszen",
+            created_utc: Date.now() / 1000,
+        },
+        {
+            title: "Top 10 Programming Tips for Students",
+            selftext:
+                "Check out these essential programming tips every student should know to excel in their coding journey!",
+            score: 85,
+            botType: "Dev Daily",
+            subreddit: "developersIndia",
+            sourceId: "sample-post-2",
+            sourceUrl: "https://campuszen.app",
+            author: "campuszen",
+            created_utc: Date.now() / 1000 - 3600,
+        },
+        {
+            title: "Study Hacks for Engineering Students",
+            selftext:
+                "Discover effective study techniques to help you ace your engineering exams and projects!",
+            score: 90,
+            botType: "Study Hub",
+            subreddit: "Btechtards",
+            sourceId: "sample-post-3",
+            sourceUrl: "https://campuszen.app",
+            author: "campuszen",
+            created_utc: Date.now() / 1000 - 7200,
+        },
+        {
+            title: "Latest Tech News: AI Breakthrough",
+            selftext:
+                "Exciting new developments in AI that are changing the way we interact with technology!",
+            score: 95,
+            botType: "AI News",
+            subreddit: "technology",
+            sourceId: "sample-post-4",
+            sourceUrl: "https://campuszen.app",
+            author: "campuszen",
+            created_utc: Date.now() / 1000 - 10800,
+        },
+    ];
+}
+
 export async function GET(request) {
     console.log("=== Reddit Import Started ===");
     const authHeader = request.headers.get("authorization");
@@ -56,8 +110,8 @@ export async function GET(request) {
                 );
                 allPosts = allPosts.concat(sanitized);
 
-                // Add small delay between subreddit requests
-                await delay(1000);
+                // Add longer delay between subreddit requests to avoid rate limits
+                await delay(5000);
             } catch (error) {
                 console.error(
                     `Error fetching from r/${subreddit.name}:`,
@@ -67,6 +121,25 @@ export async function GET(request) {
                     `Error fetching from r/${subreddit.name}: ${error.message}`,
                 );
             }
+        }
+
+        // If no posts fetched from Reddit, use sample fallback posts
+        if (allPosts.length === 0) {
+            console.log("Using sample fallback posts");
+            allPosts = getSamplePosts().map((post) => ({
+                source: "sample",
+                sourceId: post.sourceId,
+                sourceUrl: post.sourceUrl,
+                subreddit: post.subreddit,
+                sourceAuthor: post.author,
+                sourceCreatedAt: new Date(post.created_utc * 1000),
+                title: post.title,
+                selftext: post.selftext,
+                score: post.score,
+                botType: post.botType,
+                url: post.sourceUrl,
+                postHint: null,
+            }));
         }
 
         console.log(`\nTotal posts before deduplication: ${allPosts.length}`);
