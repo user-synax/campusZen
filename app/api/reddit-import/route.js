@@ -95,21 +95,6 @@ function getSamplePosts() {
             ],
         },
         {
-            title: "Internship Opportunities for Computer Science Students",
-            selftext:
-                "Check out these amazing internship openings for CS students!",
-            score: 92,
-            botType: "Placement Alerts",
-            subreddit: "JobMarketIndia",
-            sourceId: "sample-post-6",
-            sourceUrl: "https://campuszen.app",
-            author: "campuszen",
-            created_utc: Date.now() / 1000 - 18000,
-            images: [
-                "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&h=500&fit=crop",
-            ],
-        },
-        {
             title: "Funny Meme to Brighten Your Day 😂",
             selftext:
                 "We all need a good laugh during exam season! Here's a funny meme to lighten the mood.",
@@ -198,7 +183,6 @@ export async function GET(request) {
         // If no posts fetched from Reddit, use sample fallback posts
         if (allPosts.length === 0) {
             console.log("Using sample fallback posts");
-            // Add images field to sample posts to match actual post format
             allPosts = getSamplePosts().map((post) => ({
                 source: "sample",
                 sourceId: post.sourceId,
@@ -212,7 +196,7 @@ export async function GET(request) {
                 botType: post.botType,
                 url: post.sourceUrl,
                 postHint: null,
-                images: [], // Add empty images array to match actual post format
+                images: post.images,
             }));
         }
 
@@ -252,7 +236,7 @@ export async function GET(request) {
                     author: botUser._id,
                     content: content,
                     hashtags: hashtags,
-                    images: post.images || [], // Save extracted images
+                    images: post.images || [],
                     source: post.source,
                     sourceId: post.sourceId,
                     sourceUrl: post.sourceUrl,

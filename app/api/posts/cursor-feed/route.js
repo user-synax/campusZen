@@ -61,7 +61,8 @@ export async function GET(request) {
         const author = sanitizeMongoInput(searchParams.get("author"));
         const username = sanitizeMongoInput(searchParams.get("username"));
         const mode = sanitizeMongoInput(searchParams.get("mode")) || "default"; // default or latest8h
-        const feedType = sanitizeMongoInput(searchParams.get("feedType")) || "discover"; // discover or interests
+        const feedType =
+            sanitizeMongoInput(searchParams.get("feedType")) || "discover"; // discover or interests
 
         // Create a cache key based on query params and current user (if logged in)
         const cacheKey = `feed:${community || "global"}:${author || username || "all"}:${mode}:${feedType}:${cursor || "start"}:${limit}:${currentUser?._id || "guest"}`;
@@ -143,7 +144,7 @@ export async function GET(request) {
                         .select("-likes -__v -updatedAt")
                         .populate({
                             path: "author",
-                            select: "name username avatar college isVerified verificationType",
+                            select: "name username avatar college isVerified verificationType isBot botType",
                             options: { lean: true },
                         })
                         .lean();
@@ -160,7 +161,7 @@ export async function GET(request) {
                         .select("-likes -__v -updatedAt")
                         .populate({
                             path: "author",
-                            select: "name username avatar college isVerified verificationType",
+                            select: "name username avatar college isVerified verificationType isBot botType",
                             options: { lean: true },
                         })
                         .lean();
@@ -193,7 +194,7 @@ export async function GET(request) {
                         .select("-likes -__v -updatedAt")
                         .populate({
                             path: "author",
-                            select: "name username avatar college isVerified verificationType",
+                            select: "name username avatar college isVerified verificationType isBot botType",
                             options: { lean: true },
                         })
                         .lean();
@@ -210,19 +211,19 @@ export async function GET(request) {
             const communities =
                 communityNames.length > 0
                     ? await Community.find({
-                        $or: [
-                            { name: { $in: communityNames } },
-                            {
-                                slug: {
-                                    $in: communityNames.map((n) =>
-                                        n.toLowerCase().replace(/\s+/g, "-"),
-                                    ),
-                                },
-                            },
-                        ],
-                    })
-                        .select("name slug emoji")
-                        .lean()
+                          $or: [
+                              { name: { $in: communityNames } },
+                              {
+                                  slug: {
+                                      $in: communityNames.map((n) =>
+                                          n.toLowerCase().replace(/\s+/g, "-"),
+                                      ),
+                                  },
+                              },
+                          ],
+                      })
+                          .select("name slug emoji")
+                          .lean()
                     : [];
 
             const communityMap = communities.reduce((acc, c) => {
@@ -234,14 +235,14 @@ export async function GET(request) {
             const processedPosts = resultPosts.map((post) => {
                 const isLiked = currentUser
                     ? post.likes?.some(
-                        (id) => id.toString() === currentUser._id.toString(),
-                    )
+                          (id) => id.toString() === currentUser._id.toString(),
+                      )
                     : false;
                 const isBookmarked =
                     currentUser && currentUser.bookmarks
                         ? currentUser.bookmarks.some(
-                            (id) => id.toString() === post._id.toString(),
-                        )
+                              (id) => id.toString() === post._id.toString(),
+                          )
                         : false;
 
                 const communityInfo = post.community
@@ -267,24 +268,26 @@ export async function GET(request) {
                     _isBookmarked: isBookmarked,
                     communityInfo: communityInfo
                         ? {
-                            name: communityInfo.name,
-                            slug: communityInfo.slug,
-                            emoji: communityInfo.emoji,
-                        }
+                              name: communityInfo.name,
+                              slug: communityInfo.slug,
+                              emoji: communityInfo.emoji,
+                          }
                         : null,
                 };
             });
 
             const nextCursor = hasMore
                 ? Buffer.from(
-                    resultPosts
-                        .reduce((minId, post) =>
-                            post._id.toString() < minId.toString()
-                                ? post._id
-                                : minId,
-                            resultPosts[0]._id)
-                        .toString(),
-                ).toString("base64")
+                      resultPosts
+                          .reduce(
+                              (minId, post) =>
+                                  post._id.toString() < minId.toString()
+                                      ? post._id
+                                      : minId,
+                              resultPosts[0]._id,
+                          )
+                          .toString(),
+                  ).toString("base64")
                 : null;
 
             if (process.env.NODE_ENV !== "production") {
