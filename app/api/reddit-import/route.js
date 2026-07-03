@@ -67,6 +67,54 @@ function getSamplePosts() {
             author: "campuszen",
             created_utc: Date.now() / 1000 - 10800,
         },
+        {
+            title: "5 Web Dev Projects to Add to Your Portfolio",
+            selftext:
+                "Build these projects to impress recruiters and showcase your skills!",
+            score: 88,
+            botType: "Dev Daily",
+            subreddit: "webdev",
+            sourceId: "sample-post-5",
+            sourceUrl: "https://campuszen.app",
+            author: "campuszen",
+            created_utc: Date.now() / 1000 - 14400,
+        },
+        {
+            title: "Internship Opportunities for Computer Science Students",
+            selftext:
+                "Check out these amazing internship openings for CS students!",
+            score: 92,
+            botType: "Placement Alerts",
+            subreddit: "JobMarketIndia",
+            sourceId: "sample-post-6",
+            sourceUrl: "https://campuszen.app",
+            author: "campuszen",
+            created_utc: Date.now() / 1000 - 18000,
+        },
+        {
+            title: "Funny Meme to Brighten Your Day 😂",
+            selftext:
+                "We all need a good laugh during exam season! Here's a funny meme to lighten the mood.",
+            score: 98,
+            botType: "Meme Bot",
+            subreddit: "memes",
+            sourceId: "sample-post-7",
+            sourceUrl: "https://campuszen.app",
+            author: "campuszen",
+            created_utc: Date.now() / 1000 - 21600,
+        },
+        {
+            title: "Desi Memes That Hit Too Hard 🇮🇳",
+            selftext:
+                "Relatable desi memes that every Indian student will understand!",
+            score: 96,
+            botType: "Meme Bot",
+            subreddit: "IndianDankMemes",
+            sourceId: "sample-post-8",
+            sourceUrl: "https://campuszen.app",
+            author: "campuszen",
+            created_utc: Date.now() / 1000 - 25200,
+        },
     ];
 }
 
