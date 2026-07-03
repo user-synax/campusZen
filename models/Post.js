@@ -127,6 +127,34 @@ const postSchema = new mongoose.Schema(
         isFeatured: { type: Boolean, default: false },
         reportCount: { type: Number, default: 0, min: 0 },
         shareCount: { type: Number, default: 0, min: 0 },
+        source: {
+            type: String,
+            trim: true,
+            default: "",
+        },
+        sourceId: {
+            type: String,
+            trim: true,
+            default: "",
+        },
+        sourceUrl: {
+            type: String,
+            trim: true,
+            default: "",
+        },
+        subreddit: {
+            type: String,
+            trim: true,
+            default: "",
+        },
+        sourceAuthor: {
+            type: String,
+            trim: true,
+            default: "",
+        },
+        sourceCreatedAt: {
+            type: Date,
+        },
     },
     {
         timestamps: true,
@@ -149,6 +177,8 @@ postSchema.index({ isFeatured: 1, createdAt: -1 });
 postSchema.index({ isDeleted: 1, createdAt: -1 });
 postSchema.index({ isDeleted: 1, _id: -1 });
 postSchema.index({ community: 1, _id: -1 });
+postSchema.index({ sourceId: 1 });
+postSchema.index({ source: 1 });
 
 postSchema.virtual("hasPoll").get(function () {
     return this.poll?.options?.length > 0;
