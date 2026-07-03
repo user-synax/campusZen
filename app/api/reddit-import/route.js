@@ -13,6 +13,9 @@ import {
 import { getBotUser } from "../../../lib/reddit/bots.js";
 import Post from "../../../models/Post.js";
 
+// Helper function to add delay
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export async function GET(request) {
     console.log("=== Reddit Import Started ===");
     const authHeader = request.headers.get("authorization");
@@ -52,6 +55,9 @@ export async function GET(request) {
                     sanitizeRedditPost(post, subreddit.name, subreddit.botType),
                 );
                 allPosts = allPosts.concat(sanitized);
+
+                // Add small delay between subreddit requests
+                await delay(1000);
             } catch (error) {
                 console.error(
                     `Error fetching from r/${subreddit.name}:`,
