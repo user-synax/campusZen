@@ -30,6 +30,9 @@ function getSamplePosts() {
             sourceUrl: "https://campuszen.app",
             author: "campuszen",
             created_utc: Date.now() / 1000,
+            images: [
+                "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&h=500&fit=crop",
+            ],
         },
         {
             title: "Top 10 Programming Tips for Students",
@@ -42,6 +45,9 @@ function getSamplePosts() {
             sourceUrl: "https://campuszen.app",
             author: "campuszen",
             created_utc: Date.now() / 1000 - 3600,
+            images: [
+                "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&h=500&fit=crop",
+            ],
         },
         {
             title: "Study Hacks for Engineering Students",
@@ -54,6 +60,9 @@ function getSamplePosts() {
             sourceUrl: "https://campuszen.app",
             author: "campuszen",
             created_utc: Date.now() / 1000 - 7200,
+            images: [
+                "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&h=500&fit=crop",
+            ],
         },
         {
             title: "Latest Tech News: AI Breakthrough",
@@ -66,6 +75,9 @@ function getSamplePosts() {
             sourceUrl: "https://campuszen.app",
             author: "campuszen",
             created_utc: Date.now() / 1000 - 10800,
+            images: [
+                "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&h=500&fit=crop",
+            ],
         },
         {
             title: "5 Web Dev Projects to Add to Your Portfolio",
@@ -78,6 +90,9 @@ function getSamplePosts() {
             sourceUrl: "https://campuszen.app",
             author: "campuszen",
             created_utc: Date.now() / 1000 - 14400,
+            images: [
+                "https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=800&h=500&fit=crop",
+            ],
         },
         {
             title: "Internship Opportunities for Computer Science Students",
@@ -90,6 +105,9 @@ function getSamplePosts() {
             sourceUrl: "https://campuszen.app",
             author: "campuszen",
             created_utc: Date.now() / 1000 - 18000,
+            images: [
+                "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&h=500&fit=crop",
+            ],
         },
         {
             title: "Funny Meme to Brighten Your Day 😂",
@@ -102,6 +120,9 @@ function getSamplePosts() {
             sourceUrl: "https://campuszen.app",
             author: "campuszen",
             created_utc: Date.now() / 1000 - 21600,
+            images: [
+                "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=500&fit=crop",
+            ],
         },
         {
             title: "Desi Memes That Hit Too Hard 🇮🇳",
@@ -114,6 +135,9 @@ function getSamplePosts() {
             sourceUrl: "https://campuszen.app",
             author: "campuszen",
             created_utc: Date.now() / 1000 - 25200,
+            images: [
+                "https://images.unsplash.com/photo-1516383708606-19031a03896a?w=800&h=500&fit=crop",
+            ],
         },
     ];
 }
@@ -174,6 +198,7 @@ export async function GET(request) {
         // If no posts fetched from Reddit, use sample fallback posts
         if (allPosts.length === 0) {
             console.log("Using sample fallback posts");
+            // Add images field to sample posts to match actual post format
             allPosts = getSamplePosts().map((post) => ({
                 source: "sample",
                 sourceId: post.sourceId,
@@ -187,6 +212,7 @@ export async function GET(request) {
                 botType: post.botType,
                 url: post.sourceUrl,
                 postHint: null,
+                images: [], // Add empty images array to match actual post format
             }));
         }
 
@@ -226,6 +252,7 @@ export async function GET(request) {
                     author: botUser._id,
                     content: content,
                     hashtags: hashtags,
+                    images: post.images || [], // Save extracted images
                     source: post.source,
                     sourceId: post.sourceId,
                     sourceUrl: post.sourceUrl,
