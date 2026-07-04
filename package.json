@@ -39,6 +39,7 @@
     "@upstash/redis": "^1.37.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
+    "appwrite": "^26.1.0",
     "autoprefixer": "^10.4.27",
     "bcryptjs": "^3.0.3",
     "better-auth": "^1.6.2",
