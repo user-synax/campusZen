@@ -33,6 +33,7 @@ import {
     Star,
     Rocket,
     ShieldCheck,
+    Video,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useChatUnreadCount } from "@/hooks/useChatUnreadCount";
@@ -78,6 +79,7 @@ export default function Sidebar() {
 
     const navItems = [
         { label: "Feed", href: "/feed", icon: Home },
+        { label: "Clips", href: "/clips", icon: Video },
         { label: "Search", href: "/search", icon: Search },
         { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
         { label: "Resources", href: "/resources", icon: BookOpen },
@@ -98,7 +100,12 @@ export default function Sidebar() {
         { label: "Bookmarks", href: "/bookmarks", icon: Bookmark },
         { label: "Tools", href: "/tools", icon: Terminal },
         { label: "Billing", href: "/billing", icon: CreditCard },
-        { label: "Customize", href: "/customize", icon: PaletteIcon, isCustomize: true },
+        {
+            label: "Customize",
+            href: "/customize",
+            icon: PaletteIcon,
+            isCustomize: true,
+        },
         { label: "Settings", href: "/settings", icon: Settings },
     ];
 
@@ -126,12 +133,14 @@ export default function Sidebar() {
         {
             icon: Palette,
             title: "Custom Themes",
-            description: "Create and apply custom color schemes, import/export themes, and use premium presets like Nebula, Sunset, and more",
+            description:
+                "Create and apply custom color schemes, import/export themes, and use premium presets like Nebula, Sunset, and more",
         },
         {
             icon: Zap,
             title: "Animated Profile Headers",
-            description: "Beautiful animated gradient profile banners that match your theme",
+            description:
+                "Beautiful animated gradient profile banners that match your theme",
         },
         {
             icon: Crown,
@@ -141,27 +150,32 @@ export default function Sidebar() {
         {
             icon: ShieldCheck,
             title: "Ad-Free Experience",
-            description: "No ads anywhere on any screen for a clean distraction-free experience",
+            description:
+                "No ads anywhere on any screen for a clean distraction-free experience",
         },
         {
             icon: Star,
             title: "Priority Support",
-            description: "Get fast responses from our support team within 24 hours",
+            description:
+                "Get fast responses from our support team within 24 hours",
         },
         {
             icon: Rocket,
             title: "Early Access",
-            description: "Be the first to try new features before they're released to everyone else",
+            description:
+                "Be the first to try new features before they're released to everyone else",
         },
         {
             icon: BarChart2,
             title: "Advanced Analytics",
-            description: "Detailed insights about your activity, engagement, and growth",
+            description:
+                "Detailed insights about your activity, engagement, and growth",
         },
         {
             icon: Lock,
             title: "Expanded Storage",
-            description: "More storage for your resource uploads and media files",
+            description:
+                "More storage for your resource uploads and media files",
         },
     ];
 
@@ -190,7 +204,11 @@ export default function Sidebar() {
                                     )}
                                     <Link
                                         href={item.href}
-                                        onClick={item.isCustomize ? handleCustomizeClick : undefined}
+                                        onClick={
+                                            item.isCustomize
+                                                ? handleCustomizeClick
+                                                : undefined
+                                        }
                                     >
                                         <Button
                                             variant="ghost"
@@ -211,9 +229,10 @@ export default function Sidebar() {
                                                             : "",
                                                     )}
                                                 />
-                                                {item.isCustomize && !user?.isPro && (
-                                                    <Lock className="w-[10px] h-[10px] absolute -bottom-0.5 -right-0.5 text-muted-foreground" />
-                                                )}
+                                                {item.isCustomize &&
+                                                    !user?.isPro && (
+                                                        <Lock className="w-[10px] h-[10px] absolute -bottom-0.5 -right-0.5 text-muted-foreground" />
+                                                    )}
                                                 {item.badge > 0 && (
                                                     <span className="absolute -top-1.5 -right-1.5 min-w-[15px] h-[15px] bg-primary text-[9px] text-primary-foreground font-bold flex items-center justify-center rounded-full px-0.5 border-2 border-background">
                                                         {item.badge > 9
@@ -252,7 +271,8 @@ export default function Sidebar() {
                                                     <button
                                                         className={cn(
                                                             "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
-                                                            pathname === sub.href
+                                                            pathname ===
+                                                                sub.href
                                                                 ? "bg-primary/8 text-primary"
                                                                 : "text-muted-foreground/70 hover:text-foreground hover:bg-accent/50",
                                                         )}
@@ -298,7 +318,8 @@ export default function Sidebar() {
                                                     <button
                                                         className={cn(
                                                             "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
-                                                            pathname === sub.href
+                                                            pathname ===
+                                                                sub.href
                                                                 ? "bg-primary/8 text-primary"
                                                                 : "text-muted-foreground/70 hover:text-foreground hover:bg-accent/50",
                                                         )}
@@ -419,7 +440,9 @@ export default function Sidebar() {
                                             alt={user.name}
                                         />
                                         <AvatarFallback className="text-xs font-bold bg-accent">
-                                            {user.name?.charAt(0)?.toUpperCase()}
+                                            {user.name
+                                                ?.charAt(0)
+                                                ?.toUpperCase()}
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="hidden lg:flex flex-col flex-1 min-w-0">
@@ -461,7 +484,9 @@ export default function Sidebar() {
                                     <Moon className="w-4 h-4 shrink-0" />
                                 )}
                                 <span className="hidden lg:block text-xs font-semibold">
-                                    {theme === "dark" ? "Light mode" : "Dark mode"}
+                                    {theme === "dark"
+                                        ? "Light mode"
+                                        : "Dark mode"}
                                 </span>
                             </Button>
                         </div>
@@ -505,11 +530,18 @@ export default function Sidebar() {
                             {proFeatures.map((feature, index) => {
                                 const Icon = feature.icon;
                                 return (
-                                    <div key={index} className="flex gap-3 p-3 rounded-lg bg-accent/30 border border-border/50">
+                                    <div
+                                        key={index}
+                                        className="flex gap-3 p-3 rounded-lg bg-accent/30 border border-border/50"
+                                    >
                                         <Icon className="w-6 h-6 shrink-0 text-primary mt-0.5" />
                                         <div>
-                                            <h4 className="font-semibold text-sm">{feature.title}</h4>
-                                            <p className="text-xs text-muted-foreground">{feature.description}</p>
+                                            <h4 className="font-semibold text-sm">
+                                                {feature.title}
+                                            </h4>
+                                            <p className="text-xs text-muted-foreground">
+                                                {feature.description}
+                                            </p>
                                         </div>
                                     </div>
                                 );
@@ -533,7 +565,10 @@ export default function Sidebar() {
                             className="w-full"
                             onClick={() => {
                                 // Placeholder for promo code link
-                                window.open("https://wa.me/+918826343179?text=Hello%20I%20need%20a%20promo%20code%20For%20campusZen.", "_blank");
+                                window.open(
+                                    "https://wa.me/+918826343179?text=Hello%20I%20need%20a%20promo%20code%20For%20campusZen.",
+                                    "_blank",
+                                );
                             }}
                         >
                             Get Promo Code
