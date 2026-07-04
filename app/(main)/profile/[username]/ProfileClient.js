@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,7 @@ import {
     Lock,
     Share2,
     Crown,
+    Heart,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -67,19 +68,70 @@ export default function ProfileClient({ username: initialUsername }) {
         posts,
         loading: postsLoading,
         error: postsError,
-        hasMore,
-        loadMore,
+        hasMore: hasMorePosts,
+        loadMore: loadMorePosts,
         addPost,
         removePost,
         updatePostLike,
     } = usePosts({ username });
     const [sendingDm, setSendingDm] = useState(false);
+    const [activeTab, setActiveTab] = useState("posts"); // "posts" or "clips"
+    const [clips, setClips] = useState([]);
+    const [clipsLoading, setClipsLoading] = useState(false);
+    const [clipsCursor, setClipsCursor] = useState(null);
+    const [hasMoreClips, setHasMoreClips] = useState(false);
+    const clipsSentinelRef = useRef(null);
 
     const { sentinelRef } = useInfiniteScroll({
-        fetchMore: loadMore,
-        hasMore,
+        fetchMore: loadMorePosts,
+        hasMore: hasMorePosts,
         loading: postsLoading,
     });
+
+    // Fetch clips for the profile
+    const fetchClips = async (nextCursor = null) => {
+        if (clipsLoading || (!nextCursor && clips.length > 0)) return;
+        setClipsLoading(true);
+        try {
+            let url = `/api/clips/feed?username=${username}&limit=12`;
+            if (nextCursor) url += `&cursor=${nextCursor}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            if (data.success) {
+                setClips(nextCursor ? [...clips, ...data.clips] : data.clips);
+                setClipsCursor(data.pagination.nextCursor);
+                setHasMoreClips(data.pagination.hasNextPage);
+            }
+        } catch (error) {
+            console.error("Fetch clips error:", error);
+        } finally {
+            setClipsLoading(false);
+        }
+    };
+
+    // Observer for clips infinite scroll
+    useEffect(() => {
+        if (!clipsSentinelRef.current || !hasMoreClips || clipsLoading) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    fetchClips(clipsCursor);
+                }
+            },
+            { threshold: 0.1 },
+        );
+
+        observer.observe(clipsSentinelRef.current);
+        return () => observer.disconnect();
+    }, [hasMoreClips, clipsCursor, clipsLoading]);
+
+    // Fetch clips when tab switches to clips
+    useEffect(() => {
+        if (activeTab === "clips" && clips.length === 0) {
+            fetchClips();
+        }
+    }, [activeTab]);
 
     const handleDeletePost = useCallback(
         (postId) => {
@@ -721,82 +773,170 @@ export default function ProfileClient({ username: initialUsername }) {
                 </div>
             )}
 
-            {/* Tabs Placeholder */}
+            {/* Tabs */}
             <div className="flex border-b border-border mt-2">
-                <div className="px-6 py-3 border-b-2 border-primary font-bold text-sm">
+                <button
+                    onClick={() => setActiveTab("posts")}
+                    className={`px-6 py-3 font-bold text-sm transition-colors ${
+                        activeTab === "posts"
+                            ? "border-b-2 border-primary"
+                            : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
                     Posts
-                </div>
+                </button>
+                <button
+                    onClick={() => setActiveTab("clips")}
+                    className={`px-6 py-3 font-bold text-sm transition-colors ${
+                        activeTab === "clips"
+                            ? "border-b-2 border-primary"
+                            : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                    Clips
+                </button>
             </div>
 
-            {/* Posts Section */}
+            {/* Content Section */}
             <div className="flex-1">
-                {postsLoading && posts.length === 0 ? (
-                    [1, 2, 3].map((i) => <PostSkeleton key={i} />)
-                ) : posts.length === 0 ? (
-                    <EmptyState
-                        icon={FileText}
-                        title="No posts yet"
-                        description={
-                            isOwnProfile
-                                ? "You haven't posted anything yet."
-                                : `@${profileUser.username} hasn't posted anything yet.`
-                        }
-                    />
-                ) : (
+                {activeTab === "posts" ? (
                     <>
-                        <div className="divide-y divide-border">
-                            {/* Show pinned post first if exists */}
-                            {profileUser?.pinnedPost && (
-                                <PostCard
-                                    key={
-                                        typeof profileUser.pinnedPost ===
-                                        "object"
-                                            ? profileUser.pinnedPost._id
-                                            : profileUser.pinnedPost
-                                    }
-                                    post={
-                                        typeof profileUser.pinnedPost ===
-                                        "object"
-                                            ? profileUser.pinnedPost
-                                            : posts.find(
-                                                  (p) =>
-                                                      p._id ===
-                                                      profileUser.pinnedPost,
-                                              )
-                                    }
-                                    currentUserId={currentUser?._id}
-                                    onDelete={handleDeletePost}
-                                    onLike={handleLikePost}
-                                    isPinned={true}
-                                />
-                            )}
-                            {posts
-                                .filter(
-                                    (post) =>
-                                        post._id !==
-                                        (profileUser?.pinnedPost?._id ||
-                                            profileUser?.pinnedPost),
-                                )
-                                .map((post) => (
-                                    <PostCard
-                                        key={post._id}
-                                        post={post}
-                                        currentUserId={currentUser?._id}
-                                        onDelete={handleDeletePost}
-                                        onLike={handleLikePost}
-                                        isPinned={false}
+                        {postsLoading && posts.length === 0 ? (
+                            [1, 2, 3].map((i) => <PostSkeleton key={i} />)
+                        ) : posts.length === 0 ? (
+                            <EmptyState
+                                icon={FileText}
+                                title="No posts yet"
+                                description={
+                                    isOwnProfile
+                                        ? "You haven't posted anything yet."
+                                        : `@${profileUser.username} hasn't posted anything yet.`
+                                }
+                            />
+                        ) : (
+                            <>
+                                <div className="divide-y divide-border">
+                                    {/* Show pinned post first if exists */}
+                                    {profileUser?.pinnedPost && (
+                                        <PostCard
+                                            key={
+                                                typeof profileUser.pinnedPost ===
+                                                "object"
+                                                    ? profileUser.pinnedPost._id
+                                                    : profileUser.pinnedPost
+                                            }
+                                            post={
+                                                typeof profileUser.pinnedPost ===
+                                                "object"
+                                                    ? profileUser.pinnedPost
+                                                    : posts.find(
+                                                          (p) =>
+                                                              p._id ===
+                                                              profileUser.pinnedPost,
+                                                      )
+                                            }
+                                            currentUserId={currentUser?._id}
+                                            onDelete={handleDeletePost}
+                                            onLike={handleLikePost}
+                                            isPinned={true}
+                                        />
+                                    )}
+                                    {posts
+                                        .filter(
+                                            (post) =>
+                                                post._id !==
+                                                (profileUser?.pinnedPost?._id ||
+                                                    profileUser?.pinnedPost),
+                                        )
+                                        .map((post) => (
+                                            <PostCard
+                                                key={post._id}
+                                                post={post}
+                                                currentUserId={currentUser?._id}
+                                                onDelete={handleDeletePost}
+                                                onLike={handleLikePost}
+                                                isPinned={false}
+                                            />
+                                        ))}
+                                </div>
+
+                                <div ref={sentinelRef}>
+                                    <InfiniteScrollSentinel
+                                        loading={postsLoading}
+                                        hasMore={hasMorePosts}
+                                        error={postsError}
+                                        onRetry={loadMorePosts}
+                                    />
+                                </div>
+                            </>
+                        )}
+                    </>
+                ) : (
+                    // Clips Tab
+                    <>
+                        {clipsLoading && clips.length === 0 ? (
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 p-4">
+                                {[1, 2, 3, 4, 5, 6].map((i) => (
+                                    <div
+                                        key={i}
+                                        className="aspect-[9/16] bg-accent/30 rounded-lg animate-pulse"
                                     />
                                 ))}
-                        </div>
-
-                        <div ref={sentinelRef}>
-                            <InfiniteScrollSentinel
-                                loading={postsLoading}
-                                hasMore={hasMore}
-                                error={postsError}
-                                onRetry={loadMore}
+                            </div>
+                        ) : clips.length === 0 ? (
+                            <EmptyState
+                                icon={FileText}
+                                title="No clips yet"
+                                description={
+                                    isOwnProfile
+                                        ? "You haven't uploaded any clips yet."
+                                        : `@${profileUser.username} hasn't uploaded any clips yet.`
+                                }
                             />
-                        </div>
+                        ) : (
+                            <>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 p-4">
+                                    {clips.map((clip) => (
+                                        <div
+                                            key={clip._id}
+                                            className="aspect-[9/16] relative rounded-lg overflow-hidden cursor-pointer group"
+                                            onClick={() => {
+                                                // TODO: Navigate to specific clip view
+                                                // For now, navigate to clips feed
+                                                router.push("/clips");
+                                            }}
+                                        >
+                                            <Image
+                                                src={clip.thumbnailUrl}
+                                                alt={clip.description}
+                                                fill
+                                                className="object-cover"
+                                                loading="lazy"
+                                                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                            />
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                                            <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white text-xs">
+                                                <Heart className="w-4 h-4 fill-white" />
+                                                {clip.likesCount}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {hasMoreClips && (
+                                    <div
+                                        ref={clipsSentinelRef}
+                                        className="flex justify-center py-8"
+                                    >
+                                        {clipsLoading && (
+                                            <div className="animate-pulse text-muted-foreground">
+                                                Loading more clips...
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </>
                 )}
             </div>
