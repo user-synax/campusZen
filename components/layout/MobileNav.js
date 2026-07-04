@@ -31,6 +31,7 @@ import {
     Rocket,
     ShieldCheck,
     Smartphone,
+    Video,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -138,7 +139,8 @@ export default function MobileNav() {
 
     const navItems = [
         { href: "/feed", icon: Home, label: "Home" },
-        { href: "/search", icon: Search, label: "Search" },
+        { href: "/clips", icon: Video, label: "Clips" },
+        // { href: "/search", icon: Search, label: "Search" },
         {
             href: "/chats",
             icon: MessageSquare,
@@ -318,6 +320,25 @@ export default function MobileNav() {
                                         ))}
                                     </div>
                                 )}
+                                <Link
+                                    href="/search"
+                                    onClick={() => setOpen(false)}
+                                >
+                                    <Button
+                                        variant="ghost"
+                                        className={cn(
+                                            "w-full justify-start gap-4 h-12 px-3",
+                                            pathname === "/search"
+                                                ? "bg-accent text-accent-foreground"
+                                                : "text-muted-foreground",
+                                        )}
+                                    >
+                                        <Search className="w-5 h-5" />
+                                        <span className="text-base font-medium">
+                                            Search
+                                        </span>
+                                    </Button>
+                                </Link>
                                 <Link
                                     href="/bookmarks"
                                     onClick={() => setOpen(false)}
