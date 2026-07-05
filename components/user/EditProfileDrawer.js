@@ -34,6 +34,22 @@ const INTEREST_OPTIONS = [
     "Entrepreneurship",
     "College Life",
     "Events",
+    "Cybersecurity",
+    "Open Source",
+    "UI/UX",
+    "Blockchain/Web3",
+    "Content Creation",
+    "Freelancing",
+    "Sports",
+    "Fitness & Gym",
+    "Movies & TV",
+    "Anime",
+    "Travel",
+    "Fashion",
+    "Reading",
+    "Debate & Public Speaking",
+    "Volunteering",
+    "Robotics",
 ];
 
 export default function EditProfileDrawer({
@@ -212,10 +228,6 @@ export default function EditProfileDrawer({
         const trimmedName = name.trim();
         if (trimmedName.length < 2) {
             setError("Name must be at least 2 characters");
-            return;
-        }
-        if (interests.length < 3) {
-            setError("Please select at least 3 interests");
             return;
         }
         setError(null);
