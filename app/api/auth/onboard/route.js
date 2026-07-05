@@ -14,55 +14,61 @@ export async function POST(request) {
         }
 
         const body = await request.json();
-        const { username, college, course, year, gender } = body;
+        const {
+            fullName,
+            bio,
+            avatar,
+            college,
+            course,
+            branch,
+            year,
+            interests,
+            following,
+        } = body;
 
-        if (!username || !gender) {
+        if (!fullName) {
             return NextResponse.json(
-                { error: "Please fill in all required fields" },
-                { status: 400 },
-            );
-        }
-
-        // Validate username format
-        if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
-            return NextResponse.json(
-                {
-                    error: "Username must be 3-20 characters, alphanumeric and underscores only",
-                },
+                { error: "Full name is required" },
                 { status: 400 },
             );
         }
 
         await connectDB();
 
-        // Check if username is already taken
-        const existingUser = await User.findOne({ username });
-        if (
-            existingUser &&
-            existingUser._id.toString() !== currentUser._id.toString()
-        ) {
-            return NextResponse.json(
-                { error: "Username is already taken" },
-                { status: 400 },
-            );
-        }
-
         const updateData = {
-            username,
-            gender,
+            name: fullName,
+            bio: bio || "",
+            avatar: avatar || "",
+            college: college || "",
+            course: course || "",
+            branch: branch || "",
+            interests: interests || [],
             isOnboarded: true,
         };
 
-        // Add optional fields if provided
-        if (college) updateData.college = college;
-        if (course) updateData.course = course;
         if (year) updateData.year = parseInt(year, 10);
 
+        // Update user
         const updatedUser = await User.findByIdAndUpdate(
             currentUser._id,
             { $set: updateData },
             { new: true, runValidators: true },
         );
+
+        // Handle follow requests
+        if (following && following.length > 0) {
+            // Add following to current user
+            await User.findByIdAndUpdate(currentUser._id, {
+                $addToSet: { following: { $each: following } },
+            });
+
+            // Add current user to followers of each followed user
+            for (const userId of following) {
+                await User.findByIdAndUpdate(userId, {
+                    $addToSet: { followers: currentUser._id },
+                });
+            }
+        }
 
         return NextResponse.json({ success: true, user: updatedUser });
     } catch (error) {

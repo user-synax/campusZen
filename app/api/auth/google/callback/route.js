@@ -121,7 +121,7 @@ export async function GET(request) {
                 isVerified: false,
                 verificationStatus: "none",
                 gender: "unspecified",
-                isOnboarded: true,
+                isOnboarded: false,
             });
 
             // Auto-follow founder
@@ -166,8 +166,11 @@ export async function GET(request) {
             userId: user._id.toString(),
             username: user.username,
         });
-        // Redirect to feed directly
-        const response = NextResponse.redirect(`${origin}/feed`);
+        // Redirect to onboarding if not onboarded, otherwise to feed
+        const redirectUrl = user.isOnboarded
+            ? `${origin}/feed`
+            : `${origin}/onboarding`;
+        const response = NextResponse.redirect(redirectUrl);
         await setAuthCookie(response, token);
 
         return response;

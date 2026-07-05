@@ -149,6 +149,7 @@ export async function POST(request) {
                   verificationStatus: "none",
               };
 
+        // Set isOnboarded to false by default
         const user = await User.create({
             name: sanitizeText(name),
             username,
@@ -161,6 +162,7 @@ export async function POST(request) {
             year: parseInt(year) || 1,
             gender: gender || "unspecified",
             avatar,
+            isOnboarded: false, // Default to false
             ...verificationFields,
         });
 
