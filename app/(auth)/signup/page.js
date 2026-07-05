@@ -40,9 +40,6 @@ export default function SignupPage() {
         password: "",
         confirmPassword: "",
         phone: "",
-        college: "",
-        course: "",
-        year: "1",
         gender: "",
     });
     const [errors, setErrors] = useState({});
@@ -134,10 +131,6 @@ export default function SignupPage() {
         setErrors({ ...errors, [name]: validateField(name, value) });
     };
 
-    const handleYearChange = (value) => {
-        setFormData({ ...formData, year: value });
-    };
-
     const handleGenderChange = (value) => {
         setFormData({ ...formData, gender: value });
         setTouched({ ...touched, gender: true });
@@ -219,7 +212,7 @@ export default function SignupPage() {
                             "Something went wrong",
                     );
 
-                window.location.href = "/feed";
+                window.location.href = "/onboarding";
             }
         } catch (err) {
             // Zod validation errors might come in an array
@@ -707,35 +700,6 @@ export default function SignupPage() {
                                 </div>
 
                                 <div className="space-y-5 border-t border-border pt-5">
-                                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                        Campus info
-                                    </p>
-                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="college">
-                                                College
-                                            </Label>
-                                            <Input
-                                                id="college"
-                                                name="college"
-                                                value={formData.college}
-                                                onChange={handleChange}
-                                                className="h-11"
-                                            />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="course">
-                                                Course
-                                            </Label>
-                                            <Input
-                                                id="course"
-                                                name="course"
-                                                value={formData.course}
-                                                onChange={handleChange}
-                                                className="h-11"
-                                            />
-                                        </div>
-                                    </div>
                                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                         <div className="space-y-1.5">
                                             <Label htmlFor="gender">
@@ -777,45 +741,6 @@ export default function SignupPage() {
                                                         {errors.gender}
                                                     </p>
                                                 )}
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="year">
-                                                Year of Study
-                                            </Label>
-                                            <Select
-                                                onValueChange={handleYearChange}
-                                                defaultValue={formData.year}
-                                            >
-                                                <SelectTrigger className="h-11">
-                                                    <SelectValue placeholder="Select year" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="1">
-                                                        1st Year
-                                                    </SelectItem>
-                                                    <SelectItem value="2">
-                                                        2nd Year
-                                                    </SelectItem>
-                                                    <SelectItem value="3">
-                                                        3rd Year
-                                                    </SelectItem>
-                                                    <SelectItem value="4">
-                                                        4th Year
-                                                    </SelectItem>
-                                                    <SelectItem value="5">
-                                                        5th Year
-                                                    </SelectItem>
-                                                    <SelectItem value="6">
-                                                        Postgraduate/Graduate
-                                                    </SelectItem>
-                                                    <SelectItem value="7">
-                                                        Student/Researcher
-                                                    </SelectItem>
-                                                    <SelectItem value="8">
-                                                        Other
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
                                         </div>
                                     </div>
                                 </div>
