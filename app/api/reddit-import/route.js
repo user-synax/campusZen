@@ -30,9 +30,7 @@ function getSamplePosts() {
             sourceUrl: "https://campuszen.app",
             author: "campuszen",
             created_utc: Date.now() / 1000,
-            images: [
-                "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&h=500&fit=crop",
-            ],
+            images: [],
         },
         {
             title: "Top 10 Programming Tips for Students",
@@ -45,9 +43,7 @@ function getSamplePosts() {
             sourceUrl: "https://campuszen.app",
             author: "campuszen",
             created_utc: Date.now() / 1000 - 3600,
-            images: [
-                "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&h=500&fit=crop",
-            ],
+            images: [],
         },
         {
             title: "Study Hacks for Engineering Students",
@@ -60,9 +56,7 @@ function getSamplePosts() {
             sourceUrl: "https://campuszen.app",
             author: "campuszen",
             created_utc: Date.now() / 1000 - 7200,
-            images: [
-                "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&h=500&fit=crop",
-            ],
+            images: [],
         },
         {
             title: "Latest Tech News: AI Breakthrough",
@@ -75,9 +69,7 @@ function getSamplePosts() {
             sourceUrl: "https://campuszen.app",
             author: "campuszen",
             created_utc: Date.now() / 1000 - 10800,
-            images: [
-                "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&h=500&fit=crop",
-            ],
+            images: [],
         },
         {
             title: "5 Web Dev Projects to Add to Your Portfolio",
@@ -90,9 +82,7 @@ function getSamplePosts() {
             sourceUrl: "https://campuszen.app",
             author: "campuszen",
             created_utc: Date.now() / 1000 - 14400,
-            images: [
-                "https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=800&h=500&fit=crop",
-            ],
+            images: [],
         },
         {
             title: "Funny Meme to Brighten Your Day 😂",
@@ -105,9 +95,7 @@ function getSamplePosts() {
             sourceUrl: "https://campuszen.app",
             author: "campuszen",
             created_utc: Date.now() / 1000 - 21600,
-            images: [
-                "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=500&fit=crop",
-            ],
+            images: [],
         },
         {
             title: "Desi Memes That Hit Too Hard 🇮🇳",
@@ -120,9 +108,7 @@ function getSamplePosts() {
             sourceUrl: "https://campuszen.app",
             author: "campuszen",
             created_utc: Date.now() / 1000 - 25200,
-            images: [
-                "https://images.unsplash.com/photo-1516383708606-19031a03896a?w=800&h=500&fit=crop",
-            ],
+            images: [],
         },
     ];
 }
