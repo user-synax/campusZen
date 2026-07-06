@@ -1,6 +1,5 @@
 "use client";
 
-import { formatRelativeTime } from "@/utils/formatters";
 import UserAvatar from "@/components/user/UserAvatar";
 import FormattedTime from "@/components/shared/FormattedTime";
 
