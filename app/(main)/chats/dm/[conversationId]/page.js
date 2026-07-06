@@ -66,7 +66,7 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
             }
 
             fetch(`/api/dms/${conversationId}/read`, { method: "POST" }).catch(
-                () => {},
+                () => { },
             );
             setTimeout(scrollToBottom, 100);
         } catch (error) {
@@ -119,8 +119,8 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
         if (!container) return true;
         return (
             container.scrollHeight -
-                container.scrollTop -
-                container.clientHeight <
+            container.scrollTop -
+            container.clientHeight <
             150
         );
     }, []);
@@ -143,7 +143,7 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
             });
             if (isNearBottom()) setTimeout(scrollToBottom, 50);
             fetch(`/api/dms/${conversationId}/read`, { method: "POST" }).catch(
-                () => {},
+                () => { },
             );
         },
         [conversationId, isNearBottom, scrollToBottom],
@@ -203,11 +203,11 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
                 },
                 replyTo: replyTarget
                     ? {
-                          _id: replyTarget._id,
-                          content: replyTarget.content,
-                          type: replyTarget.type,
-                          sender: replyTarget.sender,
-                      }
+                        _id: replyTarget._id,
+                        content: replyTarget.content,
+                        type: replyTarget.type,
+                        sender: replyTarget.sender,
+                    }
                     : null,
                 createdAt: new Date().toISOString(),
                 isOptimistic: true,
@@ -263,7 +263,7 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
 
     return (
         <div className="flex flex-col h-full bg-background overflow-hidden relative">
-            <div className="flex-shrink-0 bg-background/80 backdrop-blur border-b border-border z-10">
+            <div className="shrink-0 bg-background/80 backdrop-blur border-b border-border z-10">
                 <div className="flex items-center gap-3 px-4 py-3">
                     <Button
                         variant="ghost"
@@ -280,6 +280,10 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
                         </p>
                     </div>
                 </div>
+            </div>
+
+            <div className="text-xs text-muted-foreground truncate border text-center border-gray-200 px-4 py-2 mx-4 rounded-xl mt-1 bg-gray-50">
+                Do not share sensitive information. Messages are not end-to-end encrypted.
             </div>
 
             <div
@@ -337,7 +341,7 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
                                     showAvatar={
                                         i === 0 ||
                                         messages[i - 1]?.sender?._id !==
-                                            message.sender?._id
+                                        message.sender?._id
                                     }
                                     currentUserId={currentUser?._id}
                                     onDelete={handleDeleteMessage}
