@@ -15,7 +15,7 @@ const protectedRoutes = [
     "/chats",
     "/events",
     "/billing",
-    "/clips"
+    "/clips",
 ];
 
 export default function middleware(request) {
@@ -28,10 +28,15 @@ export default function middleware(request) {
         return response;
     }
 
-    const session = request.cookies.get("campusx_token")?.value;
+    const legacySession = request.cookies.get("campusx_token")?.value;
+    const appwriteSessionCookieName = `a_session_${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`;
+    const appwriteSession = request.cookies.get(
+        appwriteSessionCookieName,
+    )?.value;
+    const hasSession = !!legacySession || !!appwriteSession;
 
     // Redirect logged-in users away from auth pages
-    if (session && (pathname === "/login" || pathname === "/signup")) {
+    if (hasSession && (pathname === "/login" || pathname === "/signup")) {
         const response = NextResponse.redirect(new URL("/feed", request.url));
         addSecurityHeaders(response);
         return response;
@@ -42,7 +47,7 @@ export default function middleware(request) {
         pathname.startsWith(route),
     );
 
-    if (isProtectedRoute && !session) {
+    if (isProtectedRoute && !hasSession) {
         const loginUrl = new URL("/login", request.url);
         loginUrl.searchParams.set("redirect", pathname);
 
