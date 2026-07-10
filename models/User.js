@@ -263,6 +263,16 @@ const userSchema = new mongoose.Schema(
         googleAccessToken: { type: String },
         googleRefreshToken: { type: String },
         googleProfile: { type: mongoose.Schema.Types.Mixed },
+        // Appwrite fields
+        appwriteUserId: {
+            type: String,
+            unique: true,
+            sparse: true,
+        },
+        authMigrated: {
+            type: Boolean,
+            default: false,
+        },
         authProvider: {
             type: String,
             enum: ["email", "google"],
@@ -314,6 +324,7 @@ userSchema.index({ chatPrivacy: 1 });
 userSchema.index({ dmEnabled: 1 });
 userSchema.index({ receivedChatRequests: 1 });
 userSchema.index({ sentChatRequests: 1 });
+
 
 const User = mongoose.models.User || mongoose.model("User", userSchema);
 
