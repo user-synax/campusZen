@@ -32,7 +32,7 @@ export default function ClipPlayer({ clip, isActive, onView }) {
             className="h-full w-full object-contain bg-black"
             loop
             playsInline
-            preload="metadata"
+            preload="auto"
             poster={clip.thumbnailUrl}
         />
     );

@@ -10,6 +10,16 @@ import EmptyState from "@/components/shared/EmptyState";
 import { Video, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+// Fisher-Yates (Knuth) Shuffle Algorithm - unbiased randomization
+const shuffleArray = (array) => {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+
+    return array;
+};
+
 export default function ClipsPage() {
     const [clips, setClips] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -36,7 +46,13 @@ export default function ClipsPage() {
             const res = await fetch(url);
             const data = await res.json();
             if (data.success) {
-                setClips(nextCursor ? [...clips, ...data.clips] : data.clips);
+                // For initial load, shuffle the clips; for subsequent loads, just append
+                const processedClips = nextCursor
+                    ? data.clips
+                    : shuffleArray(data.clips);
+                setClips(
+                    nextCursor ? [...clips, ...processedClips] : processedClips,
+                );
                 setCursor(data.pagination.nextCursor);
                 setHasMore(data.pagination.hasNextPage);
             }
