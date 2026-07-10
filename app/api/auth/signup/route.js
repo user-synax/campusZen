@@ -13,7 +13,12 @@ import {
     BadRequestError,
 } from "@/lib/api-response";
 import { sanitizeText } from "@/lib/sanitize";
-import { isCollegeEmail, getCollegeName } from "@/lib/collegeEmails";
+import { isCollegeEmail, getCollegeName } from "@/lib/collegeEmails.js";
+import {
+    getAppwriteUsers,
+    createAppwriteServerClient,
+} from "@/lib/appwrite/server";
+import { ID, Account } from "node-appwrite";
 
 export async function POST(request) {
     try {
@@ -68,7 +73,7 @@ export async function POST(request) {
             return errorResponse(new BadRequestError("Passwords do not match"));
         }
 
-        // ── OTP Verification ──
+        // OTP Verification
         const otpRecord = await Otp.findOne({
             email: normalizedEmail,
             purpose: "signup",
@@ -104,7 +109,7 @@ export async function POST(request) {
         // OTP Valid - delete it
         await Otp.deleteOne({ _id: otpRecord._id });
 
-        // ── Final DB Checks ──
+        // Final DB Checks
         const existingEmail = await User.findOne({
             email: normalizedEmail,
         }).lean();
@@ -119,8 +124,18 @@ export async function POST(request) {
             return errorResponse(new BadRequestError("Username already taken"));
         }
 
-        const hashedPassword = await bcrypt.hash(password, 12);
+        // Create Appwrite user first
+        const users = getAppwriteUsers();
+        const appwriteUser = await users.create({
+            userId: ID.unique(),
+            email: normalizedEmail,
+            password: password,
+            name: name,
+            // Only pass phone if it's a valid E.164 format (starts with +)
+            ...(phone && phone.startsWith("+") ? { phone: phone } : {}),
+        });
 
+        // Create mongo user
         let avatar = "";
         const seed = Math.random().toString(36).substring(7);
         if (gender === "male") {
@@ -131,7 +146,7 @@ export async function POST(request) {
             avatar = `https://api.dicebear.com/7.x/identicon/svg?seed=${seed}`;
         }
 
-        // ── College email auto-detection ──
+        // College email auto-detection
         const collegeDetected = isCollegeEmail(normalizedEmail);
         const detectedCollegeName = getCollegeName(normalizedEmail);
 
@@ -154,7 +169,7 @@ export async function POST(request) {
             name: sanitizeText(name),
             username,
             email: normalizedEmail,
-            password: hashedPassword,
+            password: await bcrypt.hash(password, 12), // Keep for legacy fallback temporarily
             phone: phone || "",
             // Auto-fill college name from domain if user didn't provide one
             college: sanitizeText(college || "") || detectedCollegeName || "",
@@ -163,6 +178,8 @@ export async function POST(request) {
             gender: gender || "unspecified",
             avatar,
             isOnboarded: false, // Default to false
+            appwriteUserId: appwriteUser.$id,
+            authMigrated: true,
             ...verificationFields,
         });
 
@@ -188,10 +205,14 @@ export async function POST(request) {
             console.error("Auto-follow founder failed:", err.message);
         }
 
-        const token = await signToken({
-            userId: user._id.toString(),
-            username: user.username,
-        });
+        // Create Appwrite session
+        const client = createAppwriteServerClient();
+        const account = new Account(client);
+        const appwriteSession = await account.createEmailPasswordSession(
+            normalizedEmail,
+            password,
+        );
+
         const response = successResponse(
             {
                 user: {
@@ -209,12 +230,28 @@ export async function POST(request) {
             { status: 201 },
         );
 
+        // Set Appwrite session cookie
+        const sessionCookieName = `a_session_${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`;
+        response.cookies.set(sessionCookieName, appwriteSession.secret, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 60 * 60 * 24 * 7, // 7 days
+            path: "/",
+        });
+
+        // Also set legacy JWT for backwards compatibility
+        const token = await signToken({
+            userId: user._id.toString(),
+            username: user.username,
+        });
         await setAuthCookie(response, token);
+
         notifyAdminNewUser(user).catch((err) =>
             console.error("Operation failed:", err),
         );
 
-        import("@/lib/globalGroup")
+        import("@/lib/globalGroup.js")
             .then(({ autoJoinGlobalGroup }) => {
                 autoJoinGlobalGroup(user._id).catch((err) =>
                     console.error("Operation failed:", err),

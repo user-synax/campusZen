@@ -1,123 +1,71 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
-import config from "@/lib/config";
-import { signToken, setAuthCookie } from "@/lib/auth";
-import bcrypt from "bcryptjs";
+import { signToken, setAuthCookie, generateUniqueUsername } from "@/lib/auth";
 import { notifyAdminNewUser } from "@/lib/admin-notify";
 
-async function getGoogleTokens(code) {
-    const response = await fetch("https://oauth2.googleapis.com/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-            code,
-            client_id: config.google.clientId,
-            client_secret: config.google.clientSecret,
-            redirect_uri: config.google.redirectUri,
-            grant_type: "authorization_code",
-        }),
-    });
-
-    if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to get tokens: ${error}`);
-    }
-
-    return response.json();
-}
-
-async function getGoogleUserInfo(accessToken) {
-    const response = await fetch(
-        `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${accessToken}`,
-    );
-
-    if (!response.ok) {
-        throw new Error("Failed to get user info");
-    }
-
-    return response.json();
-}
-
-export async function GET(request) {
+export async function POST(request) {
     try {
-        const { searchParams, origin } = new URL(request.url);
-        const code = searchParams.get("code");
-        const error = searchParams.get("error");
+        const { appwriteUser } = await request.json();
 
-        if (error) {
-            console.error("Google OAuth error:", error);
-            return NextResponse.redirect(
-                `${origin}/login?error=oauth_cancelled`,
+        console.log(
+            "[Google Callback API] Received appwriteUser:",
+            appwriteUser,
+        );
+
+        if (!appwriteUser || !appwriteUser.$id) {
+            console.error(
+                "[Google Callback API] Invalid appwriteUser provided",
             );
-        }
-
-        if (!code) {
-            return NextResponse.redirect(`${origin}/login?error=missing_code`);
+            return NextResponse.json(
+                { error: "Invalid appwriteUser" },
+                { status: 401 },
+            );
         }
 
         await connectDB();
 
-        const tokens = await getGoogleTokens(code);
-        const userInfo = await getGoogleUserInfo(tokens.access_token);
-
-        const { sub: googleId, email, name, picture } = userInfo;
-
-        // Find existing user by Google ID or email
+        // Find existing user by Appwrite ID or email
         let user = await User.findOne({
-            $or: [{ googleId }, { email: email.toLowerCase() }],
+            $or: [
+                { appwriteUserId: appwriteUser.$id },
+                { email: appwriteUser.email.toLowerCase() },
+            ],
         });
 
         if (user) {
-            // Update existing user with Google info if they don't have it
-            if (!user.googleId) {
-                user.googleId = googleId;
-                user.googleAccessToken = tokens.access_token;
-                user.googleRefreshToken =
-                    tokens.refresh_token || user.googleRefreshToken;
-                user.googleProfile = userInfo;
-                user.authProvider = "google";
+            // If user exists but doesn't have appwriteUserId, link it
+            if (!user.appwriteUserId) {
+                user.appwriteUserId = appwriteUser.$id;
+                user.authMigrated = true;
+                user.emailVerified = appwriteUser.emailVerification;
+                await user.save();
+            } else if (user.emailVerified !== appwriteUser.emailVerification) {
+                // Sync email verification status
+                user.emailVerified = appwriteUser.emailVerification;
                 await user.save();
             }
         } else {
             // Create new user
-            // Generate a random password (won't be used for Google auth)
-            const tempPassword = await bcrypt.hash(
-                Math.random().toString(36),
-                12,
+            // Generate unique username
+            const username = await generateUniqueUsername(
+                appwriteUser.name || appwriteUser.email.split("@")[0],
             );
 
-            // Generate a unique username
-            let username = name.toLowerCase().replace(/[^a-zA-Z0-9]/g, "_");
-            let usernameExists = true;
-            let counter = 1;
-
-            while (usernameExists) {
-                const checkUsername =
-                    counter > 1 ? `${username}_${counter}` : username;
-                const existing = await User.findOne({
-                    username: checkUsername,
-                });
-                if (!existing) {
-                    username = checkUsername;
-                    usernameExists = false;
-                } else {
-                    counter++;
-                }
-            }
-
+            // Create MongoDB user
             user = await User.create({
-                name,
+                name: appwriteUser.name || "User",
                 username,
-                email: email.toLowerCase(),
-                password: tempPassword,
-                avatar: picture || "",
-                googleId,
-                googleAccessToken: tokens.access_token,
-                googleRefreshToken: tokens.refresh_token,
-                googleProfile: userInfo,
+                email: appwriteUser.email.toLowerCase(),
+                // Generate random password (won't be used for OAuth)
+                password: await (
+                    await import("bcryptjs")
+                ).default.hash(Math.random().toString(36), 12),
+                avatar: "",
+                appwriteUserId: appwriteUser.$id,
+                authMigrated: true,
                 authProvider: "google",
-                emailVerified: true,
+                emailVerified: appwriteUser.emailVerification,
                 isVerified: false,
                 verificationStatus: "none",
                 gender: "unspecified",
@@ -144,39 +92,55 @@ export async function GET(request) {
                     }
                 }
             } catch (err) {
-                console.error("Auto-follow founder failed:", err.message);
+                console.error(
+                    "[Google Callback API] Auto-follow founder failed:",
+                    err.message,
+                );
             }
 
             // Send admin notification
             notifyAdminNewUser(user).catch((err) =>
-                console.error("Admin notify failed:", err),
+                console.error(
+                    "[Google Callback API] Admin notify failed:",
+                    err,
+                ),
             );
 
             import("@/lib/globalGroup")
                 .then(({ autoJoinGlobalGroup }) => {
                     autoJoinGlobalGroup(user._id).catch((err) =>
-                        console.error("Operation failed:", err),
+                        console.error(
+                            "[Google Callback API] Global group join failed:",
+                            err,
+                        ),
                     );
                 })
-                .catch((err) => console.error("Operation failed:", err));
+                .catch((err) =>
+                    console.error(
+                        "[Google Callback API] Global group import failed:",
+                        err,
+                    ),
+                );
         }
 
-        // Sign JWT and set cookie
+        // Set legacy JWT cookie for compatibility
         const token = await signToken({
             userId: user._id.toString(),
             username: user.username,
         });
-        // Redirect to onboarding if not onboarded, otherwise to feed
-        const redirectUrl = user.isOnboarded
-            ? `${origin}/feed`
-            : `${origin}/onboarding`;
-        const response = NextResponse.redirect(redirectUrl);
+
+        // Determine redirect URL
+        const redirectTo = user.isOnboarded ? "/feed" : "/onboarding";
+
+        const response = NextResponse.json({ redirectTo });
         await setAuthCookie(response, token);
 
         return response;
     } catch (error) {
-        console.error("Google OAuth callback error:", error);
-        const { origin } = new URL(request.url);
-        return NextResponse.redirect(`${origin}/login?error=oauth_failed`);
+        console.error("[Google Callback API] Error:", error);
+        return NextResponse.json(
+            { error: "Internal server error" },
+            { status: 500 },
+        );
     }
 }
