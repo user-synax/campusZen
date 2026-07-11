@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { getBannerUrl } from "@/utils/defaultBanner";
+import { getRankForLevel } from "@/lib/ranks";
 
 const THEMES = [
     // Free Themes
@@ -610,37 +611,51 @@ export default function ProfileCardExportModal({
                             </div>
                         </div>
 
-                        {/* Top Badges */}
-                        {profileUser.badges?.length > 0 && (
-                            <div className="space-y-2 mb-5">
-                                <h3 className="text-[10px] font-bold text-white/55 uppercase tracking-wider flex items-center gap-1.5">
-                                    <Medal className="w-3 h-3 text-primary" />
-                                    Top Achievements
-                                </h3>
-                                <div className="grid grid-cols-2 gap-1.5">
-                                    {profileUser.badges.slice(0, 4).map(
-                                        (b, i) =>
-                                            b.badgeId && (
-                                                <div
-                                                    key={
-                                                        b.badgeId?._id ||
-                                                        b.badgeId?.id ||
-                                                        i
-                                                    }
-                                                    className={`p-1.5 ${activeTheme.chipRadius || "rounded-lg"} border flex items-center gap-1.5 overflow-hidden ${activeTheme.badgeBg}`}
-                                                >
-                                                    <span className="text-sm shrink-0">
-                                                        {b.badgeId.icon || "🏅"}
-                                                    </span>
-                                                    <span className="text-[9px] font-semibold truncate text-white/70">
-                                                        {b.badgeId.name}
-                                                    </span>
-                                                </div>
-                                            ),
-                                    )}
+                        {/* Rank Display */}
+                        <div className="space-y-2 mb-5">
+                            <div
+                                className={`p-2 ${activeTheme.chipRadius || "rounded-lg"} border flex items-center gap-2 ${activeTheme.badgeBg}`}
+                            >
+                                <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
+                                    <img
+                                        src={
+                                            getRankForLevel(
+                                                profileUser.level || 1,
+                                            ).badge
+                                        }
+                                        alt={
+                                            getRankForLevel(
+                                                profileUser.level || 1,
+                                            ).name
+                                        }
+                                        className="w-full h-full object-contain"
+                                        crossOrigin="anonymous"
+                                        onError={(e) => {
+                                            e.target.style.display = "none";
+                                            e.target.nextSibling.style.display =
+                                                "flex";
+                                        }}
+                                    />
+                                    <div className="hidden w-full h-full items-center justify-center bg-gradient-to-br from-yellow-500 to-amber-600 text-white text-xs font-bold rounded-full">
+                                        {getRankForLevel(
+                                            profileUser.level || 1,
+                                        ).name.charAt(0)}
+                                    </div>
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-bold text-white">
+                                        {
+                                            getRankForLevel(
+                                                profileUser.level || 1,
+                                            ).name
+                                        }
+                                    </span>
+                                    <span className="text-[9px] font-semibold text-white/60">
+                                        Level {profileUser.level || 1}
+                                    </span>
                                 </div>
                             </div>
-                        )}
+                        </div>
 
                         {/* Watermark / Brand Branding */}
                         <div className="pt-4 border-t border-white/10 flex items-center justify-between mt-auto">

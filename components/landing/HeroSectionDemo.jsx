@@ -40,7 +40,6 @@ export function HeroSectionDemo() {
                         rotationInterval={2500}
                     />
                 ),
-                suffix: "",
             }}
             description="The ultimate campus ecosystem to build your network, crush your goals, and vibe with your tribe. All in one place."
             actions={[
