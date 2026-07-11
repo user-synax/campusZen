@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import UserAvatar from "@/components/user/UserAvatar";
 import VerifiedBadge from "@/components/shared/VerifiedBadge";
 import FollowButton from "@/components/user/FollowButton";
 import PostCard from "@/components/post/PostCard";
@@ -19,7 +19,6 @@ import {
     Zap,
     Flame,
     Trophy,
-    Medal,
     MessageSquare,
     Lock,
     Share2,
@@ -39,6 +38,7 @@ import UserMention from "@/components/shared/UserMention";
 import { getBannerUrl } from "@/utils/defaultBanner";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { CrownIcon } from "lucide-react";
 import Image from "next/image";
 
 // Removed founder components
@@ -355,7 +355,7 @@ export default function ProfileClient({ username: initialUsername }) {
                             </>
                         )}
 
-                    <div className="flex justify-between items-end -mt-16 mb-3 relative z-10">
+                    <div className="flex justify-between items-end -mt-16 mb-3 relative z-10 ">
                         {/* Profile Avatar with Premium Glowing Frame */}
                         <div className="relative">
                             {profileUser.isPro &&
@@ -366,25 +366,12 @@ export default function ProfileClient({ username: initialUsername }) {
                                 ) && (
                                     <div className="absolute -inset-2 rounded-full animate-pulse bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 blur-md opacity-50" />
                                 )}
-                            <Avatar
-                                className={`w-28 h-28 sm:w-32 sm:h-32 border-4 border-background shadow-xl ring-2 ring-black/10 relative z-10 ${profileUser.isPro && !(profileUser.role === "admin" || profileUser.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) ? "ring-4 ring-yellow-400/50" : ""}`}
-                            >
-                                {profileUser.isPro &&
-                                    !(
-                                        profileUser.role === "admin" ||
-                                        profileUser.email ===
-                                            process.env.NEXT_PUBLIC_ADMIN_EMAIL
-                                    ) && (
-                                        <div className="absolute inset-0 rounded-full border-2 border-yellow-400/70 animate-pulse z-20" />
-                                    )}
-                                <AvatarImage
-                                    src={profileUser.avatar}
-                                    alt={profileUser.name}
-                                />
-                                <AvatarFallback>
-                                    {profileUser.name?.charAt(0)?.toUpperCase()}
-                                </AvatarFallback>
-                            </Avatar>
+                            <UserAvatar
+                                user={profileUser}
+                                size="xl"
+                                customSize="w-28 h-28 sm:w-32 sm:h-32"
+                                className={`border-4 border-background shadow-xl ring-2 ring-black/10 relative z-10 ${profileUser.isPro && !(profileUser.role === "admin" || profileUser.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) ? "ring-4 ring-yellow-400/50" : ""}`}
+                            />
                         </div>
 
                         {isOwnProfile ? (
@@ -393,7 +380,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setExportOpen(true)}
-                                    className="rounded-full flex items-center gap-1.5"
+                                    className=" hover:cursor-pointer rounded-full flex items-center gap-1.5"
                                 >
                                     <Share2 className="w-3.5 h-3.5" />
                                 </Button>
@@ -447,7 +434,7 @@ export default function ProfileClient({ username: initialUsername }) {
                         )}
                     </div>
 
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wra py-4">
                         <span
                             className={`text-xl font-bold ${
                                 profileUser.isPro &&
@@ -456,7 +443,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                     profileUser.email ===
                                         process.env.NEXT_PUBLIC_ADMIN_EMAIL
                                 )
-                                    ? "text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 animate-pulse drop-shadow-[0_0_8px_rgba(250,204,21,0.4)]"
+                                    ? "text-transparent bg-clip-text bg-linear-to-r from-yellow-300 via-amber-400 to-yellow-500 animate-pulse drop-shadow-[0_0_8px_rgba(250,204,21,0.4)]"
                                     : "text-foreground"
                             }`}
                         >
@@ -468,7 +455,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                 profileUser.email ===
                                     process.env.NEXT_PUBLIC_ADMIN_EMAIL
                             ) && (
-                                <Badge className="bg-gradient-to-r from-yellow-400/20 to-amber-400/20 text-yellow-400 border-yellow-500/40 hover:from-yellow-400/30 hover:to-amber-400/30 rounded-full px-3 py-1 text-xs font-bold flex items-center gap-1">
+                                <Badge className="bg-linear-to-r from-yellow-400/20 to-amber-400/20 text-yellow-400 border-yellow-500/40 hover:from-yellow-400/30 hover:to-amber-400/30 rounded-full px-3 py-1 text-xs font-bold flex items-center gap-1">
                                     <Crown className="w-3 h-3" />
                                     Pro
                                 </Badge>
@@ -485,7 +472,7 @@ export default function ProfileClient({ username: initialUsername }) {
                             profileUser.email ===
                                 process.env.NEXT_PUBLIC_ADMIN_EMAIL) && (
                             <Badge className="bg-purple-600/20 text-purple-400 border-purple-600/30 hover:bg-purple-600/30 rounded-full px-3 py-1 text-xs font-bold">
-                                Founder
+                                <CrownIcon className="w-4 h-4" /> &nbsp; Founder
                             </Badge>
                         )}
                     </div>
@@ -634,7 +621,7 @@ export default function ProfileClient({ username: initialUsername }) {
                     )}
 
                     {/* Gamification Stats */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6">
                         <Card className="p-3 bg-accent/30 dark:bg-zinc-900/40 border-border/50 flex flex-col items-center justify-center text-center">
                             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mb-1">
                                 <Zap className="w-4 h-4 text-primary fill-primary" />
@@ -670,46 +657,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                 Current Level
                             </span>
                         </Card>
-
-                        <Card className="p-3 bg-accent/30 dark:bg-zinc-900/40 border-border/50 flex flex-col items-center justify-center text-center">
-                            <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center mb-1">
-                                <Medal className="w-4 h-4 text-purple-500" />
-                            </div>
-                            <span className="text-lg font-black">
-                                {profileUser.badges?.length || 0}
-                            </span>
-                            <span className="text-[10px] uppercase text-muted-foreground font-bold">
-                                Badges
-                            </span>
-                        </Card>
                     </div>
-
-                    {/* Badges Display */}
-                    {profileUser.badges?.length > 0 && (
-                        <div className="mt-6">
-                            <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
-                                <Medal className="w-4 h-4 text-primary" />
-                                Achievements
-                            </h3>
-                            <div className="flex flex-wrap gap-2">
-                                {profileUser.badges.map(
-                                    (b, i) =>
-                                        b.badgeId && (
-                                            <Badge
-                                                key={i}
-                                                variant="outline"
-                                                className="bg-accent/20 dark:bg-zinc-900/50 border-primary/20 hover:border-primary/50 transition-colors py-1.5 px-3 rounded-full flex items-center gap-2"
-                                            >
-                                                <span>{b.badgeId.icon}</span>
-                                                <span className="text-xs font-semibold">
-                                                    {b.badgeId.name}
-                                                </span>
-                                            </Badge>
-                                        ),
-                                )}
-                            </div>
-                        </div>
-                    )}
 
                     {/* Exclusive Theme Widget for Premium */}
                     {profileUser.isPro && (
@@ -906,14 +854,6 @@ export default function ProfileClient({ username: initialUsername }) {
                                                 router.push("/clips");
                                             }}
                                         >
-                                            <Image
-                                                src={clip.thumbnailUrl}
-                                                alt={clip.description}
-                                                fill
-                                                className="object-cover"
-                                                loading="lazy"
-                                                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                                            />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
                                             <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white text-xs">
                                                 <Heart className="w-4 h-4 fill-white" />
