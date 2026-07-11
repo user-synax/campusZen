@@ -56,6 +56,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { TrophyIcon } from "lucide-react";
+import { Sparkle } from "lucide-react";
+import { SparkleIcon } from "lucide-react";
 
 export default function Sidebar() {
     const pathname = usePathname();
