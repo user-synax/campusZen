@@ -141,7 +141,7 @@ export async function GET(request) {
                     posts = await Post.find(interestQuery)
                         .sort({ createdAt: -1 })
                         .limit(limit + 1)
-                        .select("-likes -__v -updatedAt")
+                        .select("-__v -updatedAt")
                         .populate({
                             path: "author",
                             select: "name username avatar college isVerified verificationType isBot botType",
@@ -158,7 +158,7 @@ export async function GET(request) {
                     const pageWindow = await Post.find(query)
                         .sort({ _id: -1 })
                         .limit(limit + 1)
-                        .select("-likes -__v -updatedAt")
+                        .select("-__v -updatedAt")
                         .populate({
                             path: "author",
                             select: "name username avatar college isVerified verificationType isBot botType",
@@ -191,7 +191,7 @@ export async function GET(request) {
                     posts = await Post.find(query)
                         .sort({ _id: -1 })
                         .limit(limit + 1)
-                        .select("-likes -__v -updatedAt")
+                        .select("-__v -updatedAt")
                         .populate({
                             path: "author",
                             select: "name username avatar college isVerified verificationType isBot botType",

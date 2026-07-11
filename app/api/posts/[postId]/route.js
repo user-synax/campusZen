@@ -32,7 +32,7 @@ export async function GET(request, { params }) {
                         "author",
                         "name username avatar college isVerified verificationType isBot botType",
                     )
-                    .select("-likes -__v") // Exclude unnecessary fields
+                    .select("-__v") // Exclude unnecessary fields
                     .lean();
 
                 if (!post) {

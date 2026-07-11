@@ -26,10 +26,6 @@ export async function GET(request, { params }) {
                 path: "pinnedPost",
                 populate: { path: "author", select: "name username avatar" },
             })
-            .populate({
-                path: "badges.badgeId",
-                select: "name icon description color category",
-            })
             .lean();
 
         if (!userResult)
