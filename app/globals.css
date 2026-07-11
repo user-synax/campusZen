@@ -192,7 +192,11 @@
     .bg-grid-pattern {
         background-image:
             linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.03) 1px,
+                transparent 1px
+            );
         background-size: 64px 64px;
     }
 
@@ -220,10 +224,11 @@
 
     /* Animated gradient for profile headers */
     .animate-gradient {
-        background: linear-gradient(-45deg, 
-            hsl(var(--primary) / 0.3), 
-            hsl(var(--accent) / 0.3), 
-            hsl(var(--primary) / 0.2), 
+        background: linear-gradient(
+            -45deg,
+            hsl(var(--primary) / 0.3),
+            hsl(var(--accent) / 0.3),
+            hsl(var(--primary) / 0.2),
             hsl(var(--accent) / 0.2)
         );
         background-size: 400% 400%;
