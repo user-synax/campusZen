@@ -91,6 +91,17 @@ CampusZen also includes a public tools section with utilities such as:
 - Color tools like picker, contrast, gradient, blindness simulation, and relationship checks
 - Developer tools like UUID, ULID, QR, JWT, hash, regex, query conversion, HTML preview, PHP serialization, and more
 
+## Gamification
+
+How to Earn XP : Users gain XP for:
+- Creating posts: +20 XP
+- Following users: +10 XP
+- Liking content: +5 XP
+- Commenting: +10 XP
+- Daily login: +50 XP
+- RSVPing to events: +15 XP
+- Uploading resources: +30 XP
+
 ## 🛠️ Tech Stack
 
 | Layer | Technology |
