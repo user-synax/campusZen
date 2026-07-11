@@ -314,13 +314,27 @@ export function usePosts(queryParams = {}, initialPosts = []) {
 
                 const data = await res.json();
 
-                setPosts((prev) =>
-                    prev.map((p) =>
+                setPosts((prev) => {
+                    const newPosts = prev.map((p) =>
                         p._id === postId
-                            ? { ...p, likesCount: data.likesCount, _isLiked: data.liked }
+                            ? {
+                                  ...p,
+                                  likesCount: data.likesCount,
+                                  _isLiked: data.liked,
+                              }
                             : p,
-                    ),
-                );
+                    );
+
+                    // Update client cache
+                    if (cacheKey) {
+                        clientCache.set(
+                            cacheKey,
+                            { posts: newPosts, hasMore, cursor },
+                            cacheTtl,
+                        );
+                    }
+                    return newPosts;
+                });
 
                 return data;
             } catch (err) {
