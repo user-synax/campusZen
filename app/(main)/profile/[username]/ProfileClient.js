@@ -160,7 +160,7 @@ export default function ProfileClient({ username: initialUsername }) {
     const isOwnProfile =
         profileUser?.isMe ||
         currentUser?.username?.toLowerCase() ===
-            profileUser?.username?.toLowerCase();
+        profileUser?.username?.toLowerCase();
     const isFollowing =
         profileUser?.isFollowing ||
         currentUser?.following?.some(
@@ -252,13 +252,21 @@ export default function ProfileClient({ username: initialUsername }) {
     if (loading) {
         return (
             <div className="flex flex-col min-h-screen">
-                <div className="h-32 bg-secondary animate-pulse" />
-                <div className="px-4 pb-4 -mt-12 space-y-4">
-                    <div className="w-24 h-24 rounded-full bg-secondary animate-pulse border-4 border-background" />
-                    <div className="h-6 w-48 bg-secondary animate-pulse rounded" />
-                    <div className="h-4 w-32 bg-secondary animate-pulse rounded" />
+                <div className="h-40 sm:h-56 bg-gradient-to-br from-secondary via-secondary/70 to-secondary animate-pulse" />
+                <div className="max-w-3xl w-full mx-auto px-4 sm:px-6 pb-4 -mt-14 sm:-mt-16 space-y-4">
+                    <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-secondary animate-pulse border-4 border-background shadow-xl" />
+                    <div className="h-6 w-48 bg-secondary animate-pulse rounded-full" />
+                    <div className="h-4 w-32 bg-secondary animate-pulse rounded-full" />
+                    <div className="grid grid-cols-3 gap-3 pt-2">
+                        {[1, 2, 3].map((i) => (
+                            <div
+                                key={i}
+                                className="h-20 bg-secondary/70 animate-pulse rounded-2xl"
+                            />
+                        ))}
+                    </div>
                 </div>
-                <div className="mt-8">
+                <div className="max-w-3xl w-full mx-auto mt-8">
                     {[1, 2].map((i) => (
                         <PostSkeleton key={i} />
                     ))}
@@ -278,10 +286,10 @@ export default function ProfileClient({ username: initialUsername }) {
     }
 
     return (
-        <div className="flex flex-col min-h-screen relative">
+        <div className="flex flex-col min-h-screen relative bg-background">
             {/* Header */}
-            <div className="flex flex-col">
-                <div className="h-32 relative overflow-hidden">
+            <div className="flex flex-col max-w-3xl w-full mx-auto sm:border-x sm:border-border/40">
+                <div className="h-40 sm:h-56 relative overflow-hidden bg-secondary">
                     {profileUser?.banner ? (
                         <Image
                             src={getBannerUrl(
@@ -309,15 +317,17 @@ export default function ProfileClient({ username: initialUsername }) {
                             priority
                         />
                     )}
+                    {/* Subtle bottom fade for a premium blend into the content */}
+                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/80 to-transparent pointer-events-none" />
                 </div>
 
-                <div className="px-4 pb-4 relative">
+                <div className="px-4 sm:px-6 pb-4 relative">
                     {/* Sparkling Animation for Pro Users */}
                     {profileUser.isPro &&
                         !(
                             profileUser.role === "admin" ||
                             profileUser.email ===
-                                process.env.NEXT_PUBLIC_ADMIN_EMAIL
+                            process.env.NEXT_PUBLIC_ADMIN_EMAIL
                         ) && (
                             <>
                                 <div
@@ -355,14 +365,14 @@ export default function ProfileClient({ username: initialUsername }) {
                             </>
                         )}
 
-                    <div className="flex justify-between items-end -mt-16 mb-3 relative z-10 ">
+                    <div className="flex justify-between items-end -mt-14 sm:-mt-16 mb-3 relative z-10 ">
                         {/* Profile Avatar with Premium Glowing Frame */}
                         <div className="relative">
                             {profileUser.isPro &&
                                 !(
                                     profileUser.role === "admin" ||
                                     profileUser.email ===
-                                        process.env.NEXT_PUBLIC_ADMIN_EMAIL
+                                    process.env.NEXT_PUBLIC_ADMIN_EMAIL
                                 ) && (
                                     <div className="absolute -inset-2 rounded-full animate-pulse bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 blur-md opacity-50" />
                                 )}
@@ -370,7 +380,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                 user={profileUser}
                                 size="xl"
                                 customSize="w-28 h-28 sm:w-32 sm:h-32"
-                                className={`border-4 border-background shadow-xl ring-2 ring-black/10 relative z-10 ${profileUser.isPro && !(profileUser.role === "admin" || profileUser.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) ? "ring-4 ring-yellow-400/50" : ""}`}
+                                className={`border-4 border-background shadow-2xl ring-2 ring-black/10 relative z-10 transition-transform duration-300 ${profileUser.isPro && !(profileUser.role === "admin" || profileUser.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) ? "ring-4 ring-yellow-400/50" : ""}`}
                             />
                         </div>
 
@@ -380,7 +390,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setExportOpen(true)}
-                                    className=" hover:cursor-pointer rounded-full flex items-center gap-1.5"
+                                    className="hover:cursor-pointer rounded-full flex items-center gap-1.5 shadow-sm backdrop-blur-sm bg-background/80 hover:bg-accent transition-colors"
                                 >
                                     <Share2 className="w-3.5 h-3.5" />
                                 </Button>
@@ -389,7 +399,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setEditOpen(true)}
-                                    className="rounded-full"
+                                    className="rounded-full shadow-sm backdrop-blur-sm bg-background/80 hover:bg-accent transition-colors font-semibold"
                                 >
                                     Edit profile
                                 </Button>
@@ -415,7 +425,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                         size="sm"
                                         onClick={handleSendDM}
                                         disabled={sendingDm}
-                                        className="rounded-full"
+                                        className="rounded-full shadow-sm font-semibold"
                                     >
                                         <MessageSquare className="w-4 h-4 mr-1" />
                                         {sendingDm ? "Opening..." : "DM"}
@@ -434,18 +444,17 @@ export default function ProfileClient({ username: initialUsername }) {
                         )}
                     </div>
 
-                    <div className="flex items-center gap-2 flex-wra py-4">
+                    <div className="flex items-center gap-2 flex-wrap py-3">
                         <span
-                            className={`text-xl font-bold ${
-                                profileUser.isPro &&
+                            className={`text-xl sm:text-2xl font-black tracking-tight ${profileUser.isPro &&
                                 !(
                                     profileUser.role === "admin" ||
                                     profileUser.email ===
-                                        process.env.NEXT_PUBLIC_ADMIN_EMAIL
+                                    process.env.NEXT_PUBLIC_ADMIN_EMAIL
                                 )
-                                    ? "text-transparent bg-clip-text bg-linear-to-r from-yellow-300 via-amber-400 to-yellow-500 animate-pulse drop-shadow-[0_0_8px_rgba(250,204,21,0.4)]"
-                                    : "text-foreground"
-                            }`}
+                                ? "text-transparent bg-clip-text bg-linear-to-r from-yellow-300 via-amber-400 to-yellow-500 animate-pulse drop-shadow-[0_0_8px_rgba(250,204,21,0.4)]"
+                                : "text-foreground"
+                                }`}
                         >
                             {profileUser.name}
                         </span>
@@ -453,7 +462,7 @@ export default function ProfileClient({ username: initialUsername }) {
                             !(
                                 profileUser.role === "admin" ||
                                 profileUser.email ===
-                                    process.env.NEXT_PUBLIC_ADMIN_EMAIL
+                                process.env.NEXT_PUBLIC_ADMIN_EMAIL
                             ) && (
                                 <Badge className="bg-linear-to-r from-yellow-400/20 to-amber-400/20 text-yellow-400 border-yellow-500/40 hover:from-yellow-400/30 hover:to-amber-400/30 rounded-full px-3 py-1 text-xs font-bold flex items-center gap-1">
                                     <Crown className="w-3 h-3" />
@@ -470,18 +479,18 @@ export default function ProfileClient({ username: initialUsername }) {
                         {/* Admin badge */}
                         {(profileUser.role === "admin" ||
                             profileUser.email ===
-                                process.env.NEXT_PUBLIC_ADMIN_EMAIL) && (
-                            <Badge className="bg-purple-600/20 text-purple-400 border-purple-600/30 hover:bg-purple-600/30 rounded-full px-3 py-1 text-xs font-bold">
-                                <CrownIcon className="w-4 h-4" /> &nbsp; Founder
-                            </Badge>
-                        )}
+                            process.env.NEXT_PUBLIC_ADMIN_EMAIL) && (
+                                <Badge className="bg-purple-600/20 text-purple-400 border-purple-600/30 hover:bg-purple-600/30 rounded-full px-3 py-1 text-xs font-bold">
+                                    <CrownIcon className="w-4 h-4" /> &nbsp; Founder
+                                </Badge>
+                            )}
                     </div>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-muted-foreground text-sm font-medium">
                         @{profileUser.username}
                     </p>
 
                     {profileUser.bio && (
-                        <div className="mt-3 text-[15px] whitespace-pre-wrap break-words">
+                        <div className="mt-3 text-[15px] leading-relaxed whitespace-pre-wrap break-words">
                             {renderContentWithMentions(profileUser.bio).map(
                                 (segment, i) => {
                                     if (segment.type === "hashtag") {
@@ -511,19 +520,19 @@ export default function ProfileClient({ username: initialUsername }) {
                         </div>
                     )}
 
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-sm text-muted-foreground">
+                    <div className="flex flex-wrap gap-2 mt-3 text-sm text-muted-foreground">
                         {profileUser.college && (
-                            <span className="flex items-center gap-1">
+                            <span className="flex items-center gap-1.5 bg-accent/40 border border-border/50 rounded-full px-3 py-1">
                                 🎓 {profileUser.college}
                             </span>
                         )}
                         {profileUser.course && (
-                            <span className="flex items-center gap-1">
+                            <span className="flex items-center gap-1.5 bg-accent/40 border border-border/50 rounded-full px-3 py-1">
                                 📚 {profileUser.course}
                             </span>
                         )}
                         {profileUser.year && (
-                            <span className="flex items-center gap-1">
+                            <span className="flex items-center gap-1.5 bg-accent/40 border border-border/50 rounded-full px-3 py-1">
                                 📅 Year {profileUser.year}
                             </span>
                         )}
@@ -531,13 +540,13 @@ export default function ProfileClient({ username: initialUsername }) {
 
                     {/* Social Links */}
                     {profileUser.socialLinks && (
-                        <div className="flex flex-wrap gap-3 mt-4">
+                        <div className="flex flex-wrap gap-2.5 mt-4">
                             {profileUser.socialLinks.twitter && (
                                 <a
                                     href={profileUser.socialLinks.twitter}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="w-8 h-8 rounded-full bg-sky-500/20 flex items-center justify-center hover:bg-sky-500/30 transition-colors"
+                                    className="w-8 h-8 rounded-full bg-sky-500/20 flex items-center justify-center hover:bg-sky-500/30 transition-all hover:scale-110 shadow-sm border border-border/40"
                                     title="Twitter"
                                 >
                                     <svg
@@ -554,7 +563,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                     href={profileUser.socialLinks.instagram}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="w-8 h-8 rounded-full bg-pink-500/20 flex items-center justify-center hover:bg-pink-500/30 transition-colors"
+                                    className="w-8 h-8 rounded-full bg-pink-500/20 flex items-center justify-center hover:bg-pink-500/30 transition-all hover:scale-110 shadow-sm border border-border/40"
                                     title="Instagram"
                                 >
                                     <svg
@@ -571,7 +580,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                     href={profileUser.socialLinks.linkedin}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="w-8 h-8 rounded-full bg-blue-600/20 flex items-center justify-center hover:bg-blue-600/30 transition-colors"
+                                    className="w-8 h-8 rounded-full bg-blue-600/20 flex items-center justify-center hover:bg-blue-600/30 transition-all hover:scale-110 shadow-sm border border-border/40"
                                     title="LinkedIn"
                                 >
                                     <svg
@@ -588,7 +597,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                     href={profileUser.socialLinks.github}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="w-8 h-8 rounded-full bg-gray-600/20 flex items-center justify-center hover:bg-gray-600/30 transition-colors"
+                                    className="w-8 h-8 rounded-full bg-gray-600/20 flex items-center justify-center hover:bg-gray-600/30 transition-all hover:scale-110 shadow-sm border border-border/40"
                                     title="GitHub"
                                 >
                                     <svg
@@ -605,7 +614,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                     href={profileUser.socialLinks.website}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center hover:bg-green-500/30 transition-colors"
+                                    className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center hover:bg-green-500/30 transition-all hover:scale-110 shadow-sm border border-border/40"
                                     title="Website"
                                 >
                                     <svg
@@ -621,39 +630,39 @@ export default function ProfileClient({ username: initialUsername }) {
                     )}
 
                     {/* Gamification Stats */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6">
-                        <Card className="p-3 bg-accent/30 dark:bg-zinc-900/40 border-border/50 flex flex-col items-center justify-center text-center">
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mb-1">
+                    <div className="grid grid-cols-3 gap-2.5 sm:gap-3 mt-6">
+                        <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 border-border/50 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+                            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center mb-1.5">
                                 <Zap className="w-4 h-4 text-primary fill-primary" />
                             </div>
-                            <span className="text-lg font-black">
+                            <span className="text-lg sm:text-xl font-black">
                                 {profileUser.totalXP || profileUser.xp || 0}
                             </span>
-                            <span className="text-[10px] uppercase text-muted-foreground font-bold">
+                            <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
                                 Total XP
                             </span>
                         </Card>
 
-                        <Card className="p-3 bg-accent/30 dark:bg-zinc-900/40 border-border/50 flex flex-col items-center justify-center text-center">
-                            <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center mb-1">
+                        <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 border-border/50 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+                            <div className="w-9 h-9 rounded-full bg-orange-500/10 flex items-center justify-center mb-1.5">
                                 <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
                             </div>
-                            <span className="text-lg font-black">
+                            <span className="text-lg sm:text-xl font-black">
                                 {profileUser.currentStreak || 0}
                             </span>
-                            <span className="text-[10px] uppercase text-muted-foreground font-bold">
+                            <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
                                 Day Streak
                             </span>
                         </Card>
 
-                        <Card className="p-3 bg-accent/30 dark:bg-zinc-900/40 border-border/50 flex flex-col items-center justify-center text-center">
-                            <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center mb-1">
+                        <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 border-border/50 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+                            <div className="w-9 h-9 rounded-full bg-yellow-500/10 flex items-center justify-center mb-1.5">
                                 <Trophy className="w-4 h-4 text-yellow-500" />
                             </div>
-                            <span className="text-lg font-black">
+                            <span className="text-lg sm:text-xl font-black">
                                 Lvl {profileUser.level || 1}
                             </span>
-                            <span className="text-[10px] uppercase text-muted-foreground font-bold">
+                            <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
                                 Current Level
                             </span>
                         </Card>
@@ -662,9 +671,9 @@ export default function ProfileClient({ username: initialUsername }) {
                     {/* Exclusive Theme Widget for Premium */}
                     {profileUser.isPro && (
                         <div className="mt-6">
-                            <Card className="p-4 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
+                            <Card className="p-4 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20 rounded-2xl shadow-sm">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center text-white text-lg">
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center text-white text-lg shadow-sm">
                                         🎨
                                     </div>
                                     <div className="flex-1">
@@ -681,15 +690,17 @@ export default function ProfileClient({ username: initialUsername }) {
                         </div>
                     )}
 
-                    <div className="flex gap-6 mt-6 pb-2 border-b border-border/50">
+                    <div className="flex gap-6 mt-6 pb-3 border-b border-border/50">
                         <button
                             onClick={() => {
                                 setFollowModal(true);
                                 setFollowModalTab("following");
                             }}
-                            className="flex gap-1 hover:underline"
+                            className="flex hover:cursor-pointer gap-1.5 hover:opacity-70 transition-opacity"
                         >
-                            <strong>{profileUser.followingCount}</strong>{" "}
+                            <strong className="font-black">
+                                {profileUser.followingCount}
+                            </strong>{" "}
                             <span className="text-muted-foreground">
                                 Following
                             </span>
@@ -699,15 +710,19 @@ export default function ProfileClient({ username: initialUsername }) {
                                 setFollowModal(true);
                                 setFollowModalTab("followers");
                             }}
-                            className="flex gap-1 hover:underline"
+                            className="flex hover:cursor-pointer gap-1.5 hover:opacity-70 transition-opacity"
                         >
-                            <strong>{profileUser.followersCount}</strong>{" "}
+                            <strong className="font-black">
+                                {profileUser.followersCount}
+                            </strong>{" "}
                             <span className="text-muted-foreground">
                                 Followers
                             </span>
                         </button>
-                        <span className="flex gap-1">
-                            <strong>{profileUser.postCount}</strong>{" "}
+                        <span className="flex gap-1.5">
+                            <strong className="font-black">
+                                {profileUser.postCount}
+                            </strong>{" "}
                             <span className="text-muted-foreground">Posts</span>
                         </span>
                     </div>
@@ -716,37 +731,41 @@ export default function ProfileClient({ username: initialUsername }) {
 
             {/* Activity Heatmap */}
             {profileUser && (
-                <div className="px-4 pb-2 mt-1">
+                <div className="max-w-3xl w-full mx-auto px-4 sm:px-6 pb-2 mt-1">
                     <ActivityHeatmap username={username} />
                 </div>
             )}
 
             {/* Tabs */}
-            <div className="flex border-b border-border mt-2">
+            <div className="sticky top-0 z-20 flex border-b border-border mt-2 bg-background/80 backdrop-blur-md max-w-3xl w-full mx-auto sm:border-x sm:border-border/40">
                 <button
                     onClick={() => setActiveTab("posts")}
-                    className={`px-6 py-3 font-bold text-sm transition-colors ${
-                        activeTab === "posts"
-                            ? "border-b-2 border-primary"
-                            : "text-muted-foreground hover:text-foreground"
-                    }`}
+                    className={`flex-1 sm:flex-none px-6 py-3.5 font-bold text-sm transition-colors relative ${activeTab === "posts"
+                        ? "text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                        }`}
                 >
                     Posts
+                    {activeTab === "posts" && (
+                        <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-primary rounded-full" />
+                    )}
                 </button>
                 <button
                     onClick={() => setActiveTab("clips")}
-                    className={`px-6 py-3 font-bold text-sm transition-colors ${
-                        activeTab === "clips"
-                            ? "border-b-2 border-primary"
-                            : "text-muted-foreground hover:text-foreground"
-                    }`}
+                    className={`flex-1 sm:flex-none px-6 py-3.5 font-bold text-sm transition-colors relative ${activeTab === "clips"
+                        ? "text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                        }`}
                 >
                     Clips
+                    {activeTab === "clips" && (
+                        <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-primary rounded-full" />
+                    )}
                 </button>
             </div>
 
             {/* Content Section */}
-            <div className="flex-1">
+            <div className="flex-1 max-w-3xl w-full mx-auto sm:border-x sm:border-border/40">
                 {activeTab === "posts" ? (
                     <>
                         {postsLoading && posts.length === 0 ? (
@@ -769,19 +788,19 @@ export default function ProfileClient({ username: initialUsername }) {
                                         <PostCard
                                             key={
                                                 typeof profileUser.pinnedPost ===
-                                                "object"
+                                                    "object"
                                                     ? profileUser.pinnedPost._id
                                                     : profileUser.pinnedPost
                                             }
                                             post={
                                                 typeof profileUser.pinnedPost ===
-                                                "object"
+                                                    "object"
                                                     ? profileUser.pinnedPost
                                                     : posts.find(
-                                                          (p) =>
-                                                              p._id ===
-                                                              profileUser.pinnedPost,
-                                                      )
+                                                        (p) =>
+                                                            p._id ===
+                                                            profileUser.pinnedPost,
+                                                    )
                                             }
                                             currentUserId={currentUser?._id}
                                             onDelete={handleDeletePost}
@@ -823,11 +842,11 @@ export default function ProfileClient({ username: initialUsername }) {
                     // Clips Tab
                     <>
                         {clipsLoading && clips.length === 0 ? (
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 p-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-4">
                                 {[1, 2, 3, 4, 5, 6].map((i) => (
                                     <div
                                         key={i}
-                                        className="aspect-[9/16] bg-accent/30 rounded-lg animate-pulse"
+                                        className="aspect-[9/16] bg-accent/30 rounded-2xl animate-pulse"
                                     />
                                 ))}
                             </div>
@@ -843,11 +862,11 @@ export default function ProfileClient({ username: initialUsername }) {
                             />
                         ) : (
                             <>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 p-4">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-4">
                                     {clips.map((clip) => (
                                         <div
                                             key={clip._id}
-                                            className="aspect-[9/16] relative rounded-lg overflow-hidden cursor-pointer group"
+                                            className="aspect-[9/16] relative rounded-2xl overflow-hidden cursor-pointer group shadow-sm hover:shadow-lg transition-shadow duration-300 bg-accent/20"
                                             onClick={() => {
                                                 // TODO: Navigate to specific clip view
                                                 // For now, navigate to clips feed
@@ -855,7 +874,8 @@ export default function ProfileClient({ username: initialUsername }) {
                                             }}
                                         >
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                                            <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white text-xs">
+                                            <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+                                            <div className="absolute bottom-2 left-2.5 flex items-center gap-1 text-white text-xs font-semibold">
                                                 <Heart className="w-4 h-4 fill-white" />
                                                 {clip.likesCount}
                                             </div>
