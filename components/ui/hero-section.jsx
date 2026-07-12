@@ -65,9 +65,7 @@ export function HeroSection({
                     )}
 
                     {/* Title */}
-                    <h1
-                        className="animate-appear flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 text-center px-4 font-black tracking-tight leading-none text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl bg-gradient-to-b from-white via-white/90 to-neutral-400 bg-clip-text text-transparent drop-shadow-2xl"
-                    >
+                    <h1 className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 text-center px-4 font-black tracking-tight leading-none text-4xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl bg-gradient-to-b from-white via-white/90 to-neutral-400 bg-clip-text text-transparent drop-shadow-2xl">
                         {titleRotatingText ? (
                             <>
                                 <span className="whitespace-nowrap">
@@ -86,12 +84,12 @@ export function HeroSection({
                             title
                         )}
                     </h1>
-                    <p className="animate-appear max-w-2xl text-base text-gray-400 sm:text-md delay-200 px-6 sm:px-4">
+                    <p className="max-w-2xl text-sm text-gray-400 sm:text-xl delay-200 px-6 sm:px-4">
                         {description}
                     </p>
 
                     {/* Actions */}
-                    <div className="animate-appear flex flex-col sm:flex-row gap-4 justify-center delay-400 w-full max-w-[300px] sm:max-w-none mx-auto px-4 sm:px-0">
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center delay-400 w-full max-w-[300px] sm:max-w-none mx-auto px-4 sm:px-0">
                         {actions.map((action, index) => (
                             <Button
                                 key={index}

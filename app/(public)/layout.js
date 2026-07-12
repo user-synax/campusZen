@@ -2,10 +2,10 @@ import "../globals.css";
 import Navbar from "@/components/landing/Navbar";
 
 export const metadata = {
-  title: 'CampusX — Your Campus Community',
+  title: 'CampusZen — Your Campus Community',
   description: 'Connect with students, discover events, join college communities.',
   openGraph: {
-    title: 'CampusX — Your Campus Community',
+    title: 'CampusZen — Your Campus Community',
     description: 'Connect with students, discover events, join college communities.',
     type: 'website',
     url: process.env.NEXT_PUBLIC_APP_URL,

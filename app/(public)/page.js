@@ -70,7 +70,7 @@ async function getLandingStats() {
             users: users || 0,
             posts: posts || 0,
             resources: resources || 0,
-            codeAreas: 0,
+            codeAreas: 5,
         };
     } catch (error) {
         console.error("[Landing Stats Fetch Error]:", error);

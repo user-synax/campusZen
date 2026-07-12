@@ -2,7 +2,7 @@
 
 import { HeroSection } from "@/components/ui/hero-section";
 import { ArrowRight } from "lucide-react";
-import RotatingText from "@/components/ui/RotatingText";
+import TextType from "@/components/ui/TextType";
 
 export function HeroSectionDemo() {
     return (
@@ -11,33 +11,29 @@ export function HeroSectionDemo() {
                 text: `Made in India: 🇮🇳`,
             }}
             titleRotatingText={{
-                prefix: "Find Your",
                 component: (
-                    <RotatingText
-                        texts={[
-                            "Peers",
-                            "Teams",
-                            "Ideas",
-                            "Goals",
-                            "Clubs",
-                            "Dreams",
-                            "Skills",
-                            "Tribe",
-                            "Voice",
+                    <TextType
+                        text={[
+                            "Your College Community, All in One",
+                            "Where College Life Happens",
+                            "Join Your College Community Today",
+                            "Connect With Students Who Matter",
+                            "Everything You Need for Campus Life",
+                            "Meet, Share & Grow With Your Campus",
+                            "Your Campus. Your People. Your Space",
+                            "Connect Beyond the Classroom",
+                            "Your Campus, Connected",
+                            "India's Verified Student Community",
                         ]}
-                        mainClassName="px-3 sm:px-4 bg-primary text-primary-foreground overflow-hidden py-0.5 sm:py-1 justify-center rounded-xl sm:rounded-2xl inline-flex shadow-2xl border border-primary/50"
-                        staggerFrom={"last"}
-                        initial={{ y: "100%" }}
-                        animate={{ y: 0 }}
-                        exit={{ y: "-120%" }}
-                        staggerDuration={0.025}
-                        splitLevelClassName="overflow-hidden pb-1"
-                        transition={{
-                            type: "spring",
-                            damping: 30,
-                            stiffness: 400,
-                        }}
-                        rotationInterval={2500}
+                        typingSpeed={75}
+                        pauseDuration={1500}
+                        showCursor
+                        cursorCharacter="●"
+                        deletingSpeed={50}
+                        variableSpeedEnabled={false}
+                        variableSpeedMin={60}
+                        variableSpeedMax={120}
+                        cursorBlinkDuration={0.5}
                     />
                 ),
             }}
