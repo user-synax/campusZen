@@ -1,6 +1,6 @@
 export const metadata = {
   title: "Login",
-  description: "Log in to your CampusX account to connect with your college community.",
+  description: "Log in to your CampusZen account to connect with your college community.",
   robots: {
     index: false,
     follow: false,

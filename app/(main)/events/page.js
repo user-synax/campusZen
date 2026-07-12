@@ -288,7 +288,7 @@ export default function EventsPage() {
             <EmptyState
               icon={Calendar}
               title={filter === 'upcoming' ? "No upcoming events" : "No past events"}
-              description={college ? `No events found for "${college}"` : "Be the first to host an event on CampusX!"}
+              description={college ? `No events found for "${college}"` : "Be the first to host an event on CampusZen!"}
             />
           </div>
         ) : (

@@ -37,7 +37,7 @@ export default function GoodbyePage() {
         </div>
 
         <p className="text-xs text-muted-foreground pt-12">
-          Thank you for being part of CampusX 💙
+          Thank you for being part of CampusZen 💙
         </p>
       </div>
     </div>

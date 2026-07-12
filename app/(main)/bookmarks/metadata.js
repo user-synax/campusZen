@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'Bookmarks — CampusX',
-  description: 'Your saved posts and resources on CampusX.',
+  title: 'Bookmarks — CampusZen',
+  description: 'Your saved posts and resources on CampusZen.',
   robots: { index: false, follow: false }
 }

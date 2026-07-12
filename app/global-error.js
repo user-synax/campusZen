@@ -13,7 +13,7 @@ export default function GlobalError({ error, reset }) {
         
         <h1 className="text-4xl font-black mb-4 tracking-tight">Critical Error</h1>
         <p className="text-muted-foreground max-w-sm mb-12">
-          CampusX encountered a catastrophic system error. Please reload the application.
+          CampusZen encountered a catastrophic system error. Please reload the application.
         </p>
 
         <Button 

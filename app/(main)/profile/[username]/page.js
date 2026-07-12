@@ -13,13 +13,13 @@ export async function generateMetadata({ params }) {
             .lean();
 
         if (!user) {
-            return { title: "User Not Found | CampusX" };
+            return { title: "User Not Found | CampusZen" };
         }
 
         const title = `${user.name} (@${user.username})`;
         const description =
             user.bio ||
-            `Student at ${user.college || "CampusX"}. Connect with ${user.name} on the student-only social network.`;
+            `Student at ${user.college || "CampusZen"}. Connect with ${user.name} on the student-only social network.`;
         const ogImage = user.profilePicture || "/og-image.png";
 
         return {
@@ -40,7 +40,7 @@ export async function generateMetadata({ params }) {
             },
         };
     } catch (error) {
-        return { title: "Profile | CampusX" };
+        return { title: "Profile | CampusZen" };
     }
 }
 
