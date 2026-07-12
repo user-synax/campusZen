@@ -203,7 +203,7 @@ CampusZen is a student-only social platform built for Indian college students. I
 ## Project Structure
 
 ```
-campusx/
+campusZen/
 ├── app/
 │   ├── (auth)/          # Authentication pages
 │   ├── (main)/          # Main app pages (feed, chats, profile, etc.)

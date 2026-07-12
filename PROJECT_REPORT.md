@@ -1,6 +1,6 @@
-# 🚀 CampusX Project Report
+# 🚀 CampusZen Project Report
 
-Welcome to the **CampusX** codebase report. This document provides a comprehensive overview of the technologies, features, and architectural structure used in this project.
+Welcome to the **CampusZen** codebase report. This document provides a comprehensive overview of the technologies, features, and architectural structure used in this project.
 
 ***
 

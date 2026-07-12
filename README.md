@@ -165,7 +165,7 @@ models/            Mongoose models
 ### 📦 Install
 
 ```bash
-git clone https://github.com/ayush0x00/campusx.git
+git clone https://github.com/user-synax/campusX.git
 cd campusx
 npm install
 ```
