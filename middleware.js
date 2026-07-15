@@ -94,11 +94,11 @@ function getDevelopmentCSP() {
 
         "style-src 'self' 'unsafe-inline' blob: https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com http://localhost:*",
 
-        "img-src 'self' data: blob: https: http: https://res.cloudinary.com https://utfs.io https://*.uploadthing.com https://*.ufs.sh https://api.dicebear.com https://*.tldraw.com http://localhost:* https://*.cloud.appwrite.io",
+        "img-src 'self' data: blob: https: http: https://utfs.io https://*.uploadthing.com https://*.ufs.sh https://api.dicebear.com https://*.tldraw.com http://localhost:* https://*.cloud.appwrite.io",
 
         "media-src 'self' data: blob: https://*.cloud.appwrite.io",
 
-        "connect-src 'self' https://api.anthropic.com https://res.cloudinary.com https://api.dicebear.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://*.uploadthing.com https://*.ingest.uploadthing.com https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com https://*.pusher.com wss://*.pusher.com blob: data: http://localhost:* ws://localhost:* https://*.cloud.appwrite.io",
+        "connect-src 'self' https://api.anthropic.com https://api.dicebear.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://*.uploadthing.com https://*.ingest.uploadthing.com https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com https://*.pusher.com wss://*.pusher.com blob: data: http://localhost:* ws://localhost:* https://*.cloud.appwrite.io",
 
         "font-src 'self' data: https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com",
 
@@ -124,11 +124,11 @@ function getProductionCSP() {
 
         "style-src 'self' 'unsafe-inline' blob: https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com",
 
-        "img-src 'self' data: blob: https: http: https://res.cloudinary.com https://utfs.io https://*.uploadthing.com https://*.ufs.sh https://api.dicebear.com https://*.tldraw.com https://*.cloud.appwrite.io",
+        "img-src 'self' data: blob: https: http: https://utfs.io https://*.uploadthing.com https://*.ufs.sh https://api.dicebear.com https://*.tldraw.com https://*.cloud.appwrite.io",
 
         "media-src 'self' data: blob: https://*.cloud.appwrite.io",
 
-        "connect-src 'self' https://api.anthropic.com https://res.cloudinary.com https://api.dicebear.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://*.uploadthing.com https://*.ingest.uploadthing.com https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com https://*.pusher.com wss://*.pusher.com blob: data: https://*.cloud.appwrite.io",
+        "connect-src 'self' https://api.anthropic.com https://api.dicebear.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://*.uploadthing.com https://*.ingest.uploadthing.com https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com https://*.pusher.com wss://*.pusher.com blob: data: https://*.cloud.appwrite.io",
 
         "font-src 'self' data: https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com",
 

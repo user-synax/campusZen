@@ -1,56 +1,59 @@
-import withBundleAnalyzer from '@next/bundle-analyzer';
+import withBundleAnalyzer from "@next/bundle-analyzer";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
-  reactCompiler: true,
-  images: {
-    dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'utfs.io',
-      },
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-      },
-      {
-        protocol: 'https',
-        hostname: '**.uploadthing.com',
-      },
-      {
-        protocol: 'https',
-        hostname: '**.ufs.sh',
-      },
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
-      {
-        protocol: 'http',
-        hostname: '**',
-      },
-    ],
-  },
-  async headers() {
-    return [
-      // Images — cache for 1 day
-      {
-        source: '/images/(.*)',
-        headers: [{ key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=3600' }]
-      },
-      // API routes — no cache by default (important for gamification data accuracy)
-      {
-        source: '/api/(.*)',
-        headers: [{ key: 'Cache-Control', value: 'no-store' }]
-      }
-    ]
-  }
+    /* config options here */
+    reactCompiler: true,
+    images: {
+        dangerouslyAllowSVG: true,
+        contentDispositionType: "attachment",
+        contentSecurityPolicy:
+            "default-src 'self'; script-src 'none'; sandbox;",
+        remotePatterns: [
+            {
+                protocol: "https",
+                hostname: "utfs.io",
+            },
+            {
+                protocol: "https",
+                hostname: "**.uploadthing.com",
+            },
+            {
+                protocol: "https",
+                hostname: "**.ufs.sh",
+            },
+            {
+                protocol: "https",
+                hostname: "**",
+            },
+            {
+                protocol: "http",
+                hostname: "**",
+            },
+        ],
+    },
+    async headers() {
+        return [
+            // Images — cache for 1 day
+            {
+                source: "/images/(.*)",
+                headers: [
+                    {
+                        key: "Cache-Control",
+                        value: "public, max-age=86400, stale-while-revalidate=3600",
+                    },
+                ],
+            },
+            // API routes — no cache by default (important for gamification data accuracy)
+            {
+                source: "/api/(.*)",
+                headers: [{ key: "Cache-Control", value: "no-store" }],
+            },
+        ];
+    },
 };
 
 export default withBundleAnalyzer({
-  enabled: process.env.ANALYZE === 'true' && process.env.NODE_ENV !== 'production',
+    enabled:
+        process.env.ANALYZE === "true" && process.env.NODE_ENV !== "production",
 })(nextConfig);
