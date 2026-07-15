@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { refreshUserProStatus } from "@/lib/subscription";
-import { uploadPostImage } from "@/lib/cloudinary";
+import {
+    getAppwriteAdminStorage,
+    getFileViewUrlString,
+    getUserMediaBucketId,
+} from "@/lib/appwrite";
+import { ID, Permission, Role } from "appwrite";
 
 export async function POST(request) {
     try {
@@ -42,6 +47,8 @@ export async function POST(request) {
         ];
         const maxFileSize = 8 * 1024 * 1024; // 8MB per file
 
+        const bucketId = getUserMediaBucketId();
+        const storage = getAppwriteAdminStorage();
         const uploadedUrls = [];
 
         for (const file of files) {
@@ -59,19 +66,24 @@ export async function POST(request) {
                 );
             }
 
-            // Convert to buffer!
-            const arrayBuffer = await file.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
+            const fileId = ID.unique();
+            const permissions = [
+                Permission.read(Role.any()),
+                Permission.delete(Role.user(currentUser._id)),
+            ];
 
-            // Upload each to Cloudinary!
+            // Upload to Appwrite!
             try {
-                const url = await uploadPostImage(
-                    buffer,
-                    currentUser._id.toString(),
+                const uploadedFile = await storage.createFile(
+                    bucketId,
+                    fileId,
+                    file,
+                    permissions,
                 );
+                const url = getFileViewUrlString(uploadedFile.$id, bucketId);
                 uploadedUrls.push(url);
             } catch (uploadError) {
-                console.error("Cloudinary upload error:", uploadError);
+                console.error("Appwrite upload error:", uploadError);
                 return NextResponse.json(
                     { message: "Upload failed, please try again" },
                     { status: 500 },

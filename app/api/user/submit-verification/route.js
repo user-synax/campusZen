@@ -1,104 +1,133 @@
-import connectDB from '@/lib/db'
-import User from '@/models/User'
-import { getCurrentUser } from '@/lib/auth'
-import { uploadVerificationId } from '@/lib/cloudinary'
-import { getTransporter } from '@/lib/mailer'
+import connectDB from "@/lib/db";
+import User from "@/models/User";
+import { getCurrentUser } from "@/lib/auth";
 import {
-  successResponse,
-  errorResponse,
-  BadRequestError,
-  UnauthorizedError,
-  ConflictError,
-} from '@/lib/api-response'
+    getAppwriteAdminStorage,
+    getFileViewUrlString,
+    getUserMediaBucketId,
+} from "@/lib/appwrite";
+import { ID, Permission, Role } from "appwrite";
+import { getTransporter } from "@/lib/mailer";
+import {
+    successResponse,
+    errorResponse,
+    BadRequestError,
+    UnauthorizedError,
+    ConflictError,
+} from "@/lib/api-response";
 
 const ALLOWED_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'application/pdf',
-]
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5 MB
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "application/pdf",
+];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
 export async function POST(request) {
-  try {
-    // ── Auth ──
-    const user = await getCurrentUser(request)
-    if (!user) {
-      return errorResponse(new UnauthorizedError('Please log in to verify'))
+    try {
+        // ── Auth ──
+        const user = await getCurrentUser(request);
+        if (!user) {
+            return errorResponse(
+                new UnauthorizedError("Please log in to verify"),
+            );
+        }
+
+        // ── Guard: already verified or pending ──
+        if (user.isVerified && user.verificationStatus === "verified") {
+            return errorResponse(
+                new ConflictError("You are already a verified student"),
+            );
+        }
+        if (user.verificationStatus === "pending") {
+            return errorResponse(
+                new ConflictError(
+                    "Your verification is already under review. Please wait for a response.",
+                ),
+            );
+        }
+
+        // ── Parse multipart form data ──
+        const formData = await request.formData();
+        const file = formData.get("idCard");
+
+        if (!file || typeof file === "string") {
+            return errorResponse(
+                new BadRequestError("College ID card file is required"),
+            );
+        }
+
+        // ── Validate file type ──
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            return errorResponse(
+                new BadRequestError(
+                    "Invalid file type. Accepted: JPG, PNG, WebP, PDF",
+                ),
+            );
+        }
+
+        // ── Validate file size ──
+        if (file.size > MAX_FILE_SIZE) {
+            return errorResponse(
+                new BadRequestError("File too large. Maximum size is 5 MB"),
+            );
+        }
+
+        // ── Upload to Appwrite ──
+        const bucketId = getUserMediaBucketId();
+        const storage = getAppwriteAdminStorage();
+        const fileId = ID.unique();
+        const permissions = [
+            Permission.read(Role.user(user._id)),
+            Permission.read(Role.admin()), // Admins should see this
+            Permission.delete(Role.user(user._id)),
+        ];
+        const uploadedFile = await storage.createFile(
+            bucketId,
+            fileId,
+            file,
+            permissions,
+        );
+        const collegeIdUrl = getFileViewUrlString(uploadedFile.$id, bucketId);
+
+        // ── Update user document ──
+        await connectDB();
+        await User.findByIdAndUpdate(user._id, {
+            $set: {
+                collegeIdUrl,
+                verificationType: "id_card",
+                verificationStatus: "pending",
+                verificationRequestedAt: new Date(),
+                // Clear any previous rejection
+                verificationRejectedReason: null,
+            },
+        });
+
+        // ── Send confirmation email (fire-and-forget) ──
+        sendConfirmationEmail(user.email, user.name).catch((err) =>
+            console.error("[submit-verification] Email failed:", err.message),
+        );
+
+        return successResponse({
+            message:
+                "Verification submitted successfully. We will review your ID within 24 hours.",
+            collegeIdUrl,
+            verificationStatus: "pending",
+        });
+    } catch (error) {
+        console.error("[submit-verification] Error:", error);
+        return errorResponse(error);
     }
-
-    // ── Guard: already verified or pending ──
-    if (user.isVerified && user.verificationStatus === 'verified') {
-      return errorResponse(new ConflictError('You are already a verified student'))
-    }
-    if (user.verificationStatus === 'pending') {
-      return errorResponse(
-        new ConflictError('Your verification is already under review. Please wait for a response.')
-      )
-    }
-
-    // ── Parse multipart form data ──
-    const formData = await request.formData()
-    const file = formData.get('idCard')
-
-    if (!file || typeof file === 'string') {
-      return errorResponse(new BadRequestError('College ID card file is required'))
-    }
-
-    // ── Validate file type ──
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      return errorResponse(
-        new BadRequestError('Invalid file type. Accepted: JPG, PNG, WebP, PDF')
-      )
-    }
-
-    // ── Validate file size ──
-    if (file.size > MAX_FILE_SIZE) {
-      return errorResponse(
-        new BadRequestError('File too large. Maximum size is 5 MB')
-      )
-    }
-
-    // ── Upload to Cloudinary ──
-    const buffer = Buffer.from(await file.arrayBuffer())
-    const collegeIdUrl = await uploadVerificationId(buffer, user._id.toString())
-
-    // ── Update user document ──
-    await connectDB()
-    await User.findByIdAndUpdate(user._id, {
-      $set: {
-        collegeIdUrl,
-        verificationType: 'id_card',
-        verificationStatus: 'pending',
-        verificationRequestedAt: new Date(),
-        // Clear any previous rejection
-        verificationRejectedReason: null,
-      },
-    })
-
-    // ── Send confirmation email (fire-and-forget) ──
-    sendConfirmationEmail(user.email, user.name).catch((err) =>
-      console.error('[submit-verification] Email failed:', err.message)
-    )
-
-    return successResponse({
-      message: 'Verification submitted successfully. We will review your ID within 24 hours.',
-      collegeIdUrl,
-      verificationStatus: 'pending',
-    })
-  } catch (error) {
-    console.error('[submit-verification] Error:', error)
-    return errorResponse(error)
-  }
 }
 
 /**
  * Sends a confirmation email after ID card submission
  */
 async function sendConfirmationEmail(email, name) {
-  const transporter = getTransporter()
+    const transporter = getTransporter();
 
-  const html = `
+    const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
@@ -114,7 +143,7 @@ async function sendConfirmationEmail(email, name) {
         <tr>
           <td style="padding:32px;">
             <h1 style="margin:0 0 8px;font-size:18px;font-weight:700;color:#f5f5f5;">
-              We've received your college ID, ${name || 'Student'}! 🎉
+              We've received your college ID, ${name || "Student"}! 🎉
             </h1>
             <p style="margin:0 0 20px;font-size:14px;color:#a3a3a3;line-height:1.6;">
               Your verification request is now <strong style="color:#facc15;">under review</strong>.
@@ -141,12 +170,12 @@ async function sendConfirmationEmail(email, name) {
     </td></tr>
   </table>
 </body>
-</html>`
+</html>`;
 
-  await transporter.sendMail({
-    from: `"CampusX" <${process.env.GMAIL_USER}>`,
-    to: email,
-    subject: '📋 Verification received — we\'re reviewing your ID',
-    html,
-  })
+    await transporter.sendMail({
+        from: `"CampusX" <${process.env.GMAIL_USER}>`,
+        to: email,
+        subject: "📋 Verification received — we're reviewing your ID",
+        html,
+    });
 }

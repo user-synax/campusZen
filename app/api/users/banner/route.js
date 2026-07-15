@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import connectDB from '@/lib/db'
 import User from '@/models/User'
 import { getCurrentUser } from '@/lib/auth'
-import { uploadBanner } from '@/lib/cloudinary'
+import { getAppwriteAdminStorage, getFileViewUrlString, getUserMediaBucketId } from '@/lib/appwrite'
+import { ID, Permission, Role } from 'appwrite'
 
 export async function POST(request) {
   try {
@@ -29,18 +30,30 @@ export async function POST(request) {
       return NextResponse.json({ message: 'Image must be under 5MB' }, { status: 400 })
     }
 
-    // Convert to buffer
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
+    const bucketId = getUserMediaBucketId()
+    const storage = getAppwriteAdminStorage()
+    const fileId = ID.unique()
+    const permissions = [
+      Permission.read(Role.any()),
+      Permission.update(Role.user(currentUser._id)),
+      Permission.delete(Role.user(currentUser._id))
+    ]
 
-    // Upload to Cloudinary
-    let bannerUrl
-    try {
-      bannerUrl = await uploadBanner(buffer, currentUser._id)
+    let uploadedFile
+    try {      
+      // Upload new banner
+      uploadedFile = await storage.createFile(
+        bucketId,
+        fileId,
+        file,
+        permissions
+      )
     } catch (uploadError) {
-      console.error('Cloudinary upload error:', uploadError)
+      console.error('Appwrite upload error:', uploadError)
       return NextResponse.json({ message: 'Upload failed, please try again' }, { status: 500 })
     }
+
+    const bannerUrl = getFileViewUrlString(uploadedFile.$id, bucketId)
 
     await connectDB()
     
