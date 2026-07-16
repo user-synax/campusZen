@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import UserAvatar from "@/components/user/UserAvatar";
 import VerifiedBadge from "@/components/shared/VerifiedBadge";
+import RankBadge from "@/components/user/RankBadge";
 import FollowButton from "@/components/user/FollowButton";
 import PostCard from "@/components/post/PostCard";
 import PostSkeleton from "@/components/post/PostSkeleton";
@@ -160,7 +161,7 @@ export default function ProfileClient({ username: initialUsername }) {
     const isOwnProfile =
         profileUser?.isMe ||
         currentUser?.username?.toLowerCase() ===
-        profileUser?.username?.toLowerCase();
+            profileUser?.username?.toLowerCase();
     const isFollowing =
         profileUser?.isFollowing ||
         currentUser?.following?.some(
@@ -329,7 +330,7 @@ export default function ProfileClient({ username: initialUsername }) {
                         !(
                             profileUser.role === "admin" ||
                             profileUser.email ===
-                            process.env.NEXT_PUBLIC_ADMIN_EMAIL
+                                process.env.NEXT_PUBLIC_ADMIN_EMAIL
                         ) && (
                             <>
                                 <div
@@ -374,7 +375,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                 !(
                                     profileUser.role === "admin" ||
                                     profileUser.email ===
-                                    process.env.NEXT_PUBLIC_ADMIN_EMAIL
+                                        process.env.NEXT_PUBLIC_ADMIN_EMAIL
                                 ) && (
                                     <div className="absolute -inset-2 rounded-full animate-pulse bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 blur-md opacity-50" />
                                 )}
@@ -447,30 +448,21 @@ export default function ProfileClient({ username: initialUsername }) {
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap py-3">
+                        <RankBadge level={profileUser.level || 1} size="xl" />
                         <span
-                            className={`text-xl sm:text-2xl font-black tracking-tight ${profileUser.isPro &&
+                            className={`text-xl sm:text-2xl font-black tracking-tight ${
+                                profileUser.isPro &&
                                 !(
                                     profileUser.role === "admin" ||
                                     profileUser.email ===
-                                    process.env.NEXT_PUBLIC_ADMIN_EMAIL
+                                        process.env.NEXT_PUBLIC_ADMIN_EMAIL
                                 )
-                                ? "text-transparent bg-clip-text bg-linear-to-r from-yellow-300 via-amber-400 to-yellow-500 animate-pulse drop-shadow-[0_0_8px_rgba(250,204,21,0.4)]"
-                                : "text-foreground"
-                                }`}
+                                    ? "text-transparent bg-clip-text bg-linear-to-r from-yellow-300 via-amber-400 to-yellow-500 animate-pulse drop-shadow-[0_0_8px_rgba(250,204,21,0.4)]"
+                                    : "text-foreground"
+                            }`}
                         >
                             {profileUser.name}
                         </span>
-                        {profileUser?.isPro &&
-                            !(
-                                profileUser.role === "admin" ||
-                                profileUser.email ===
-                                process.env.NEXT_PUBLIC_ADMIN_EMAIL
-                            ) && (
-                                <Badge className="bg-linear-to-r from-yellow-400/20 to-amber-400/20 text-yellow-400 border-yellow-500/40 hover:from-yellow-400/30 hover:to-amber-400/30 rounded-full px-3 py-1 text-xs font-bold flex items-center gap-1">
-                                    <Crown className="w-3 h-3" />
-                                    Pro
-                                </Badge>
-                            )}
                         {profileUser?.isVerified && (
                             <VerifiedBadge
                                 size="lg"
@@ -481,11 +473,11 @@ export default function ProfileClient({ username: initialUsername }) {
                         {/* Admin badge */}
                         {(profileUser.role === "admin" ||
                             profileUser.email ===
-                            process.env.NEXT_PUBLIC_ADMIN_EMAIL) && (
-                                <Badge className="bg-purple-600/20 text-purple-400 border-purple-600/30 hover:bg-purple-600/30 rounded-full px-3 py-1 text-xs font-bold">
-                                    <CrownIcon className="w-4 h-4" /> &nbsp; Founder
-                                </Badge>
-                            )}
+                                process.env.NEXT_PUBLIC_ADMIN_EMAIL) && (
+                            <Badge className="bg-purple-600/20 text-purple-400 border-purple-600/30 hover:bg-purple-600/30 rounded-full px-3 py-1 text-xs font-bold">
+                                <CrownIcon className="w-4 h-4" /> &nbsp; Founder
+                            </Badge>
+                        )}
                     </div>
                     <p className="text-muted-foreground text-sm font-medium">
                         @{profileUser.username}
@@ -742,10 +734,11 @@ export default function ProfileClient({ username: initialUsername }) {
             <div className="sticky top-0 z-20 flex border-b border-border mt-2 bg-background/80 backdrop-blur-md max-w-3xl w-full mx-auto sm:border-x sm:border-border/40">
                 <button
                     onClick={() => setActiveTab("posts")}
-                    className={`flex-1 sm:flex-none px-6 py-3.5 font-bold text-sm transition-colors relative ${activeTab === "posts"
-                        ? "text-foreground"
-                        : "text-muted-foreground hover:text-foreground"
-                        }`}
+                    className={`flex-1 sm:flex-none px-6 py-3.5 font-bold text-sm transition-colors relative ${
+                        activeTab === "posts"
+                            ? "text-foreground"
+                            : "text-muted-foreground hover:text-foreground"
+                    }`}
                 >
                     Posts
                     {activeTab === "posts" && (
@@ -754,10 +747,11 @@ export default function ProfileClient({ username: initialUsername }) {
                 </button>
                 <button
                     onClick={() => setActiveTab("clips")}
-                    className={`flex-1 sm:flex-none px-6 py-3.5 font-bold text-sm transition-colors relative ${activeTab === "clips"
-                        ? "text-foreground"
-                        : "text-muted-foreground hover:text-foreground"
-                        }`}
+                    className={`flex-1 sm:flex-none px-6 py-3.5 font-bold text-sm transition-colors relative ${
+                        activeTab === "clips"
+                            ? "text-foreground"
+                            : "text-muted-foreground hover:text-foreground"
+                    }`}
                 >
                     Clips
                     {activeTab === "clips" && (
@@ -790,19 +784,19 @@ export default function ProfileClient({ username: initialUsername }) {
                                         <PostCard
                                             key={
                                                 typeof profileUser.pinnedPost ===
-                                                    "object"
+                                                "object"
                                                     ? profileUser.pinnedPost._id
                                                     : profileUser.pinnedPost
                                             }
                                             post={
                                                 typeof profileUser.pinnedPost ===
-                                                    "object"
+                                                "object"
                                                     ? profileUser.pinnedPost
                                                     : posts.find(
-                                                        (p) =>
-                                                            p._id ===
-                                                            profileUser.pinnedPost,
-                                                    )
+                                                          (p) =>
+                                                              p._id ===
+                                                              profileUser.pinnedPost,
+                                                      )
                                             }
                                             currentUserId={currentUser?._id}
                                             onDelete={handleDeletePost}

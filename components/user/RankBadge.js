@@ -7,29 +7,19 @@ import { cn } from "@/lib/utils";
 const RankBadge = memo(function RankBadge({ level, size = "md", className }) {
     const rank = getRankForLevel(level || 1);
 
-    // Badge size scales with avatar size
+    // Badge size - keep original dimensions, don't scale up beyond a certain point
     const badgeSizeClasses = {
         xs: "h-4 w-4",
         sm: "h-6 w-6",
         md: "h-8 w-8",
-        lg: "h-9 w-9",
+        lg: "h-10 w-10",
         xl: "h-12 w-12",
-    };
-
-    // Position adjustments for larger badges
-    const positionClasses = {
-        xs: "-bottom-0.5 -right-0.5 bg-blue-500",
-        sm: "-bottom-1 -right-1",
-        md: "-bottom-1 -right-1",
-        lg: "-bottom-1.5 -right-1.5",
-        xl: "-bottom-2 -right-1.5",
     };
 
     return (
         <div
             className={cn(
-                "absolute rounded-full overflow-hidden  shadow-md z-20",
-                positionClasses[size] || positionClasses.md,
+                "rounded-full overflow-hidden shadow-md shrink-0",
                 badgeSizeClasses[size] || badgeSizeClasses.md,
                 className,
             )}

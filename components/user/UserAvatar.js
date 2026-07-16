@@ -5,18 +5,66 @@ import Image from "next/image";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/context/ThemeContext";
-import RankBadge from "./RankBadge";
+import { getRankForLevel } from "@/lib/ranks";
 
 // Simple ring configurations - easy to adjust!
 const RING_CONFIGS = {
     founder: {
         style: {
-            boxShadow: "0 0 0 4px #ef4444, 0 0 0 4px #f97316",
+            boxShadow: `
+  0 0 0 3px rgba(239, 68, 68, 0.7),
+  0 0 0 8px rgba(239, 68, 68, 0.25),
+  0 8px 20px rgba(239, 68, 68, 0.4)
+`,
         },
     },
     pro: {
         style: {
             boxShadow: "0 0 0 3px #3b82f6, 0 0 0 3px #06b6d4",
+        },
+    },
+    rookie: {
+        style: {
+            boxShadow: "0 0 0 3px #6b7280",
+        },
+    },
+    ruby: {
+        style: {
+            boxShadow: "0 0 0 3px #dc2626",
+        },
+    },
+    diamond: {
+        style: {
+            boxShadow: "0 0 0 3px #3b82f6",
+        },
+    },
+    emerald: {
+        style: {
+            boxShadow: "0 0 0 3px #10b981",
+        },
+    },
+    titan: {
+        style: {
+            boxShadow: "0 0 0 3px #8b5cf6",
+        },
+    },
+    mythic: {
+        style: {
+            boxShadow: "0 0 0 3px #f59e0b",
+        },
+    },
+    ace: {
+        style: {
+            boxShadow: "0 0 0 3px #14b8a6",
+        },
+    },
+    immortal: {
+        style: {
+            boxShadow: `
+  0 0 0 4px rgba(236, 72, 153, 0.7),
+  0 0 0 10px rgba(236, 72, 153, 0.25),
+  0 8px 20px rgba(236, 72, 153, 0.4)
+`,
         },
     },
 };
@@ -25,7 +73,6 @@ const UserAvatar = memo(function UserAvatar({
     user,
     size = "md",
     className,
-    showRank = true,
     customSize,
 }) {
     const sizeClasses = {
@@ -43,10 +90,11 @@ const UserAvatar = memo(function UserAvatar({
     let activeRing = null;
     if (user?.role === "admin" || user?.isFounder) {
         activeRing = RING_CONFIGS.founder;
-    } else if (user?.level >= 50) {
-        activeRing = RING_CONFIGS.legend;
     } else if (user?.isPro) {
         activeRing = RING_CONFIGS.pro;
+    } else if (user?.level !== undefined) {
+        const rank = getRankForLevel(user.level);
+        activeRing = RING_CONFIGS[rank.name.toLowerCase()];
     }
 
     // Calculate appropriate sizes based on the size prop
@@ -97,9 +145,6 @@ const UserAvatar = memo(function UserAvatar({
                 <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-md z-30">
                     Bot
                 </div>
-            )}
-            {!user?.isBot && showRank && user?.level !== undefined && (
-                <RankBadge level={user.level} size={size} />
             )}
         </div>
     );
