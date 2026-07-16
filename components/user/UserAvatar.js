@@ -49,6 +49,24 @@ const UserAvatar = memo(function UserAvatar({
         activeRing = RING_CONFIGS.pro;
     }
 
+    // Calculate appropriate sizes based on the size prop
+    const getSizes = () => {
+        switch (size) {
+            case "xs":
+                return "(max-width: 768px) 24px, 24px";
+            case "sm":
+                return "(max-width: 768px) 32px, 32px";
+            case "md":
+                return "(max-width: 768px) 40px, 40px";
+            case "lg":
+                return "(max-width: 768px) 48px, 48px";
+            case "xl":
+                return "(max-width: 768px) 128px, 128px";
+            default:
+                return "(max-width: 768px) 40px, 40px";
+        }
+    };
+
     return (
         <div className={cn("relative inline-flex", effectiveSizeClass)}>
             <Avatar
@@ -66,7 +84,8 @@ const UserAvatar = memo(function UserAvatar({
                         fill
                         className="object-cover"
                         loading="lazy"
-                        sizes="(max-width: 768px) 32px, 40px"
+                        sizes={getSizes()}
+                        quality={100}
                     />
                 ) : (
                     <AvatarFallback>

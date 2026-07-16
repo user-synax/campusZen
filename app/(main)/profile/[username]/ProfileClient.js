@@ -301,6 +301,7 @@ export default function ProfileClient({ username: initialUsername }) {
                             className="object-cover"
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                             priority
+                            quality={100}
                         />
                     ) : profileUser?.isPro ? (
                         <div className="absolute inset-0 animate-gradient" />
@@ -315,6 +316,7 @@ export default function ProfileClient({ username: initialUsername }) {
                             className="object-cover"
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                             priority
+                            quality={100}
                         />
                     )}
                     {/* Subtle bottom fade for a premium blend into the content */}

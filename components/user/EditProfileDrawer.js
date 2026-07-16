@@ -292,6 +292,7 @@ export default function EditProfileDrawer({
                                     fill
                                     className="object-cover"
                                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                    quality={100}
                                 />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-blue-500/20 to-purple-500/20">
@@ -350,6 +351,7 @@ export default function EditProfileDrawer({
                                         width={80}
                                         height={80}
                                         className="object-cover w-full h-full"
+                                        quality={100}
                                     />
                                 ) : (
                                     <span className="text-2xl font-bold text-muted-foreground">
