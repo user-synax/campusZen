@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation";
 import {
     Home,
     GraduationCap,
-    PlusSquare,
     User,
     Bell,
     Bookmark,
@@ -30,8 +29,8 @@ import {
     Star,
     Rocket,
     ShieldCheck,
-    Smartphone,
     Video,
+    CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -57,7 +56,6 @@ import CreatePostDialog from "@/components/post/CreatePostDialog";
 import Logo from "@/components/shared/Logo";
 import { cn } from "@/lib/utils";
 import { isAdmin } from "@/lib/admin";
-import config from "@/lib/config";
 
 export default function MobileNav() {
     const pathname = usePathname();
@@ -140,7 +138,6 @@ export default function MobileNav() {
     const navItems = [
         { href: "/feed", icon: Home, label: "Home" },
         { href: "/clips", icon: Video, label: "Clips" },
-        // { href: "/search", icon: Search, label: "Search" },
         {
             href: "/chats",
             icon: MessageSquare,
@@ -480,6 +477,26 @@ export default function MobileNav() {
                                         ))}
                                     </div>
                                 )}
+
+                                <Link
+                                    href="/billing"
+                                    onClick={() => setOpen(false)}
+                                >
+                                    <Button
+                                        variant="ghost"
+                                        className={cn(
+                                            "w-full justify-start gap-4 h-12 px-3",
+                                            pathname.startsWith("/billing")
+                                                ? "bg-accent text-accent-foreground font-bold"
+                                                : "text-muted-foreground",
+                                        )}
+                                    >
+                                        <CreditCard className="w-5 h-5" />
+                                        <span className="text-base font-medium">
+                                            Billing
+                                        </span>
+                                    </Button>
+                                </Link>
 
                                 {/* Customize Link */}
                                 {user?.isPro ? (

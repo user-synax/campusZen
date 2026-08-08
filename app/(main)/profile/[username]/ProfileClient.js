@@ -41,6 +41,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { CrownIcon } from "lucide-react";
 import Image from "next/image";
+import { getLevelProgress } from "@/lib/ranks";
 
 // Removed founder components
 const FollowListModal = dynamic(
@@ -657,7 +658,13 @@ export default function ProfileClient({ username: initialUsername }) {
                                 Lvl {profileUser.level || 1}
                             </span>
                             <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
-                                Current Level
+                                {(() => {
+                                    const progress = getLevelProgress(
+                                        profileUser.xp || 0,
+                                        profileUser.level || 1,
+                                    );
+                                    return `${progress.remainingXP} XP to next`;
+                                })()}
                             </span>
                         </Card>
                     </div>

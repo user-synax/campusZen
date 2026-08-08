@@ -59,6 +59,8 @@ import {
 import { TrophyIcon } from "lucide-react";
 import { Sparkle } from "lucide-react";
 import { SparkleIcon } from "lucide-react";
+import { getLevelProgress } from "@/lib/ranks";
+import { CircleStar } from "lucide-react";
 
 export default function Sidebar() {
     const pathname = usePathname();
@@ -85,6 +87,7 @@ export default function Sidebar() {
         { label: "Clips", href: "/clips", icon: Video },
         { label: "Search", href: "/search", icon: Search },
         { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
+        { label: "Ranks", href: "/ranks", icon: CircleStar },
         { label: "Resources", href: "/resources", icon: BookOpen },
         {
             label: "Notifications",
@@ -129,8 +132,9 @@ export default function Sidebar() {
         }
     };
 
-    const xpInLevel = (user?.xp || 0) % 1000;
-    const xpPercent = xpInLevel / 10;
+    const progress = user
+        ? getLevelProgress(user.xp || 0, user.level || 1)
+        : null;
 
     const proFeatures = [
         {
@@ -421,10 +425,14 @@ export default function Sidebar() {
                                         Level {user.level || 1}
                                     </span>
                                     <span className="text-[10px] text-muted-foreground/60 tabular-nums">
-                                        {xpInLevel} / 1000 XP
+                                        {progress?.xpInCurrentLevel || 0} /{" "}
+                                        {progress?.xpNeededForNext || 0} XP
                                     </span>
                                 </div>
-                                <Progress value={xpPercent} className="h-1" />
+                                <Progress
+                                    value={progress?.progressPercentage || 0}
+                                    className="h-1"
+                                />
                             </div>
 
                             {/* User profile card */}

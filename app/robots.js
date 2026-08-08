@@ -15,6 +15,6 @@ export default function robots() {
         ],
       },
     ],
-    sitemap: 'https://campuszen.vercel.app/sitemap.xml',
+    sitemap: 'https://campuszen.tech/sitemap.xml',
   }
 }
