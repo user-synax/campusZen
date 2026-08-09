@@ -11,8 +11,8 @@ export function validateUsername(username) {
 }
 
 export function validatePassword(password) {
-  if (password.length < 6) {
-    return { valid: false, message: 'Password must be at least 6 characters long' };
+  if (password.length < 8) {
+    return { valid: false, message: 'Password must be at least 8 characters long' };
   }
   return { valid: true, message: '' };
 }
