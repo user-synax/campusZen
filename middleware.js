@@ -21,7 +21,6 @@ const protectedRoutes = [
 export default function middleware(request) {
     const { pathname } = request.nextUrl;
 
-    // Skip Better Auth routes
     if (pathname.startsWith("/api/auth")) {
         const response = NextResponse.next();
         addSecurityHeaders(response, false);
@@ -94,7 +93,7 @@ function getDevelopmentCSP() {
 
         "style-src 'self' 'unsafe-inline' blob: https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com http://localhost:*",
 
-        "img-src 'self' data: blob: https: http: https://utfs.io https://*.uploadthing.com https://*.ufs.sh https://api.dicebear.com https://*.tldraw.com http://localhost:* https://*.cloud.appwrite.io",
+        "img-src 'self' data: blob: https://utfs.io https://*.uploadthing.com https://*.ufs.sh https://api.dicebear.com https://*.tldraw.com https://*.cloud.appwrite.io",
 
         "media-src 'self' data: blob: https://*.cloud.appwrite.io",
 
@@ -124,7 +123,7 @@ function getProductionCSP() {
 
         "style-src 'self' 'unsafe-inline' blob: https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com",
 
-        "img-src 'self' data: blob: https: http: https://utfs.io https://*.uploadthing.com https://*.ufs.sh https://api.dicebear.com https://*.tldraw.com https://*.cloud.appwrite.io",
+        "img-src 'self' data: blob: https://utfs.io https://*.uploadthing.com https://*.ufs.sh https://api.dicebear.com https://*.tldraw.com https://*.cloud.appwrite.io",
 
         "media-src 'self' data: blob: https://*.cloud.appwrite.io",
 
