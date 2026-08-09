@@ -344,6 +344,9 @@ export default function RightPanel() {
                 <p>
                     © {new Date().getFullYear()} CampusZen · Built for students
                 </p>
+                <p>
+                    V - 1.0.0
+                </p>
             </footer>
         </aside>
     );
