@@ -11,6 +11,7 @@ import {
     Eye,
     Edit3,
     Lock,
+    MoreHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -432,6 +433,28 @@ export default function PostComposer({
     const iconBtnBase =
         "relative inline-flex items-center justify-center h-8 rounded-lg text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground disabled:opacity-40 disabled:pointer-events-none disabled:hover:bg-transparent";
 
+    // More popover state (Poll / Document)
+    const [showMorePopover, setShowMorePopover] = useState(false);
+    const morePopoverRef = useRef(null);
+    const moreBtnRef = useRef(null);
+
+    // Close popover on outside click
+    useEffect(() => {
+        if (!showMorePopover) return;
+        const handler = (e) => {
+            if (
+                morePopoverRef.current &&
+                !morePopoverRef.current.contains(e.target) &&
+                moreBtnRef.current &&
+                !moreBtnRef.current.contains(e.target)
+            ) {
+                setShowMorePopover(false);
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, [showMorePopover]);
+
     // Reset blocked state when user edits content
     useEffect(() => {
         if (isBlocked) {
@@ -699,45 +722,6 @@ export default function PostComposer({
                     {/* Toolbar */}
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-3 pt-2.5 border-t border-border/70 gap-2.5">
                         <div className="flex items-center gap-0.5 w-full sm:w-auto">
-                            {/* Poll Button */}
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            title="Create a poll"
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            className={cn(
-                                                iconBtnBase,
-                                                "w-8 px-0",
-                                                showPoll &&
-                                                    "text-primary bg-primary/10 hover:bg-primary/15 hover:text-primary",
-                                            )}
-                                            onClick={(e) => {
-                                                if (!currentUser?.isPro) {
-                                                    e.preventDefault();
-                                                    router.push("/billing");
-                                                } else {
-                                                    setShowPoll(!showPoll);
-                                                }
-                                            }}
-                                            aria-label="Create a poll"
-                                        >
-                                            <BarChart2 className="w-4 h-4" />
-                                            {!currentUser?.isPro && (
-                                                <ProLockBadge />
-                                            )}
-                                        </Button>
-                                    </TooltipTrigger>
-                                    {!currentUser?.isPro && (
-                                        <TooltipContent>
-                                            <span>Pro Feature</span>
-                                        </TooltipContent>
-                                    )}
-                                </Tooltip>
-                            </TooltipProvider>
-
                             {/* Image attachment button */}
                             <input
                                 ref={fileInputRef}
@@ -794,7 +778,7 @@ export default function PostComposer({
                                 </Tooltip>
                             </TooltipProvider>
 
-                            {/* Markdown file attachment button */}
+                            {/* Markdown file input (hidden, triggered from popover) */}
                             <input
                                 ref={markdownFileInputRef}
                                 type="file"
@@ -802,19 +786,6 @@ export default function PostComposer({
                                 className="hidden"
                                 onChange={handleMarkdownFileSelect}
                             />
-                            <Button
-                                title="Upload Markdown File"
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className={cn(iconBtnBase, "w-8 px-0")}
-                                onClick={() =>
-                                    markdownFileInputRef.current?.click()
-                                }
-                                aria-label="Upload markdown file"
-                            >
-                                <FileCode className="w-4 h-4" />
-                            </Button>
 
                             <span
                                 className="w-px h-5 bg-border/70 mx-1"
@@ -886,6 +857,79 @@ export default function PostComposer({
                                     </Button>
                                 }
                             />
+
+                            {/* ··· More button — Poll + Document popover */}
+                            <div className="relative">
+                                <Button
+                                    ref={moreBtnRef}
+                                    title="More options"
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className={cn(
+                                        iconBtnBase,
+                                        "w-8 px-0",
+                                        showMorePopover &&
+                                            "bg-muted text-foreground",
+                                    )}
+                                    onClick={() =>
+                                        setShowMorePopover((prev) => !prev)
+                                    }
+                                    aria-label="More options"
+                                    aria-expanded={showMorePopover}
+                                >
+                                    <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+
+                                {/* Popover panel */}
+                                {showMorePopover && (
+                                    <div
+                                        ref={morePopoverRef}
+                                        className="absolute bottom-full mb-2 left-0 z-50 bg-popover border border-border/60 rounded-xl shadow-lg overflow-hidden min-w-[160px]"
+                                    >
+                                        {/* Poll row */}
+                                        <button
+                                            type="button"
+                                            className={cn(
+                                                "flex items-center gap-2.5 w-full px-3.5 py-2.5 text-sm font-medium transition-colors duration-150",
+                                                showPoll
+                                                    ? "text-primary bg-primary/10"
+                                                    : "text-muted-foreground hover:text-foreground hover:bg-accent/60",
+                                            )}
+                                            onClick={(e) => {
+                                                if (!currentUser?.isPro) {
+                                                    e.preventDefault();
+                                                    router.push("/billing");
+                                                } else {
+                                                    setShowPoll(!showPoll);
+                                                    setShowMorePopover(false);
+                                                }
+                                            }}
+                                        >
+                                            <BarChart2 className="w-4 h-4 shrink-0" />
+                                            <span>Poll</span>
+                                            {!currentUser?.isPro && (
+                                                <span className="ml-auto text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                                                    Pro
+                                                </span>
+                                            )}
+                                        </button>
+
+                                        {/* Document row */}
+                                        <button
+                                            type="button"
+                                            className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors duration-150"
+                                            onClick={() => {
+                                                markdownFileInputRef.current?.click();
+                                                setShowMorePopover(false);
+                                            }}
+                                        >
+                                            <FileCode className="w-4 h-4 shrink-0" />
+                                            <span>Document</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div className="flex items-center justify-between sm:justify-end gap-2.5 w-full sm:w-auto">

@@ -40,7 +40,7 @@ export default function PostContent({
             <div>
                 <MarkdownRenderer
                     content={displayContent}
-                    className="text-[15px]"
+                    className="text-[15px] leading-relaxed"
                 />
                 {!expanded && shouldTruncate && "..."}
 
@@ -63,7 +63,7 @@ export default function PostContent({
     // For plain text, use original rendering with mentions/hashtags
     return (
         <div>
-            <div className="whitespace-pre-wrap break-words text-[15px] leading-normal text-foreground">
+            <div className="whitespace-pre-wrap break-words text-[15px] leading-relaxed text-foreground">
                 {renderContentWithMentions(displayContent).map((segment, i) => {
                     if (segment.type === "hashtag") {
                         return (

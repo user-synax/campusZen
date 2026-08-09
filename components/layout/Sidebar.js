@@ -34,6 +34,8 @@ import {
     Rocket,
     ShieldCheck,
     Video,
+    ChevronDown,
+    ChevronRight,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useChatUnreadCount } from "@/hooks/useChatUnreadCount";
@@ -62,6 +64,69 @@ import { SparkleIcon } from "lucide-react";
 import { getLevelProgress } from "@/lib/ranks";
 import { CircleStar } from "lucide-react";
 
+// ─── localStorage helpers ─────────────────────────────────────────────────────
+function readLocalBool(key, defaultValue) {
+    if (typeof window === "undefined") return defaultValue;
+    const raw = localStorage.getItem(key);
+    if (raw === null) return defaultValue;
+    return raw === "true";
+}
+
+function writeLocalBool(key, value) {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(key, String(value));
+}
+
+// ─── Collapsible section wrapper ─────────────────────────────────────────────
+function CollapsibleSection({ label, storageKey, defaultOpen = false, children }) {
+    const [open, setOpen] = useState(defaultOpen);
+
+    // Read from localStorage on mount (client-side only)
+    useEffect(() => {
+        setOpen(readLocalBool(storageKey, defaultOpen));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const toggle = () => {
+        const next = !open;
+        setOpen(next);
+        writeLocalBool(storageKey, next);
+    };
+
+    return (
+        <div className="mt-2">
+            {/* Section header */}
+            <button
+                onClick={toggle}
+                className="flex items-center justify-between w-full px-3 py-1 group"
+                aria-expanded={open}
+            >
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40 select-none group-hover:text-muted-foreground/60 transition-colors duration-150">
+                    {label}
+                </span>
+                {open ? (
+                    <ChevronDown className="w-3 h-3 text-muted-foreground/40 group-hover:text-muted-foreground/60 transition-colors duration-150 shrink-0" />
+                ) : (
+                    <ChevronRight className="w-3 h-3 text-muted-foreground/40 group-hover:text-muted-foreground/60 transition-colors duration-150 shrink-0" />
+                )}
+            </button>
+            {open && <div className="space-y-0.5">{children}</div>}
+        </div>
+    );
+}
+
+// ─── Collapsed icon-only section indicator ───────────────────────────────────
+function CollapsibleSectionIconOnly({ storageKey, defaultOpen = false, children }) {
+    const [open, setOpen] = useState(defaultOpen);
+
+    useEffect(() => {
+        setOpen(readLocalBool(storageKey, defaultOpen));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    return open ? <div className="space-y-0.5">{children}</div> : null;
+}
+
 export default function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
@@ -82,29 +147,41 @@ export default function Sidebar() {
         }
     }, [user]);
 
-    const navItems = [
+    // ── Primary nav items (always visible) ──────────────────────────────────
+    const primaryNavItems = [
         { label: "Feed", href: "/feed", icon: Home },
-        { label: "Clips", href: "/clips", icon: Video },
-        { label: "Search", href: "/search", icon: Search },
-        { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
-        { label: "Ranks", href: "/ranks", icon: CircleStar },
-        { label: "Resources", href: "/resources", icon: BookOpen },
-        {
-            label: "Notifications",
-            href: "/notifications",
-            icon: Bell,
-            badge: unreadCount,
-        },
+        { label: "Communities", href: "/community", icon: GraduationCap },
         {
             label: "Chats",
             href: "/chats",
             icon: MessageSquare,
             badge: chatUnread,
         },
-        { label: "Communities", href: "/community", icon: GraduationCap },
-        { label: "Events", href: "/events", icon: Calendar },
+        {
+            label: "Notifications",
+            href: "/notifications",
+            icon: Bell,
+            badge: unreadCount,
+        },
         { label: "Bookmarks", href: "/bookmarks", icon: Bookmark },
+    ];
+
+    // ── Gamification items (collapsible) ────────────────────────────────────
+    const gamificationItems = [
+        { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
+        { label: "Ranks", href: "/ranks", icon: CircleStar },
+    ];
+
+    // ── More items (collapsible) ─────────────────────────────────────────────
+    const moreItems = [
+        { label: "Clips", href: "/clips", icon: Video },
+        { label: "Resources", href: "/resources", icon: BookOpen },
+        { label: "Events", href: "/events", icon: Calendar },
         { label: "Tools", href: "/tools", icon: Terminal },
+    ];
+
+    // ── Secondary bottom items ───────────────────────────────────────────────
+    const bottomNavItems = [
         { label: "Billing", href: "/billing", icon: CreditCard },
         {
             label: "Customize",
@@ -186,6 +263,152 @@ export default function Sidebar() {
         },
     ];
 
+    // ── Shared nav item renderer ─────────────────────────────────────────────
+    const renderNavItem = (item) => {
+        const isActive = pathname === item.href;
+        const Icon = item.icon;
+
+        return (
+            <div key={item.href}>
+                {/* Nav item */}
+                <div className="relative">
+                    {/* Left active indicator */}
+                    {isActive && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[18px] bg-primary rounded-r-full z-10" />
+                    )}
+                    <Link
+                        href={item.href}
+                        onClick={
+                            item.isCustomize
+                                ? handleCustomizeClick
+                                : undefined
+                        }
+                    >
+                        <Button
+                            variant="ghost"
+                            className={cn(
+                                "w-full justify-start hover:cursor-pointer gap-3 h-10 px-3 rounded-lg transition-all duration-150 font-medium",
+                                isActive
+                                    ? "bg-accent text-foreground font-semibold hover:bg-accent"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-accent/60",
+                                item.className,
+                            )}
+                        >
+                            <div className="relative shrink-0">
+                                <Icon
+                                    className={cn(
+                                        "w-[18px] h-[18px] transition-colors",
+                                        isActive
+                                            ? "text-primary"
+                                            : "",
+                                    )}
+                                />
+                                {item.isCustomize &&
+                                    !user?.isPro && (
+                                        <Lock className="w-[10px] h-[10px] absolute -bottom-0.5 -right-0.5 text-muted-foreground" />
+                                    )}
+                                {item.badge > 0 && (
+                                    <span className="absolute -top-1.5 -right-1.5 min-w-[15px] h-[15px] bg-primary text-[9px] text-primary-foreground font-bold flex items-center justify-center rounded-full px-0.5 border-2 border-background">
+                                        {item.badge > 9
+                                            ? "9+"
+                                            : item.badge}
+                                    </span>
+                                )}
+                            </div>
+                            <span className="hidden lg:block text-sm">
+                                {item.label}
+                            </span>
+                        </Button>
+                    </Link>
+                </div>
+
+                {/* Resources sub-links */}
+                {item.href === "/resources" &&
+                    pathname.startsWith("/resources") && (
+                        <div className="hidden lg:flex flex-col gap-0.5 mt-0.5 ml-9 mr-1">
+                            {[
+                                {
+                                    label: "My Uploads",
+                                    href: "/resources/my-uploads",
+                                    icon: History,
+                                },
+                                {
+                                    label: "Saved",
+                                    href: "/resources/saved",
+                                    icon: Heart,
+                                },
+                            ].map((sub) => (
+                                <Link
+                                    key={sub.href}
+                                    href={sub.href}
+                                >
+                                    <button
+                                        className={cn(
+                                            "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
+                                            pathname ===
+                                                sub.href
+                                                ? "bg-primary/8 text-primary"
+                                                : "text-muted-foreground/70 hover:text-foreground hover:bg-accent/50",
+                                        )}
+                                    >
+                                        <sub.icon className="w-3.5 h-3.5 shrink-0" />
+                                        {sub.label}
+                                    </button>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+
+                {/* Tools sub-links */}
+                {item.href === "/tools" &&
+                    pathname.startsWith("/tools") && (
+                        <div className="hidden lg:flex flex-col gap-0.5 mt-0.5 ml-9 mr-1">
+                            {[
+                                {
+                                    label: "Popular",
+                                    href: "/tools",
+                                    icon: Terminal,
+                                },
+                                {
+                                    label: "Text tools",
+                                    href: "/tools/text",
+                                    icon: Type,
+                                },
+                                {
+                                    label: "Color tools",
+                                    href: "/tools/color",
+                                    icon: Palette,
+                                },
+                                {
+                                    label: "SEO tools",
+                                    href: "/tools/seo",
+                                    icon: Search,
+                                },
+                            ].map((sub) => (
+                                <Link
+                                    key={sub.href}
+                                    href={sub.href}
+                                >
+                                    <button
+                                        className={cn(
+                                            "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
+                                            pathname ===
+                                                sub.href
+                                                ? "bg-primary/8 text-primary"
+                                                : "text-muted-foreground/70 hover:text-foreground hover:bg-accent/50",
+                                        )}
+                                    >
+                                        <sub.icon className="w-3.5 h-3.5 shrink-0" />
+                                        {sub.label}
+                                    </button>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+            </div>
+        );
+    };
+
     return (
         <>
             <aside className="fixed left-0 top-0 h-screen w-18 lg:w-70 border-r border-border/60 bg-background z-50 hidden md:flex flex-col">
@@ -197,150 +420,53 @@ export default function Sidebar() {
 
                 {/* Nav */}
                 <nav className="flex-1 px-2 py-3 overflow-y-auto overflow-x-hidden custom-scrollbar space-y-0.5">
-                    {navItems.map((item) => {
-                        const isActive = pathname === item.href;
-                        const Icon = item.icon;
+                    {/* ── Primary nav ─────────────────────────────────── */}
+                    {primaryNavItems.map(renderNavItem)}
 
-                        return (
-                            <div key={item.href}>
-                                {/* Nav item */}
-                                <div className="relative">
-                                    {/* Left active indicator */}
-                                    {isActive && (
-                                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[18px] bg-primary rounded-r-full z-10" />
-                                    )}
-                                    <Link
-                                        href={item.href}
-                                        onClick={
-                                            item.isCustomize
-                                                ? handleCustomizeClick
-                                                : undefined
-                                        }
-                                    >
-                                        <Button
-                                            variant="ghost"
-                                            className={cn(
-                                                "w-full justify-start hover:cursor-pointer gap-3 h-10 px-3 rounded-lg transition-all duration-150 font-medium",
-                                                isActive
-                                                    ? "bg-accent text-foreground font-semibold hover:bg-accent"
-                                                    : "text-muted-foreground hover:text-foreground hover:bg-accent/60",
-                                                item.className,
-                                            )}
-                                        >
-                                            <div className="relative shrink-0">
-                                                <Icon
-                                                    className={cn(
-                                                        "w-[18px] h-[18px] transition-colors",
-                                                        isActive
-                                                            ? "text-primary"
-                                                            : "",
-                                                    )}
-                                                />
-                                                {item.isCustomize &&
-                                                    !user?.isPro && (
-                                                        <Lock className="w-[10px] h-[10px] absolute -bottom-0.5 -right-0.5 text-muted-foreground" />
-                                                    )}
-                                                {item.badge > 0 && (
-                                                    <span className="absolute -top-1.5 -right-1.5 min-w-[15px] h-[15px] bg-primary text-[9px] text-primary-foreground font-bold flex items-center justify-center rounded-full px-0.5 border-2 border-background">
-                                                        {item.badge > 9
-                                                            ? "9+"
-                                                            : item.badge}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <span className="hidden lg:block text-sm">
-                                                {item.label}
-                                            </span>
-                                        </Button>
-                                    </Link>
-                                </div>
+                    {/* ── Gamification collapsible (lg: shows label) ── */}
+                    <div className="hidden lg:block">
+                        <CollapsibleSection
+                            label="Gamification"
+                            storageKey="cx_sidebar_gamification_open"
+                            defaultOpen={false}
+                        >
+                            {gamificationItems.map(renderNavItem)}
+                        </CollapsibleSection>
+                    </div>
+                    {/* Icon-only mode (collapsed sidebar on md) */}
+                    <div className="lg:hidden mt-2">
+                        <CollapsibleSectionIconOnly
+                            storageKey="cx_sidebar_gamification_open"
+                            defaultOpen={false}
+                        >
+                            {gamificationItems.map(renderNavItem)}
+                        </CollapsibleSectionIconOnly>
+                    </div>
 
-                                {/* Resources sub-links */}
-                                {item.href === "/resources" &&
-                                    pathname.startsWith("/resources") && (
-                                        <div className="hidden lg:flex flex-col gap-0.5 mt-0.5 ml-9 mr-1">
-                                            {[
-                                                {
-                                                    label: "My Uploads",
-                                                    href: "/resources/my-uploads",
-                                                    icon: History,
-                                                },
-                                                {
-                                                    label: "Saved",
-                                                    href: "/resources/saved",
-                                                    icon: Heart,
-                                                },
-                                            ].map((sub) => (
-                                                <Link
-                                                    key={sub.href}
-                                                    href={sub.href}
-                                                >
-                                                    <button
-                                                        className={cn(
-                                                            "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
-                                                            pathname ===
-                                                                sub.href
-                                                                ? "bg-primary/8 text-primary"
-                                                                : "text-muted-foreground/70 hover:text-foreground hover:bg-accent/50",
-                                                        )}
-                                                    >
-                                                        <sub.icon className="w-3.5 h-3.5 shrink-0" />
-                                                        {sub.label}
-                                                    </button>
-                                                </Link>
-                                            ))}
-                                        </div>
-                                    )}
+                    {/* ── More collapsible ─────────────────────────── */}
+                    <div className="hidden lg:block">
+                        <CollapsibleSection
+                            label="More"
+                            storageKey="cx_sidebar_more_open"
+                            defaultOpen={false}
+                        >
+                            {moreItems.map(renderNavItem)}
+                        </CollapsibleSection>
+                    </div>
+                    {/* Icon-only mode */}
+                    <div className="lg:hidden mt-2">
+                        <CollapsibleSectionIconOnly
+                            storageKey="cx_sidebar_more_open"
+                            defaultOpen={false}
+                        >
+                            {moreItems.map(renderNavItem)}
+                        </CollapsibleSectionIconOnly>
+                    </div>
 
-                                {/* Tools sub-links */}
-                                {item.href === "/tools" &&
-                                    pathname.startsWith("/tools") && (
-                                        <div className="hidden lg:flex flex-col gap-0.5 mt-0.5 ml-9 mr-1">
-                                            {[
-                                                {
-                                                    label: "Popular",
-                                                    href: "/tools",
-                                                    icon: Terminal,
-                                                },
-                                                {
-                                                    label: "Text tools",
-                                                    href: "/tools/text",
-                                                    icon: Type,
-                                                },
-                                                {
-                                                    label: "Color tools",
-                                                    href: "/tools/color",
-                                                    icon: Palette,
-                                                },
-                                                {
-                                                    label: "SEO tools",
-                                                    href: "/tools/seo",
-                                                    icon: Search,
-                                                },
-                                            ].map((sub) => (
-                                                <Link
-                                                    key={sub.href}
-                                                    href={sub.href}
-                                                >
-                                                    <button
-                                                        className={cn(
-                                                            "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
-                                                            pathname ===
-                                                                sub.href
-                                                                ? "bg-primary/8 text-primary"
-                                                                : "text-muted-foreground/70 hover:text-foreground hover:bg-accent/50",
-                                                        )}
-                                                    >
-                                                        <sub.icon className="w-3.5 h-3.5 shrink-0" />
-                                                        {sub.label}
-                                                    </button>
-                                                </Link>
-                                            ))}
-                                        </div>
-                                    )}
-                            </div>
-                        );
-                    })}
+                    {/* ── Bottom secondary items ────────────────────── */}
+                    <div className="mt-2 pt-2 border-t border-border/40">
+                        {bottomNavItems.map(renderNavItem)}
+                    </div>
 
                     {/* Admin section */}
                     {user && isAdmin(user) && (
@@ -390,7 +516,7 @@ export default function Sidebar() {
                                                 <div className="relative shrink-0">
                                                     <Icon
                                                         className={cn(
-                                                            "w-[18px] h-[18px] transition-transform group-hover:scale-110",
+                                                            "w-[18px] h-[18px] transition-colors",
                                                             item.color,
                                                         )}
                                                     />

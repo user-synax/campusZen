@@ -4,11 +4,71 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, Hash, Calendar, Users2 } from "lucide-react";
+import { TrendingUp, Hash, Calendar, Users2, ChevronDown, ChevronRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import FollowButton from "@/components/user/FollowButton";
 import useUser from "@/hooks/useUser";
 import TrendingPosts from "@/components/feed/TrendingPosts";
+
+// ─── localStorage helpers ─────────────────────────────────────────────────────
+function readLocalBool(key, defaultValue) {
+    if (typeof window === "undefined") return defaultValue;
+    const raw = localStorage.getItem(key);
+    if (raw === null) return defaultValue;
+    return raw === "true";
+}
+
+function writeLocalBool(key, value) {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(key, String(value));
+}
+
+// ─── Accordion section header ─────────────────────────────────────────────────
+function AccordionSection({ icon: Icon, title, storageKey, defaultOpen = false, rightElement, children }) {
+    const [open, setOpen] = useState(defaultOpen);
+
+    useEffect(() => {
+        setOpen(readLocalBool(storageKey, defaultOpen));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const toggle = () => {
+        const next = !open;
+        setOpen(next);
+        writeLocalBool(storageKey, next);
+    };
+
+    return (
+        <>
+            {/* Header row — acts as toggle */}
+            <button
+                onClick={toggle}
+                className="flex items-center justify-between w-full p-4 group text-left"
+                aria-expanded={open}
+            >
+                <div className="flex items-center gap-2">
+                    <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                    <h3 className="text-sm font-bold">{title}</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                    {rightElement}
+                    {open ? (
+                        <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+                    ) : (
+                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+                    )}
+                </div>
+            </button>
+
+            {/* Content — only rendered when open */}
+            {open && (
+                <div className="px-4 pb-4">
+                    {children}
+                </div>
+            )}
+        </>
+    );
+}
 
 export default function RightPanel() {
     const { user: currentUser, loading: userLoading } = useUser();
@@ -55,11 +115,14 @@ export default function RightPanel() {
         return count;
     };
 
+    // After loading, hide the Events section entirely if there are no events
+    const showEventsSection = loading || upcomingEvents.length > 0;
+
     return (
         <aside className="hidden xl:block fixed right-0 top-0 h-screen w-87.5 py-4 px-3 overflow-y-auto custom-scrollbar">
             {/* Unified panel */}
             <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
-                {/* ── Trending Communities ── */}
+                {/* ── Trending Communities — always expanded ── */}
                 <section className="p-4">
                     <div className="flex items-center justify-between mb-3.5">
                         <div className="flex items-center gap-2">
@@ -124,13 +187,13 @@ export default function RightPanel() {
 
                 <div className="border-t border-border/40" />
 
-                {/* ── Trending Hashtags ── */}
-                <section className="p-4">
-                    <div className="flex items-center gap-2 mb-3.5">
-                        <Hash className="w-3.5 h-3.5 text-muted-foreground" />
-                        <h3 className="text-sm font-bold">Trending Hashtags</h3>
-                    </div>
-
+                {/* ── Trending Hashtags — collapsible, closed by default ── */}
+                <AccordionSection
+                    icon={Hash}
+                    title="Trending Hashtags"
+                    storageKey="cx_rp_hashtags_open"
+                    defaultOpen={false}
+                >
                     <div className="space-y-0.5">
                         {loading ? (
                             Array(3)
@@ -170,88 +233,86 @@ export default function RightPanel() {
                             ))
                         )}
                     </div>
-                </section>
+                </AccordionSection>
 
-                <div className="border-t border-border/40" />
-
-                {/* ── Upcoming Events ── */}
-                <section className="p-4">
-                    <div className="flex items-center justify-between mb-3.5">
-                        <div className="flex items-center gap-2">
-                            <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                            <h3 className="text-sm font-bold">
-                                Upcoming Events
-                            </h3>
-                        </div>
-                        <Link
-                            href="/events"
-                            className="text-[11px] text-primary font-medium hover:underline underline-offset-2"
-                        >
-                            See all
-                        </Link>
-                    </div>
-
-                    <div className="space-y-3">
-                        {loading ? (
-                            Array(3)
-                                .fill(0)
-                                .map((_, i) => (
-                                    <div key={i} className="flex gap-3">
-                                        <Skeleton className="h-10 w-10 rounded-lg bg-secondary shrink-0" />
-                                        <div className="flex-1 space-y-1.5">
-                                            <Skeleton className="h-3.5 w-32 bg-secondary" />
-                                            <Skeleton className="h-2.5 w-20 bg-secondary" />
-                                        </div>
-                                    </div>
-                                ))
-                        ) : upcomingEvents.length === 0 ? (
-                            <p className="text-xs text-muted-foreground text-center py-2">
-                                No upcoming events yet.
-                            </p>
-                        ) : (
-                            upcomingEvents.map((event) => (
+                {/* ── Upcoming Events — collapsible, closed by default, hidden if empty ── */}
+                {showEventsSection && (
+                    <>
+                        <div className="border-t border-border/40" />
+                        <AccordionSection
+                            icon={Calendar}
+                            title="Upcoming Events"
+                            storageKey="cx_rp_events_open"
+                            defaultOpen={false}
+                            rightElement={
                                 <Link
-                                    key={event._id}
-                                    href={`/events/${event._id}`}
-                                    className="group flex gap-3"
+                                    href="/events"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-[11px] text-primary font-medium hover:underline underline-offset-2"
                                 >
-                                    <div className="text-center bg-accent/50 rounded-lg px-2 py-1.5 shrink-0 min-w-[40px] border border-border/50 h-fit">
-                                        <p className="text-[8px] text-muted-foreground uppercase font-bold tracking-wide leading-none">
-                                            {format(
-                                                new Date(event.eventDate),
-                                                "MMM",
-                                            )}
-                                        </p>
-                                        <p className="text-base font-black leading-tight mt-0.5 tabular-nums">
-                                            {format(
-                                                new Date(event.eventDate),
-                                                "d",
-                                            )}
-                                        </p>
-                                    </div>
-                                    <div className="flex-1 min-w-0 py-0.5">
-                                        <p className="text-sm font-semibold group-hover:text-primary transition-colors duration-150 truncate">
-                                            {event.title}
-                                        </p>
-                                        <p className="text-[11px] text-muted-foreground truncate">
-                                            {event.college}
-                                        </p>
-                                    </div>
+                                    See all
                                 </Link>
-                            ))
-                        )}
-                    </div>
-                </section>
+                            }
+                        >
+                            <div className="space-y-3">
+                                {loading ? (
+                                    Array(3)
+                                        .fill(0)
+                                        .map((_, i) => (
+                                            <div key={i} className="flex gap-3">
+                                                <Skeleton className="h-10 w-10 rounded-lg bg-secondary shrink-0" />
+                                                <div className="flex-1 space-y-1.5">
+                                                    <Skeleton className="h-3.5 w-32 bg-secondary" />
+                                                    <Skeleton className="h-2.5 w-20 bg-secondary" />
+                                                </div>
+                                            </div>
+                                        ))
+                                ) : (
+                                    upcomingEvents.map((event) => (
+                                        <Link
+                                            key={event._id}
+                                            href={`/events/${event._id}`}
+                                            className="group flex gap-3"
+                                        >
+                                            <div className="text-center bg-accent/50 rounded-lg px-2 py-1.5 shrink-0 min-w-[40px] border border-border/50 h-fit">
+                                                <p className="text-[8px] text-muted-foreground uppercase font-bold tracking-wide leading-none">
+                                                    {format(
+                                                        new Date(event.eventDate),
+                                                        "MMM",
+                                                    )}
+                                                </p>
+                                                <p className="text-base font-black leading-tight mt-0.5 tabular-nums">
+                                                    {format(
+                                                        new Date(event.eventDate),
+                                                        "d",
+                                                    )}
+                                                </p>
+                                            </div>
+                                            <div className="flex-1 min-w-0 py-0.5">
+                                                <p className="text-sm font-semibold group-hover:text-primary transition-colors duration-150 truncate">
+                                                    {event.title}
+                                                </p>
+                                                <p className="text-[11px] text-muted-foreground truncate">
+                                                    {event.college}
+                                                </p>
+                                            </div>
+                                        </Link>
+                                    ))
+                                )}
+                            </div>
+                        </AccordionSection>
+                    </>
+                )}
 
                 <div className="border-t border-border/40" />
 
-                {/* ── Who to Follow ── */}
-                <section className="p-4">
-                    <div className="flex items-center gap-2 mb-3.5">
-                        <Users2 className="w-3.5 h-3.5 text-muted-foreground" />
-                        <h3 className="text-sm font-bold">Who to Follow</h3>
-                    </div>
-
+                {/* ── Who to Follow — collapsible, closed by default ── */}
+                <AccordionSection
+                    icon={Users2}
+                    title="Who to Follow"
+                    storageKey="cx_rp_follow_open"
+                    defaultOpen={false}
+                >
                     <div className="space-y-3">
                         {loading ? (
                             Array(3)
@@ -315,7 +376,7 @@ export default function RightPanel() {
                             ))
                         )}
                     </div>
-                </section>
+                </AccordionSection>
             </div>
 
             {/* Footer */}

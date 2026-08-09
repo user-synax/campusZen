@@ -26,6 +26,11 @@ const nextConfig = {
                 protocol: "https",
                 hostname: "**.ufs.sh",
             },
+            { protocol: "https", hostname: "**.appwrite.io" },
+            {
+                protocol: "https",
+                hostname: "images.unsplash.com",
+            },
         ],
     },
     async headers() {

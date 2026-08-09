@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Zap, Compass, Sparkles } from "lucide-react";
+import { FileText, Zap, Compass, Sparkles, Search } from "lucide-react";
 import { useCallback, useState, useEffect, useRef } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import dynamic from "next/dynamic";
@@ -13,6 +13,7 @@ import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { useNotifications } from "@/hooks/useNotifications";
 import InfiniteScrollSentinel from "@/components/shared/InfiniteScrollSentinel";
 import PushPromptManager from "@/components/notifications/PushPromptManager";
+import Link from "next/link";
 import CommunitySwitcher from "@/components/feed/CommunitySwitcher";
 import ShinyText from "@/components/reactBits/shinyText";
 
@@ -214,11 +215,19 @@ export default function FeedPage() {
                         </p>
                     </div>
 
-                    <div className="shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
                         <CommunitySwitcher
                             selectedCommunity={selectedCommunity}
                             onSelect={setSelectedCommunity}
                         />
+                        {/* Search entry point — sidebar Search item removed */}
+                        <Link
+                            href="/search"
+                            aria-label="Search"
+                            className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors duration-150"
+                        >
+                            <Search className="w-[18px] h-[18px]" />
+                        </Link>
                     </div>
                 </div>
 

@@ -14,15 +14,15 @@ export default function GoogleSignInButton({
             const client = createAppwriteClient();
             const account = getAppwriteAccount(client);
 
-            // Appwrite will redirect to Google, then back to our client-side callback
-            await account.createOAuth2Session(
+            // Use createOAuth2Token so Appwrite appends userId and secret query params to callback URL
+            await account.createOAuth2Token(
                 "google",
                 `${window.location.origin}/auth/callback`,
                 `${window.location.origin}/login?error=oauth_failed`,
             );
         } catch (error) {
-            console.error("Google sign in error:", error);
-            window.location.href = "/login?error=oauth_failed";
+            console.warn("Appwrite Google sign in error, redirecting to direct Google OAuth:", error);
+            window.location.href = "/api/auth/google";
         }
     };
 
