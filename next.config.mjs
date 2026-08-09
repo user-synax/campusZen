@@ -20,15 +20,11 @@ const nextConfig = {
             },
             {
                 protocol: "https",
-                hostname: "**.ufs.sh",
+                hostname: "**.giphy.com"
             },
             {
                 protocol: "https",
-                hostname: "**",
-            },
-            {
-                protocol: "http",
-                hostname: "**",
+                hostname: "**.ufs.sh",
             },
         ],
     },
