@@ -22,7 +22,6 @@ import {
     History,
     Heart,
     Trophy,
-    Code,
     CreditCard,
     Sun,
     Moon,
@@ -49,7 +48,6 @@ import NotificationBell from "@/components/notifications/NotificationBell";
 import { cn } from "@/lib/utils";
 import { isFounder } from "@/lib/founder";
 import { isAdmin } from "@/lib/admin";
-import config from "@/lib/config";
 import { useCat } from "@/context/CatContext";
 import {
     Dialog,
@@ -58,9 +56,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { TrophyIcon } from "lucide-react";
-import { Sparkle } from "lucide-react";
-import { SparkleIcon } from "lucide-react";
 import { getLevelProgress } from "@/lib/ranks";
 import { CircleStar } from "lucide-react";
 
@@ -77,14 +72,11 @@ function writeLocalBool(key, value) {
     localStorage.setItem(key, String(value));
 }
 
-// ─── Collapsible section wrapper ─────────────────────────────────────────────
 function CollapsibleSection({ label, storageKey, defaultOpen = false, children }) {
     const [open, setOpen] = useState(defaultOpen);
 
-    // Read from localStorage on mount (client-side only)
     useEffect(() => {
         setOpen(readLocalBool(storageKey, defaultOpen));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const toggle = () => {
@@ -95,7 +87,6 @@ function CollapsibleSection({ label, storageKey, defaultOpen = false, children }
 
     return (
         <div className="mt-2">
-            {/* Section header */}
             <button
                 onClick={toggle}
                 className="flex items-center justify-between w-full px-3 py-1 group"
@@ -115,13 +106,11 @@ function CollapsibleSection({ label, storageKey, defaultOpen = false, children }
     );
 }
 
-// ─── Collapsed icon-only section indicator ───────────────────────────────────
 function CollapsibleSectionIconOnly({ storageKey, defaultOpen = false, children }) {
     const [open, setOpen] = useState(defaultOpen);
 
     useEffect(() => {
         setOpen(readLocalBool(storageKey, defaultOpen));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return open ? <div className="space-y-0.5">{children}</div> : null;
@@ -134,7 +123,6 @@ export default function Sidebar() {
     const { unreadCount } = useNotifications();
     const chatUnread = useChatUnreadCount();
     const [pendingResources, setPendingResources] = useState(0);
-    const { cursorEnabled, handleToggleClick } = useCat();
     const { theme, toggleTheme } = useTheme();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
@@ -147,7 +135,6 @@ export default function Sidebar() {
         }
     }, [user]);
 
-    // ── Primary nav items (always visible) ──────────────────────────────────
     const primaryNavItems = [
         { label: "Feed", href: "/feed", icon: Home },
         { label: "Communities", href: "/community", icon: GraduationCap },
@@ -166,13 +153,13 @@ export default function Sidebar() {
         { label: "Bookmarks", href: "/bookmarks", icon: Bookmark },
     ];
 
-    // ── Gamification items (collapsible) ────────────────────────────────────
+
     const gamificationItems = [
         { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
         { label: "Ranks", href: "/ranks", icon: CircleStar },
     ];
 
-    // ── More items (collapsible) ─────────────────────────────────────────────
+
     const moreItems = [
         { label: "Clips", href: "/clips", icon: Video },
         { label: "Resources", href: "/resources", icon: BookOpen },
@@ -180,7 +167,6 @@ export default function Sidebar() {
         { label: "Tools", href: "/tools", icon: Terminal },
     ];
 
-    // ── Secondary bottom items ───────────────────────────────────────────────
     const bottomNavItems = [
         { label: "Billing", href: "/billing", icon: CreditCard },
         {
@@ -263,18 +249,15 @@ export default function Sidebar() {
         },
     ];
 
-    // ── Shared nav item renderer ─────────────────────────────────────────────
     const renderNavItem = (item) => {
         const isActive = pathname === item.href;
         const Icon = item.icon;
 
         return (
             <div key={item.href}>
-                {/* Nav item */}
                 <div className="relative">
-                    {/* Left active indicator */}
                     {isActive && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[18px] bg-primary rounded-r-full z-10" />
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.75 h-4.5 bg-primary rounded-r-full z-10" />
                     )}
                     <Link
                         href={item.href}
@@ -297,7 +280,7 @@ export default function Sidebar() {
                             <div className="relative shrink-0">
                                 <Icon
                                     className={cn(
-                                        "w-[18px] h-[18px] transition-colors",
+                                        "w-4.5 h-4.5 transition-colors",
                                         isActive
                                             ? "text-primary"
                                             : "",
@@ -305,10 +288,10 @@ export default function Sidebar() {
                                 />
                                 {item.isCustomize &&
                                     !user?.isPro && (
-                                        <Lock className="w-[10px] h-[10px] absolute -bottom-0.5 -right-0.5 text-muted-foreground" />
+                                        <Lock className="w-2.5 h-2.5 absolute -bottom-0.5 -right-0.5 text-muted-foreground" />
                                     )}
                                 {item.badge > 0 && (
-                                    <span className="absolute -top-1.5 -right-1.5 min-w-[15px] h-[15px] bg-primary text-[9px] text-primary-foreground font-bold flex items-center justify-center rounded-full px-0.5 border-2 border-background">
+                                    <span className="absolute -top-1.5 -right-1.5 min-w-3.75 h-3.75 bg-primary text-[9px] text-primary-foreground font-bold flex items-center justify-center rounded-full px-0.5 border-2 border-background">
                                         {item.badge > 9
                                             ? "9+"
                                             : item.badge}
@@ -322,7 +305,6 @@ export default function Sidebar() {
                     </Link>
                 </div>
 
-                {/* Resources sub-links */}
                 {item.href === "/resources" &&
                     pathname.startsWith("/resources") && (
                         <div className="hidden lg:flex flex-col gap-0.5 mt-0.5 ml-9 mr-1">
@@ -359,7 +341,6 @@ export default function Sidebar() {
                         </div>
                     )}
 
-                {/* Tools sub-links */}
                 {item.href === "/tools" &&
                     pathname.startsWith("/tools") && (
                         <div className="hidden lg:flex flex-col gap-0.5 mt-0.5 ml-9 mr-1">
@@ -412,18 +393,14 @@ export default function Sidebar() {
     return (
         <>
             <aside className="fixed left-0 top-0 h-screen w-18 lg:w-70 border-r border-border/60 bg-background z-50 hidden md:flex flex-col">
-                {/* Logo */}
-                <div className="flex h-[60px] shrink-0 items-center px-3 lg:px-5 border-b border-border/40">
+                <div className="flex h-15 shrink-0 items-center px-3 lg:px-5 border-b border-border/40">
                     <Logo className="lg:hidden" showText={false} />
                     <Logo className="hidden lg:flex" />
                 </div>
 
-                {/* Nav */}
                 <nav className="flex-1 px-2 py-3 overflow-y-auto overflow-x-hidden custom-scrollbar space-y-0.5">
-                    {/* ── Primary nav ─────────────────────────────────── */}
                     {primaryNavItems.map(renderNavItem)}
 
-                    {/* ── Gamification collapsible (lg: shows label) ── */}
                     <div className="hidden lg:block">
                         <CollapsibleSection
                             label="Gamification"
@@ -433,7 +410,6 @@ export default function Sidebar() {
                             {gamificationItems.map(renderNavItem)}
                         </CollapsibleSection>
                     </div>
-                    {/* Icon-only mode (collapsed sidebar on md) */}
                     <div className="lg:hidden mt-2">
                         <CollapsibleSectionIconOnly
                             storageKey="cx_sidebar_gamification_open"
@@ -443,7 +419,6 @@ export default function Sidebar() {
                         </CollapsibleSectionIconOnly>
                     </div>
 
-                    {/* ── More collapsible ─────────────────────────── */}
                     <div className="hidden lg:block">
                         <CollapsibleSection
                             label="More"
@@ -453,7 +428,7 @@ export default function Sidebar() {
                             {moreItems.map(renderNavItem)}
                         </CollapsibleSection>
                     </div>
-                    {/* Icon-only mode */}
+
                     <div className="lg:hidden mt-2">
                         <CollapsibleSectionIconOnly
                             storageKey="cx_sidebar_more_open"
@@ -463,12 +438,11 @@ export default function Sidebar() {
                         </CollapsibleSectionIconOnly>
                     </div>
 
-                    {/* ── Bottom secondary items ────────────────────── */}
+
                     <div className="mt-2 pt-2 border-t border-border/40">
                         {bottomNavItems.map(renderNavItem)}
                     </div>
 
-                    {/* Admin section */}
                     {user && isAdmin(user) && (
                         <div className="mt-3 pt-3 border-t border-border/40">
                             <p className="hidden lg:block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40 px-3 mb-1.5 select-none">
@@ -500,7 +474,7 @@ export default function Sidebar() {
                                 return (
                                     <div key={item.href} className="relative">
                                         {isActive && (
-                                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[18px] bg-primary rounded-r-full z-10" />
+                                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.75 h-4.5bg-primary rounded-r-full z-10" />
                                         )}
                                         <Link href={item.href}>
                                             <Button
@@ -516,12 +490,12 @@ export default function Sidebar() {
                                                 <div className="relative shrink-0">
                                                     <Icon
                                                         className={cn(
-                                                            "w-[18px] h-[18px] transition-colors",
+                                                            "w-4.5 h-4.5 transition-colors",
                                                             item.color,
                                                         )}
                                                     />
                                                     {item.badge > 0 && (
-                                                        <span className="absolute -top-1.5 -right-1.5 min-w-[15px] h-[15px] bg-red-500 text-[9px] text-white font-bold flex items-center justify-center rounded-full px-0.5 border-2 border-background">
+                                                        <span className="absolute -top-1.5 -right-1.5 min-w-3.75 h-3.75 bg-red-500 text-[9px] text-white font-bold flex items-center justify-center rounded-full px-0.5 border-2 border-background">
                                                             {item.badge > 9
                                                                 ? "9+"
                                                                 : item.badge}
@@ -646,10 +620,10 @@ export default function Sidebar() {
 
             {/* Upgrade Modal */}
             <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
-                <DialogContent className="sm:max-w-[500px] max-h-[80vh] flex flex-col p-0">
+                <DialogContent className="sm:max-w-125 max-h-[80vh] flex flex-col p-0">
                     <DialogHeader className="px-6 pt-6 pb-2">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-full bg-linear-to-r from-primary to-accent flex items-center justify-center">
                                 <Crown className="w-5 h-5 text-white" />
                             </div>
                             <div>
@@ -701,7 +675,6 @@ export default function Sidebar() {
                             size="lg"
                             className="w-full"
                             onClick={() => {
-                                // Placeholder for promo code link
                                 window.open(
                                     "https://wa.me/+918826343179?text=Hello%20I%20need%20a%20promo%20code%20For%20campusZen.",
                                     "_blank",
