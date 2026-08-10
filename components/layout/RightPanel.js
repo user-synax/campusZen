@@ -43,19 +43,19 @@ function AccordionSection({ icon: Icon, title, storageKey, defaultOpen = false, 
             {/* Header row — acts as toggle */}
             <button
                 onClick={toggle}
-                className="flex items-center justify-between w-full p-4 group text-left"
+                className="chip-chunky hover:cursor-pointer flex items-center justify-between w-[calc(100%-1rem)] mx-2 my-1 p-3.5 group text-left"
                 aria-expanded={open}
             >
                 <div className="flex items-center gap-2">
-                    <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                    <Icon className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors duration-150" />
                     <h3 className="text-sm font-bold">{title}</h3>
                 </div>
                 <div className="flex items-center gap-2">
                     {rightElement}
                     {open ? (
-                        <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+                        <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-foreground transition-colors duration-150 shrink-0" />
                     ) : (
-                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-foreground transition-colors duration-150 shrink-0" />
                     )}
                 </div>
             </button>
@@ -121,7 +121,7 @@ export default function RightPanel() {
     return (
         <aside className="hidden xl:block fixed right-0 top-0 h-screen w-87.5 py-4 px-3 overflow-y-auto custom-scrollbar">
             {/* Unified panel */}
-            <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
+            <div className="card-chunky bg-card overflow-hidden">
                 {/* ── Trending Communities — always expanded ── */}
                 <section className="p-4">
                     <div className="flex items-center justify-between mb-3.5">
