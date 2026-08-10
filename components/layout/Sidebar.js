@@ -89,16 +89,16 @@ function CollapsibleSection({ label, storageKey, defaultOpen = false, children }
         <div className="mt-2">
             <button
                 onClick={toggle}
-                className="flex items-center justify-between w-full px-3 py-1 group"
+                className="chip-chunky hover:cursor-pointer flex items-center justify-between w-full px-3 py-1.5 group"
                 aria-expanded={open}
             >
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40 select-none group-hover:text-muted-foreground/60 transition-colors duration-150">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 select-none group-hover:text-foreground transition-colors duration-150">
                     {label}
                 </span>
                 {open ? (
-                    <ChevronDown className="w-3 h-3 text-muted-foreground/40 group-hover:text-muted-foreground/60 transition-colors duration-150 shrink-0" />
+                    <ChevronDown className="w-3 h-3 text-muted-foreground/70 group-hover:text-foreground transition-colors duration-150 shrink-0" />
                 ) : (
-                    <ChevronRight className="w-3 h-3 text-muted-foreground/40 group-hover:text-muted-foreground/60 transition-colors duration-150 shrink-0" />
+                    <ChevronRight className="w-3 h-3 text-muted-foreground/70 group-hover:text-foreground transition-colors duration-150 shrink-0" />
                 )}
             </button>
             {open && <div className="space-y-0.5">{children}</div>}
@@ -270,10 +270,10 @@ export default function Sidebar() {
                         <Button
                             variant="ghost"
                             className={cn(
-                                "w-full justify-start hover:cursor-pointer gap-3 h-10 px-3 rounded-lg transition-all duration-150 font-medium",
+                                "chip-chunky w-full justify-start hover:cursor-pointer gap-3 h-10 px-3 font-medium",
                                 isActive
-                                    ? "bg-accent text-foreground font-semibold hover:bg-accent"
-                                    : "text-muted-foreground hover:text-foreground hover:bg-accent/60",
+                                    ? "chip-chunky-active text-foreground font-semibold hover:bg-accent"
+                                    : "text-muted-foreground hover:text-foreground",
                                 item.className,
                             )}
                         >
@@ -480,10 +480,10 @@ export default function Sidebar() {
                                             <Button
                                                 variant="ghost"
                                                 className={cn(
-                                                    "w-full justify-start gap-3 h-10 px-3 rounded-lg transition-all duration-150 group",
+                                                    "chip-chunky w-full justify-start gap-3 h-10 px-3 group",
                                                     isActive
-                                                        ? "bg-accent text-foreground font-semibold hover:bg-accent"
-                                                        : "text-muted-foreground hover:text-foreground hover:bg-accent/60",
+                                                        ? "chip-chunky-active text-foreground font-semibold hover:bg-accent"
+                                                        : "text-muted-foreground hover:text-foreground",
                                                     item.color,
                                                 )}
                                             >
@@ -519,7 +519,7 @@ export default function Sidebar() {
                     {!loading && user && user.username && (
                         <>
                             {/* XP progress card */}
-                            <div className="hidden lg:block px-3 py-2.5 rounded-lg bg-accent/40 space-y-2">
+                            <div className="card-chunky hidden lg:block px-3 py-2.5 bg-accent/40 space-y-2">
                                 <div className="flex justify-between items-center">
                                     <span className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wide">
                                         Level {user.level || 1}
@@ -539,18 +539,18 @@ export default function Sidebar() {
                             <Link href={`/profile/${user.username}`}>
                                 <div
                                     className={cn(
-                                        "flex items-center gap-2.5 p-2 rounded-xl transition-all duration-150 group cursor-pointer",
+                                        "card-chunky card-chunky-interactive flex items-center gap-2.5 p-2 group",
                                         isFounder(user.username)
-                                            ? "bg-primary/5 border border-primary/10 hover:bg-primary/10"
+                                            ? "bg-primary/5 border-primary/20"
                                             : "hover:bg-accent/70",
                                     )}
                                 >
-                                    <Avatar className="h-8 w-8 shrink-0 ring-2 ring-border/60">
+                                    <Avatar className="h-9 w-9 shrink-0 ring-2 ring-border/60">
                                         <AvatarImage
                                             src={user.avatar}
                                             alt={user.name}
                                         />
-                                        <AvatarFallback className="text-xs font-bold bg-accent">
+                                        <AvatarFallback className="text-sm font-bold bg-accent">
                                             {user.name
                                                 ?.charAt(0)
                                                 ?.toUpperCase()}
@@ -587,7 +587,7 @@ export default function Sidebar() {
                             <Button
                                 variant="ghost"
                                 onClick={toggleTheme}
-                                className="flex-1 justify-start gap-3 h-9 px-3 text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-all duration-150 rounded-lg"
+                                className="chip-chunky flex-1 justify-start gap-3 h-9 px-3 text-muted-foreground hover:text-foreground"
                             >
                                 {theme === "dark" ? (
                                     <Sun className="w-4 h-4 shrink-0" />
@@ -606,7 +606,7 @@ export default function Sidebar() {
                             <Button
                                 variant="ghost"
                                 onClick={handleLogout}
-                                className="flex-1 justify-start gap-3 h-9 px-3 text-muted-foreground hover:text-destructive hover:bg-destructive/8 transition-all duration-150 rounded-lg"
+                                className="chip-chunky flex-1 justify-start gap-3 h-9 px-3 text-muted-foreground hover:text-destructive hover:bg-destructive/8"
                             >
                                 <LogOut className="w-4 h-4 shrink-0" />
                                 <span className="hidden lg:block text-xs font-semibold">
