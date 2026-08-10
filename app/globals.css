@@ -61,6 +61,13 @@
         --ring: 203 71% 59%;
 
         --radius: 0.5rem;
+
+        /* Funky hard-shadow tokens (opt-in, used only by .chip-chunky / .card-chunky / .btn-chunky) */
+        --shadow-ink: 222 47% 11%;
+        --shadow-hard: 3px 3px 0px hsl(var(--shadow-ink) / 0.14);
+        --shadow-hard-hover: 4px 4px 0px hsl(var(--shadow-ink) / 0.18);
+        --shadow-hard-press: 1px 1px 0px hsl(var(--shadow-ink) / 0.14);
+        --shadow-hard-sm: 2px 2px 0px hsl(var(--shadow-ink) / 0.12);
     }
 
     /* Dark theme */
@@ -88,6 +95,13 @@
         --ring: 203 71% 59%;
 
         --radius: 0.5rem;
+
+        /* Funky hard-shadow tokens (opt-in, used only by .chip-chunky / .card-chunky / .btn-chunky) */
+        --shadow-ink: 0 0% 0%;
+        --shadow-hard: 3px 3px 0px hsl(var(--shadow-ink) / 0.45);
+        --shadow-hard-hover: 4px 4px 0px hsl(var(--shadow-ink) / 0.55);
+        --shadow-hard-press: 1px 1px 0px hsl(var(--shadow-ink) / 0.4);
+        --shadow-hard-sm: 2px 2px 0px hsl(var(--shadow-ink) / 0.4);
     }
 }
 
@@ -321,6 +335,124 @@
 
     .max-w-container {
         max-width: 1200px;
+    }
+
+    /* ── Funky hard-shadow system (opt-in only, apply via these classes) ── */
+
+    .chip-chunky {
+        border: 2px solid transparent;
+        border-radius: 14px;
+        box-shadow: none;
+        transition:
+            box-shadow 130ms ease,
+            border-color 130ms ease,
+            background-color 130ms ease,
+            transform 90ms ease;
+    }
+
+    .chip-chunky:hover {
+        border-color: hsl(var(--border));
+        background-color: hsl(var(--accent));
+        box-shadow: var(--shadow-hard);
+    }
+
+    .chip-chunky:active {
+        box-shadow: var(--shadow-hard-press);
+        transform: translate(2px, 2px);
+    }
+
+    .chip-chunky-active {
+        border-color: hsl(var(--primary) / 0.35);
+        background-color: hsl(var(--accent));
+        box-shadow: var(--shadow-hard-sm);
+    }
+
+    .card-chunky {
+        border: 2px solid hsl(var(--border));
+        border-radius: 20px;
+        box-shadow: var(--shadow-hard);
+        transition:
+            box-shadow 150ms ease,
+            border-color 150ms ease,
+            background-color 150ms ease;
+    }
+
+    .card-chunky-interactive {
+        cursor: pointer;
+    }
+
+    .card-chunky-interactive:hover {
+        border-color: hsl(var(--primary) / 0.3);
+        background-color: hsl(var(--accent) / 0.7);
+        box-shadow: var(--shadow-hard-hover);
+    }
+
+    .card-chunky-interactive:active {
+        box-shadow: var(--shadow-hard-press);
+        transform: translate(2px, 2px);
+    }
+
+    .btn-chunky {
+        border: 2px solid hsl(var(--border));
+        border-radius: 12px;
+        box-shadow: var(--shadow-hard-sm);
+        transition:
+            box-shadow 130ms ease,
+            background-color 130ms ease,
+            border-color 130ms ease,
+            transform 90ms ease;
+    }
+
+    .btn-chunky:hover {
+        background-color: hsl(var(--accent));
+        border-color: hsl(var(--primary) / 0.35);
+    }
+
+    .btn-chunky:active {
+        box-shadow: none;
+        transform: translate(2px, 2px);
+    }
+
+    .pill-chunky {
+        border: 2px solid transparent;
+        border-radius: 9999px;
+        transition:
+            box-shadow 130ms ease,
+            border-color 130ms ease,
+            transform 90ms ease;
+    }
+
+    .pill-chunky:not(:disabled) {
+        box-shadow: var(--shadow-hard-sm);
+    }
+
+    .pill-chunky:hover:not(:disabled) {
+        border-color: hsl(var(--primary-foreground) / 0.25);
+    }
+
+    .pill-chunky:active:not(:disabled) {
+        box-shadow: none;
+        transform: translate(2px, 2px);
+    }
+
+    .icon-chunky {
+        border: 2px solid transparent;
+        border-radius: 10px;
+        transition:
+            box-shadow 130ms ease,
+            border-color 130ms ease,
+            background-color 130ms ease,
+            transform 90ms ease;
+    }
+
+    .icon-chunky:hover:not(:disabled) {
+        border-color: hsl(var(--border));
+        box-shadow: var(--shadow-hard-sm);
+    }
+
+    .icon-chunky:active:not(:disabled) {
+        box-shadow: none;
+        transform: translate(1.5px, 1.5px);
     }
 }
 
