@@ -51,7 +51,7 @@ export default function PostContent({
                             e.stopPropagation();
                             setExpanded(!expanded);
                         }}
-                        className="text-primary text-sm mt-1 hover:underline font-medium"
+                        className="chip-chunky hover:cursor-pointer inline-block text-primary text-xs mt-1.5 px-2.5 py-1 font-semibold"
                     >
                         {expanded ? "Show less" : "Read more"}
                     </button>
@@ -114,7 +114,7 @@ export default function PostContent({
                         e.stopPropagation();
                         setExpanded(!expanded);
                     }}
-                    className="text-primary text-sm mt-1 hover:underline font-medium"
+                    className="chip-chunky hover:cursor-pointer inline-block text-primary text-xs mt-1.5 px-2.5 py-1 font-semibold"
                 >
                     {expanded ? "Show less" : "Read more"}
                 </button>

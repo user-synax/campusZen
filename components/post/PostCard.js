@@ -139,12 +139,12 @@ const PostCard = memo(function PostCard({ post, currentUserId, onDelete, onLike,
                   e.stopPropagation()
                   setShowComments(!showComments)
                 }}
-                className="flex items-center gap-1.5 text-xs hover:text-blue-400 transition-colors group/comment"
+                className="icon-chunky hover:cursor-pointer flex items-center gap-1.5 text-xs hover:text-blue-400 transition-colors group/comment px-1"
               >
                 <div className="p-2 rounded-full group-hover/comment:bg-blue-400/10">
                   <MessageCircle className="w-4 h-4" />
                 </div>
-                <span className="font-medium text-[10px] sm:text-xs">{commentsCount}</span>
+                <span className="font-medium text-[10px] sm:text-xs pr-1">{commentsCount}</span>
               </button>
             </div>
 
@@ -152,8 +152,10 @@ const PostCard = memo(function PostCard({ post, currentUserId, onDelete, onLike,
               <button 
                 onClick={handleBookmark}
                 className={cn(
-                  "p-2 rounded-full transition-colors",
-                  isBookmarked ? "text-yellow-400 bg-yellow-400/10" : "hover:text-yellow-400 hover:bg-yellow-400/10"
+                  "p-2 rounded-full border-2 border-transparent transition-all duration-150 hover:cursor-pointer",
+                  isBookmarked
+                    ? "text-yellow-400 bg-yellow-400/10 border-yellow-400/20"
+                    : "hover:text-yellow-400 hover:bg-yellow-400/10 hover:border-border hover:shadow-[var(--shadow-hard-sm)]"
                 )}
                 title={isBookmarked ? 'Remove bookmark' : 'Save post'}
               >

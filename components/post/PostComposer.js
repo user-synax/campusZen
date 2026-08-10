@@ -431,7 +431,7 @@ export default function PostComposer({
     };
 
     const iconBtnBase =
-        "relative inline-flex items-center justify-center h-8 rounded-lg text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground disabled:opacity-40 disabled:pointer-events-none disabled:hover:bg-transparent";
+        "icon-chunky relative inline-flex items-center justify-center h-8 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40 disabled:pointer-events-none disabled:hover:bg-transparent";
 
     // More popover state (Poll / Document)
     const [showMorePopover, setShowMorePopover] = useState(false);
@@ -885,7 +885,7 @@ export default function PostComposer({
                                 {showMorePopover && (
                                     <div
                                         ref={morePopoverRef}
-                                        className="absolute bottom-full mb-2 left-0 z-50 bg-popover border border-border/60 rounded-xl shadow-lg overflow-hidden min-w-[160px]"
+                                        className="card-chunky absolute bottom-full mb-2 left-0 z-50 bg-popover overflow-hidden min-w-[160px]"
                                     >
                                         {/* Poll row */}
                                         <button
@@ -946,7 +946,7 @@ export default function PostComposer({
                                     isUploadingImages
                                 }
                                 size="sm"
-                                className="rounded-full px-5 text-sm font-medium h-8 shadow-sm shadow-primary/20 transition-shadow duration-150 hover:shadow-md disabled:shadow-none"
+                                className="pill-chunky hover:cursor-pointer px-5 text-sm font-medium h-8 transition-transform duration-150"
                             >
                                 {isUploadingImages ? (
                                     <>
