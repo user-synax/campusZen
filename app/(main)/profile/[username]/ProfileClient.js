@@ -16,14 +16,12 @@ import PostSkeleton from "@/components/post/PostSkeleton";
 import EmptyState from "@/components/shared/EmptyState";
 import {
     FileText,
-    Pin,
     Zap,
     Flame,
     Trophy,
     MessageSquare,
     Lock,
     Share2,
-    Crown,
     Heart,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -33,7 +31,6 @@ import { usePosts } from "@/hooks/usePosts";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import InfiniteScrollSentinel from "@/components/shared/InfiniteScrollSentinel";
 import { useTheme } from "@/context/ThemeContext";
-// Removed isFounder
 import { renderContentWithMentions } from "@/utils/hashtags";
 import UserMention from "@/components/shared/UserMention";
 import { getBannerUrl } from "@/utils/defaultBanner";
@@ -43,7 +40,6 @@ import { CrownIcon } from "lucide-react";
 import Image from "next/image";
 import { getLevelProgress } from "@/lib/ranks";
 
-// Removed founder components
 const FollowListModal = dynamic(
     () => import("@/components/user/FollowListModal"),
     { ssr: false },
@@ -184,8 +180,6 @@ export default function ProfileClient({ username: initialUsername }) {
 
                 if (userRes.ok) {
                     setProfileUser(userData);
-
-                    // Removed founder profile view tracking
                 } else {
                     toast.error("Failed to load profile", {
                         description: userData.message,
@@ -394,7 +388,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setExportOpen(true)}
-                                    className="hover:cursor-pointer rounded-full flex items-center gap-1.5 shadow-sm backdrop-blur-sm bg-background/80 hover:bg-accent transition-colors"
+                                    className="hover:cursor-pointer flex items-center gap-1.5 backdrop-blur-sm bg-background/80 pill-chunky"
                                 >
                                     <Share2 className="w-3.5 h-3.5" />
                                 </Button>
@@ -403,7 +397,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setEditOpen(true)}
-                                    className="rounded-full shadow-sm backdrop-blur-sm bg-background/80 hover:bg-accent transition-colors font-semibold"
+                                    className="backdrop-blur-sm bg-background/80 font-semibold pill-chunky"
                                 >
                                     Edit profile
                                 </Button>
@@ -429,7 +423,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                         size="sm"
                                         onClick={handleSendDM}
                                         disabled={sendingDm}
-                                        className="rounded-full shadow-sm font-semibold"
+                                        className="font-semibold pill-chunky"
                                     >
                                         <MessageSquare className="w-4 h-4 mr-1" />
                                         {sendingDm ? "Opening..." : "DM"}
@@ -438,7 +432,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                     <Button
                                         size="sm"
                                         disabled
-                                        className="rounded-full opacity-70"
+                                        className="opacity-70 pill-chunky"
                                     >
                                         <Lock className="w-4 h-4 mr-1" />
                                         DM Locked
@@ -626,7 +620,7 @@ export default function ProfileClient({ username: initialUsername }) {
 
                     {/* Gamification Stats */}
                     <div className="grid grid-cols-3 gap-2.5 sm:gap-3 mt-6">
-                        <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 border-border/50 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+                        <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 rounded-2xl flex flex-col items-center justify-center text-center card-chunky card-chunky-interactive">
                             <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center mb-1.5">
                                 <Zap className="w-4 h-4 text-primary fill-primary" />
                             </div>
@@ -638,7 +632,7 @@ export default function ProfileClient({ username: initialUsername }) {
                             </span>
                         </Card>
 
-                        <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 border-border/50 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+                        <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 rounded-2xl flex flex-col items-center justify-center text-center card-chunky card-chunky-interactive">
                             <div className="w-9 h-9 rounded-full bg-orange-500/10 flex items-center justify-center mb-1.5">
                                 <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
                             </div>
@@ -650,7 +644,7 @@ export default function ProfileClient({ username: initialUsername }) {
                             </span>
                         </Card>
 
-                        <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 border-border/50 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+                        <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 rounded-2xl flex flex-col items-center justify-center text-center card-chunky card-chunky-interactive">
                             <div className="w-9 h-9 rounded-full bg-yellow-500/10 flex items-center justify-center mb-1.5">
                                 <Trophy className="w-4 h-4 text-yellow-500" />
                             </div>
@@ -672,7 +666,7 @@ export default function ProfileClient({ username: initialUsername }) {
                     {/* Exclusive Theme Widget for Premium */}
                     {profileUser.isPro && (
                         <div className="mt-6">
-                            <Card className="p-4 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20 rounded-2xl shadow-sm">
+                            <Card className="p-4 bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl card-chunky">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center text-white text-lg shadow-sm">
                                         🎨
