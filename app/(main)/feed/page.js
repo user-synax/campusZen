@@ -224,7 +224,7 @@ export default function FeedPage() {
                         <Link
                             href="/search"
                             aria-label="Search"
-                            className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors duration-150"
+                            className="icon-chunky inline-flex items-center justify-center w-9 h-9 text-muted-foreground hover:text-foreground hover:bg-accent/60"
                         >
                             <Search className="w-[18px] h-[18px]" />
                         </Link>
@@ -240,22 +240,22 @@ export default function FeedPage() {
                                 key={id}
                                 onClick={() => handleTabChange(id)}
                                 className={`
-                                    relative flex items-center justify-center gap-1.5
+                                    chip-chunky hover:cursor-pointer relative flex items-center justify-center gap-1.5
                                     flex-1 sm:flex-none sm:px-4
-                                    py-2 rounded-xl text-[12px] sm:text-[13px] font-medium
-                                    transition-all duration-200 select-none outline-none
+                                    py-2 text-[12px] sm:text-[13px] font-medium
+                                    select-none outline-none
                                     focus-visible:ring-2 focus-visible:ring-primary/50
                                     ${
                                         isActive
-                                            ? "bg-accent text-foreground shadow-sm"
-                                            : "text-muted-foreground hover:text-foreground/80 hover:bg-accent/40"
+                                            ? "chip-chunky-active text-foreground"
+                                            : "text-muted-foreground hover:text-foreground/80"
                                     }
                                 `}
                             >
                                 <Icon
                                     className={`
                                         w-3.5 h-3.5 shrink-0 transition-all duration-200
-                                        ${isActive ? "text-primary scale-110" : ""}
+                                        ${isActive ? "text-primary" : ""}
                                     `}
                                 />
                                 <span>{label}</span>
