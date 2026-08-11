@@ -742,20 +742,14 @@ export default function PostComposer({
                                             className={cn(
                                                 iconBtnBase,
                                                 selectedImages.length > 0
-                                                    ? "px-2 gap-1 text-primary bg-primary/10 hover:bg-primary/15 hover:text-primary"
-                                                    : "w-8 px-0",
+                                                    ? "px-2 gap-1 hover:cursor-pointer text-primary bg-primary/10 hover:bg-primary/15 hover:text-primary "
+                                                    : "w-8 px-0 hover:cursor-pointer",
                                             )}
                                             onClick={(e) => {
-                                                if (!currentUser?.isPro) {
-                                                    e.preventDefault();
-                                                    router.push("/billing");
-                                                } else {
-                                                    fileInputRef.current?.click();
-                                                }
+                                                fileInputRef.current?.click();
                                             }}
                                             disabled={
-                                                selectedImages.length >= 6 ||
-                                                !currentUser?.isPro
+                                                selectedImages.length >= 6 
                                             }
                                             aria-label="Add image"
                                         >
@@ -765,16 +759,8 @@ export default function PostComposer({
                                                     {selectedImages.length}/6
                                                 </span>
                                             )}
-                                            {!currentUser?.isPro && (
-                                                <ProLockBadge />
-                                            )}
                                         </Button>
                                     </TooltipTrigger>
-                                    {!currentUser?.isPro && (
-                                        <TooltipContent>
-                                            <span>Pro Feature</span>
-                                        </TooltipContent>
-                                    )}
                                 </Tooltip>
                             </TooltipProvider>
 
@@ -803,9 +789,9 @@ export default function PostComposer({
                                         size="sm"
                                         className={cn(
                                             iconBtnBase,
-                                            "w-8 px-0 text-[11px] font-bold tracking-tight",
+                                            "w-8 px-0 text-[11px] hover:cursor-pointer font-bold tracking-tight",
                                             selectedGIFs.length > 0 &&
-                                                "text-primary bg-primary/10 hover:bg-primary/15 hover:text-primary",
+                                            "text-primary bg-primary/10 hover:cursor-pointer hover:bg-primary/15 hover:text-primary",
                                         )}
                                         aria-label="Add GIF"
                                     >
@@ -823,7 +809,7 @@ export default function PostComposer({
                                         type="button"
                                         variant="ghost"
                                         size="sm"
-                                        className={cn(iconBtnBase, "w-8 px-0")}
+                                        className={cn(iconBtnBase, "w-8 hover:cursor-pointer px-0")}
                                         aria-label="Add emoji"
                                     >
                                         <svg
@@ -868,9 +854,9 @@ export default function PostComposer({
                                     size="sm"
                                     className={cn(
                                         iconBtnBase,
-                                        "w-8 px-0",
+                                        "w-8 px-0 hover:cursor-pointer",
                                         showMorePopover &&
-                                            "bg-muted text-foreground",
+                                        "bg-muted text-foreground",
                                     )}
                                     onClick={() =>
                                         setShowMorePopover((prev) => !prev)
@@ -885,7 +871,7 @@ export default function PostComposer({
                                 {showMorePopover && (
                                     <div
                                         ref={morePopoverRef}
-                                        className="card-chunky absolute bottom-full mb-2 left-0 z-50 bg-popover overflow-hidden min-w-[160px]"
+                                        className="card-chunky absolute bottom-full mb-2 left-0 z-50 bg-popover overflow-hidden min-w-40"
                                     >
                                         {/* Poll row */}
                                         <button
@@ -893,8 +879,8 @@ export default function PostComposer({
                                             className={cn(
                                                 "flex items-center gap-2.5 w-full px-3.5 py-2.5 text-sm font-medium transition-colors duration-150",
                                                 showPoll
-                                                    ? "text-primary bg-primary/10"
-                                                    : "text-muted-foreground hover:text-foreground hover:bg-accent/60",
+                                                    ? "text-primary bg-primary/10 hover:cursor-pointer"
+                                                    : "text-muted-foreground hover:text-foreground hover:cursor-pointer hover:bg-accent/60",
                                             )}
                                             onClick={(e) => {
                                                 if (!currentUser?.isPro) {
@@ -909,7 +895,7 @@ export default function PostComposer({
                                             <BarChart2 className="w-4 h-4 shrink-0" />
                                             <span>Poll</span>
                                             {!currentUser?.isPro && (
-                                                <span className="ml-auto text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                                                <span className="ml-auto text-[10px]  font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
                                                     Pro
                                                 </span>
                                             )}
@@ -918,7 +904,7 @@ export default function PostComposer({
                                         {/* Document row */}
                                         <button
                                             type="button"
-                                            className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors duration-150"
+                                            className="flex items-center hover:cursor-pointer gap-2.5 w-full px-3.5 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors duration-150"
                                             onClick={() => {
                                                 markdownFileInputRef.current?.click();
                                                 setShowMorePopover(false);

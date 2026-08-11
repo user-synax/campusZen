@@ -55,19 +55,6 @@ export async function POST(request) {
             tags,
         } = body;
 
-        // Check if restricted features are used without Pro
-        if ((poll && poll.length > 0) || (images && images.length > 0)) {
-            if (!isPro) {
-                return NextResponse.json(
-                    {
-                        message:
-                            "Pro subscription required for polls and image uploads",
-                    },
-                    { status: 403 },
-                );
-            }
-        }
-
         await connectDB();
         // Auto-create community agar exist nahi karti
         if (community && community.trim()) {

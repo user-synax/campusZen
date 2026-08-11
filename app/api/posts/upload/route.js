@@ -18,15 +18,6 @@ export async function POST(request) {
             );
         }
 
-        // Check Pro status first!
-        const isPro = await refreshUserProStatus(currentUser._id);
-        if (!isPro) {
-            return NextResponse.json(
-                { message: "Pro subscription required for image uploads" },
-                { status: 403 },
-            );
-        }
-
         const formData = await request.formData();
         const files = formData.getAll("images"); // Accept multiple files!
 
