@@ -14,6 +14,7 @@ const pushSubscriptionSchema = new mongoose.Schema(
             auth: { type: String, required: true },
         },
         userAgent: { type: String },
+        isActive: { type: Boolean, default: true },
         lastActive: { type: Date, default: Date.now },
     },
     { timestamps: true },
