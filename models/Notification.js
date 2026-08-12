@@ -20,24 +20,26 @@ const notificationSchema = new mongoose.Schema({
    type: { 
      type: String, 
      required: true, 
-     enum: [ 
-       'like',             // Someone liked your post 
-       'comment',          // Someone commented on your post 
-       'follow',           // Someone followed you 
-       'mention',          // Someone mentioned you in a post/comment 
-       'repost',           // Someone reposted your post 
-       'reaction',         // Someone reacted to your post 
-       'poll_vote',        // Someone voted on your poll 
-       'comment_like',     // Someone liked your comment 
-       'group_invite',     // Added to a group 
-       'group_message',    // New message in a group (for muted users) 
-       'event_reminder',   // Event happening soon 
-       'resource_approved',// Your uploaded resource was approved 
-       'resource_rejected',// Your uploaded resource was rejected 
-       'achievement',      // You unlocked an achievement 
-       'level_up',         // You reached a new level
-       'system'            // Platform announcement 
-     ] 
+      enum: [
+        'like',             // Someone liked your post
+        'comment',          // Someone commented on your post
+        'follow',           // Someone followed you
+        'mention',          // Someone mentioned you in a post/comment
+        'repost',           // Someone reposted your post
+        'reaction',         // Someone reacted to your post
+        'poll_vote',        // Someone voted on your poll
+        'comment_like',     // Someone liked your comment
+        'group_invite',     // Added to a group
+        'group_message',    // New message in a group (for muted users)
+        'event_reminder',   // Event happening soon
+        'event_cancelled',  // Event was cancelled by organizer
+        'resource_approved',// Your uploaded resource was approved
+        'resource_rejected',// Your uploaded resource was rejected
+        'achievement',      // You unlocked an achievement
+        'badge_earned',     // You earned a badge (gamification)
+        'level_up',         // You reached a new level
+        'system'            // Platform announcement
+      ]
    }, 
  
    // Related content — only set what's relevant 
