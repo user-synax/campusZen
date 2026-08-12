@@ -12,10 +12,20 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("push", (event) => {
     console.log("[SW] Push received:", event.data);
-    const data = event.data?.json() || {
-        title: "New Message",
-        body: "You have a new message",
-    };
+
+    let data;
+    try {
+        data = event.data?.json() || {
+            title: "New Message",
+            body: "You have a new message",
+        };
+    } catch (err) {
+        console.error("[SW] Failed to parse push data:", err);
+        data = {
+            title: "New Message",
+            body: "You have a new message",
+        };
+    }
 
     const options = {
         body: data.body,
@@ -38,19 +48,28 @@ self.addEventListener("notificationclick", (event) => {
     console.log("[SW] Notification clicked:", event.notification);
     event.notification.close();
 
+    const targetUrl = event.notification.data?.url || "/";
+
     event.waitUntil(
         clients
             .matchAll({ type: "window", includeUncontrolled: true })
             .then((clientList) => {
                 for (let client of clientList) {
-                    if (client.url === "/" || client.url.startsWith("/")) {
-                        return client.focus();
+                    try {
+                        const clientPath = new URL(client.url).pathname;
+                        if (
+                            clientPath === targetUrl ||
+                            client.url.startsWith(self.location.origin)
+                        ) {
+                            client.navigate(targetUrl);
+                            return client.focus();
+                        }
+                    } catch (err) {
+                        console.error("[SW] Failed to parse client URL:", err);
                     }
                 }
                 if (clients.openWindow) {
-                    return clients.openWindow(
-                        event.notification.data?.url || "/",
-                    );
+                    return clients.openWindow(targetUrl);
                 }
             }),
     );
@@ -58,4 +77,40 @@ self.addEventListener("notificationclick", (event) => {
 
 self.addEventListener("notificationclose", (event) => {
     console.log("[SW] Notification closed");
+});
+
+self.addEventListener("pushsubscriptionchange", (event) => {
+    console.log("[SW] Push subscription changed");
+
+    event.waitUntil(
+        self.registration.pushManager
+            .subscribe(event.oldSubscription?.options || { userVisibleOnly: true })
+            .then((subscription) => {
+                return fetch("/api/notifications/subscribe", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(subscription),
+                });
+            })
+            .catch((err) => {
+                console.error("[SW] Failed to resubscribe after subscription change:", err);
+            }),
+    );
+});
+
+const OFFLINE_URL = "/offline.html";
+
+self.addEventListener("install", (event) => {
+    event.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => cache.add(OFFLINE_URL))
+    );
+    self.skipWaiting();
+});
+
+self.addEventListener("fetch", (event) => {
+    if (event.request.mode === "navigate") {
+        event.respondWith(
+            fetch(event.request).catch(() => caches.match(OFFLINE_URL))
+        );
+    }
 });
