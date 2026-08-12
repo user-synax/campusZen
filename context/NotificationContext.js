@@ -12,6 +12,7 @@ export function NotificationProvider({ children }) {
   const [unreadCount, setUnreadCount] = useState(0)
   const [newNotification, setNewNotification] = useState(null)
   const channelRef = useRef(null)
+  const timerRef = useRef(null)
 
   // Fetch initial unread count
   const fetchCount = useCallback(async () => {
@@ -75,6 +76,7 @@ export function NotificationProvider({ children }) {
     })
 
     return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
       if (channelRef.current) {
         channelRef.current.unbind_all()
         pusher.unsubscribe(channelName)
