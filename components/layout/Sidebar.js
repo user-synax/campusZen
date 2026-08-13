@@ -33,8 +33,10 @@ import {
     Rocket,
     ShieldCheck,
     Video,
+    ShoppingBag,
     ChevronDown,
     ChevronRight,
+    Coins,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useChatUnreadCount } from "@/hooks/useChatUnreadCount";
@@ -72,7 +74,12 @@ function writeLocalBool(key, value) {
     localStorage.setItem(key, String(value));
 }
 
-function CollapsibleSection({ label, storageKey, defaultOpen = false, children }) {
+function CollapsibleSection({
+    label,
+    storageKey,
+    defaultOpen = false,
+    children,
+}) {
     const [open, setOpen] = useState(defaultOpen);
 
     useEffect(() => {
@@ -106,7 +113,11 @@ function CollapsibleSection({ label, storageKey, defaultOpen = false, children }
     );
 }
 
-function CollapsibleSectionIconOnly({ storageKey, defaultOpen = false, children }) {
+function CollapsibleSectionIconOnly({
+    storageKey,
+    defaultOpen = false,
+    children,
+}) {
     const [open, setOpen] = useState(defaultOpen);
 
     useEffect(() => {
@@ -153,12 +164,12 @@ export default function Sidebar() {
         { label: "Bookmarks", href: "/bookmarks", icon: Bookmark },
     ];
 
-
     const gamificationItems = [
         { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
         { label: "Ranks", href: "/ranks", icon: CircleStar },
+        { label: "Shop", href: "/shop", icon: ShoppingBag },
+        { label: "Wallet", href: "/wallet", icon: Coins },
     ];
-
 
     const moreItems = [
         { label: "Clips", href: "/clips", icon: Video },
@@ -262,9 +273,7 @@ export default function Sidebar() {
                     <Link
                         href={item.href}
                         onClick={
-                            item.isCustomize
-                                ? handleCustomizeClick
-                                : undefined
+                            item.isCustomize ? handleCustomizeClick : undefined
                         }
                     >
                         <Button
@@ -281,20 +290,15 @@ export default function Sidebar() {
                                 <Icon
                                     className={cn(
                                         "w-4.5 h-4.5 transition-colors",
-                                        isActive
-                                            ? "text-primary"
-                                            : "",
+                                        isActive ? "text-primary" : "",
                                     )}
                                 />
-                                {item.isCustomize &&
-                                    !user?.isPro && (
-                                        <Lock className="w-2.5 h-2.5 absolute -bottom-0.5 -right-0.5 text-muted-foreground" />
-                                    )}
+                                {item.isCustomize && !user?.isPro && (
+                                    <Lock className="w-2.5 h-2.5 absolute -bottom-0.5 -right-0.5 text-muted-foreground" />
+                                )}
                                 {item.badge > 0 && (
                                     <span className="absolute -top-1.5 -right-1.5 min-w-3.75 h-3.75 bg-primary text-[9px] text-primary-foreground font-bold flex items-center justify-center rounded-full px-0.5 border-2 border-background">
-                                        {item.badge > 9
-                                            ? "9+"
-                                            : item.badge}
+                                        {item.badge > 9 ? "9+" : item.badge}
                                     </span>
                                 )}
                             </div>
@@ -320,15 +324,11 @@ export default function Sidebar() {
                                     icon: Heart,
                                 },
                             ].map((sub) => (
-                                <Link
-                                    key={sub.href}
-                                    href={sub.href}
-                                >
+                                <Link key={sub.href} href={sub.href}>
                                     <button
                                         className={cn(
                                             "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
-                                            pathname ===
-                                                sub.href
+                                            pathname === sub.href
                                                 ? "bg-primary/8 text-primary"
                                                 : "text-muted-foreground/70 hover:text-foreground hover:bg-accent/50",
                                         )}
@@ -341,51 +341,46 @@ export default function Sidebar() {
                         </div>
                     )}
 
-                {item.href === "/tools" &&
-                    pathname.startsWith("/tools") && (
-                        <div className="hidden lg:flex flex-col gap-0.5 mt-0.5 ml-9 mr-1">
-                            {[
-                                {
-                                    label: "Popular",
-                                    href: "/tools",
-                                    icon: Terminal,
-                                },
-                                {
-                                    label: "Text tools",
-                                    href: "/tools/text",
-                                    icon: Type,
-                                },
-                                {
-                                    label: "Color tools",
-                                    href: "/tools/color",
-                                    icon: Palette,
-                                },
-                                {
-                                    label: "SEO tools",
-                                    href: "/tools/seo",
-                                    icon: Search,
-                                },
-                            ].map((sub) => (
-                                <Link
-                                    key={sub.href}
-                                    href={sub.href}
+                {item.href === "/tools" && pathname.startsWith("/tools") && (
+                    <div className="hidden lg:flex flex-col gap-0.5 mt-0.5 ml-9 mr-1">
+                        {[
+                            {
+                                label: "Popular",
+                                href: "/tools",
+                                icon: Terminal,
+                            },
+                            {
+                                label: "Text tools",
+                                href: "/tools/text",
+                                icon: Type,
+                            },
+                            {
+                                label: "Color tools",
+                                href: "/tools/color",
+                                icon: Palette,
+                            },
+                            {
+                                label: "SEO tools",
+                                href: "/tools/seo",
+                                icon: Search,
+                            },
+                        ].map((sub) => (
+                            <Link key={sub.href} href={sub.href}>
+                                <button
+                                    className={cn(
+                                        "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
+                                        pathname === sub.href
+                                            ? "bg-primary/8 text-primary"
+                                            : "text-muted-foreground/70 hover:text-foreground hover:bg-accent/50",
+                                    )}
                                 >
-                                    <button
-                                        className={cn(
-                                            "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
-                                            pathname ===
-                                                sub.href
-                                                ? "bg-primary/8 text-primary"
-                                                : "text-muted-foreground/70 hover:text-foreground hover:bg-accent/50",
-                                        )}
-                                    >
-                                        <sub.icon className="w-3.5 h-3.5 shrink-0" />
-                                        {sub.label}
-                                    </button>
-                                </Link>
-                            ))}
-                        </div>
-                    )}
+                                    <sub.icon className="w-3.5 h-3.5 shrink-0" />
+                                    {sub.label}
+                                </button>
+                            </Link>
+                        ))}
+                    </div>
+                )}
             </div>
         );
     };
@@ -437,7 +432,6 @@ export default function Sidebar() {
                             {moreItems.map(renderNavItem)}
                         </CollapsibleSectionIconOnly>
                     </div>
-
 
                     <div className="mt-2 pt-2 border-t border-border/40">
                         {bottomNavItems.map(renderNavItem)}
