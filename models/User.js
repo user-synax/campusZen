@@ -138,6 +138,45 @@ const userSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        // ── VP (Viper Coins) Economy ──
+        // Cached, atomically-updated balance. Never read from ledger.
+        vp: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+        // ── Shop / Cosmetic Inventory ──
+        // Items the user has purchased. Self-contained snapshot so rendering
+        // works even if the catalog item is later removed.
+        ownedShopItems: [
+            {
+                itemId: { type: mongoose.Schema.Types.ObjectId, ref: "ShopItem" },
+                slug: { type: String },
+                name: { type: String },
+                category: { type: String },
+                rarity: { type: String, default: "common" },
+                price: { type: Number, default: 0 },
+                visual: {
+                    icon: { type: String, default: "Package" },
+                    color: { type: String, default: "#94a3b8" },
+                    className: { type: String, default: "" },
+                    imageUrl: { type: String, default: "" },
+                    frameAssetUrl: { type: String, default: "" },
+                },
+                purchasedAt: { type: Date, default: Date.now },
+            },
+        ],
+        // Currently equipped item per category (category -> owned item's _id).
+        // Only one item equipped per category at a time.
+        equippedShopItems: {
+            type: mongoose.Schema.Types.Mixed,
+            default: {},
+        },
+        // Calendar-day gate for daily login reward (server-checked)
+        lastLoginRewardAt: {
+            type: Date,
+            default: null,
+        },
         // ── Student Verification System ──
         isVerified: {
             type: Boolean,
@@ -311,6 +350,10 @@ userSchema.index({ following: 1 });
 userSchema.index({ totalXP: -1 });
 userSchema.index({ weeklyXP: -1 });
 userSchema.index({ college: 1, weeklyXP: -1 });
+// VP economy indexes
+userSchema.index({ vp: -1 });
+// Shop inventory indexes
+userSchema.index({ "ownedShopItems.itemId": 1 });
 // Moderation index
 userSchema.index({ isBanned: 1 });
 userSchema.index({ isDeleted: 1, createdAt: -1 });
