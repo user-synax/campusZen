@@ -35,12 +35,12 @@ export default function ShopItemIcon({ iconName, rarity, className, visual = {} 
     }
   }
 
-  return (
-    <div className={cn(
-      "shop-item-icon-container",
-      rarity,
-      className
-    )}>
+    return (
+      <div className={cn(
+        "shop-item-icon-container relative overflow-hidden",
+        rarity,
+        className
+      )}>
       {/* Background Glow for high rarities */}
       {(rarity === 'mythic' || rarity === 'legendary') && (
         <div 
