@@ -21,7 +21,7 @@ export default function OverviewTab({ data, lastFetched }) {
                     icon={FileText}
                 />
                 <StatCard
-                    title="Coins in Circulation"
+                    title="VP in Circulation"
                     value={coins?.totalCirculation}
                     icon={Coins}
                 />
