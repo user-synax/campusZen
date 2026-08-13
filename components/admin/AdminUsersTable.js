@@ -153,7 +153,7 @@ export default function AdminUsersTable() {
                   )}
 
                   <DropdownMenuItem onClick={() => openAction('award_coins', user)}>
-                    <Coins className="w-4 h-4 mr-2" /> Award Coins
+                    <Coins className="w-4 h-4 mr-2" /> Award VP
                   </DropdownMenuItem>
 
                   <DropdownMenuItem onClick={() => openAction('force_logout', user)}>
