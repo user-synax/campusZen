@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { validateObjectId } from '@/utils/validators';
 import { createNotification, deleteNotification } from '@/lib/notifications';
 import { awardXP } from '@/lib/gamification';
+import { awardVP } from '@/lib/coins';
 
 import { applyRateLimit } from '@/lib/rate-limit';
 import { sanitizeMongoInput } from '@/lib/sanitize';
@@ -82,6 +83,12 @@ export async function POST(request) {
 
       // Award XP for following someone
       xpResult = await awardXP(currentUser._id, 'follow');
+
+      // Award VP for following someone (actor earns). Follow-loop guard
+      // inside awardVP prevents follow/unfollow farming.
+      awardVP(currentUser._id, 'follow', targetUserId).catch((err) =>
+        console.error('VP award error:', err)
+      );
     }
 
     return NextResponse.json({
