@@ -3,6 +3,7 @@ import connectDB from '@/lib/db'
 import Resource from '@/models/Resource'
 import { getCurrentUser } from '@/lib/auth'
 import { awardXP } from '@/lib/gamification'
+import { awardVP } from '@/lib/coins'
 import { applyRateLimit } from '@/lib/rate-limit'
 import { sanitizeText } from '@/lib/sanitize'
 import { 
@@ -126,6 +127,9 @@ export async function POST(request) {
 
     // Award XP for uploading (background)
     awardXP(currentUser._id, 'resource_upload').catch(err => console.error('XP award error:', err));
+
+    // Award VP for uploading a resource (background, idempotent)
+    awardVP(currentUser._id, 'resource_upload', resource._id).catch(err => console.error('VP award error:', err));
 
     // ━━━ 10. Return success ━━━
     return NextResponse.json({
