@@ -467,3 +467,29 @@
 .blob-3 {
     animation: float 7s ease-in-out infinite 4s;
 }
+
+/* ── Shop cosmetic: avatar frame glow (applied via item.visual.className) ── */
+.shop-frame-glow {
+    animation: shop-frame-pulse 2.8s ease-in-out infinite;
+}
+
+@keyframes shop-frame-pulse {
+    0%,
+    100% {
+        filter: drop-shadow(0 0 4px currentColor);
+    }
+    50% {
+        filter: drop-shadow(0 0 12px currentColor);
+    }
+}
+
+/* ── Shop item icon container ──
+   Establishes a positioning + clipping context so the rarity glow
+   (position:absolute; inset:0 inside ShopItemIcon) is contained within the
+   icon box. Without this, the absolute layer resolves against the nearest
+   positioned ancestor (the page root), painting a full-viewport glow per
+   high-rarity icon and stacking as more items render. */
+.shop-item-icon-container {
+    position: relative;
+    overflow: hidden;
+}
