@@ -19,7 +19,7 @@ const sections = [
   { id: "use-policy", title: "2. Acceptable Use" },
   { id: "content", title: "3. Content Ownership" },
   { id: "termination", title: "4. Account Termination" },
-  { id: "currency", title: "5. Campus Coins" },
+  { id: "currency", title: "5. Viper Coins (VP)" },
   { id: "contact", title: "6. Contact" },
 ];
 
@@ -111,12 +111,12 @@ export default function TermsPage() {
       </section>
 
       <section id="currency" className="scroll-mt-32">
-        <h2 className="text-3xl md:text-4xl font-black text-white mb-8 tracking-tight">5. Campus Coins</h2>
+        <h2 className="text-3xl md:text-4xl font-black text-white mb-8 tracking-tight">5. Viper Coins (VP)</h2>
         <div className="space-y-6 text-orange-200/80">
           <p className="font-semibold text-orange-400">Important Disclaimer:</p>
           <ul className="grid gap-3 list-none pl-0 italic">
             {[
-              "Campus Coins have no real-world monetary value.",
+              "Viper Coins (VP) have no real-world monetary value.",
               "They cannot be exchanged for cash or legal tender.",
               "The developer reserves the right to modify or reset the system anytime."
             ].map((item, i) => (
