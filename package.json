@@ -6,7 +6,8 @@
         "dev": "next dev",
         "build": "next build",
         "start": "next start",
-        "lint": "next lint"
+        "lint": "next lint",
+        "sync:shop": "node scripts/syncShopItems.mjs"
     },
     "dependencies": {
         "@animateicons/react": "^0.3.4",
