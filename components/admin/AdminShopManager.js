@@ -45,7 +45,9 @@ const CATEGORIES = [
   { value: 'special_badge', label: 'Special Badge' },
   { value: 'profile_theme', label: 'Profile Theme' },
   { value: 'effect', label: 'Effect' },
-  { value: 'entry_effect', label: 'Entry Effect' }
+  { value: 'entry_effect', label: 'Entry Effect' },
+  { value: 'profile_bg', label: 'Profile BG Effect' },
+  { value: 'profile_layout', label: 'Profile Layout' }
 ]
 
 const RARITIES = [
@@ -164,7 +166,7 @@ export default function AdminShopManager() {
         category: 'avatar_frame',
         price: 0,
         rarity: 'common',
-        visual: { icon: 'Package', color: '#94a3b8', className: '' },
+        visual: { icon: 'Package', color: '#94a3b8', className: '', imageUrl: '' },
         sortOrder: 0,
         isLimited: false,
         limitedUntil: '',
@@ -266,7 +268,7 @@ export default function AdminShopManager() {
                 )}
               </div>
               <p className="text-[10px] text-muted-foreground mt-0.5 uppercase font-bold tracking-tight flex items-center gap-1">
-                {item.category.replace('_', ' ')} · <Coins className="w-2.5 h-2.5" /> {item.price}
+                {item.category.replace('_', ' ')} · <Coins className="w-2.5 h-2.5" /> {item.price} VP
               </p>
               <div className="flex items-center gap-2 mt-1.5 text-[10px] text-muted-foreground">
                 <span className="font-bold text-foreground">{item.soldCount || 0} sold</span>
@@ -354,7 +356,7 @@ export default function AdminShopManager() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Price (Coins)</label>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Price (VP)</label>
                 <Input 
                   type="number"
                   value={formData.price} 
@@ -447,6 +449,31 @@ export default function AdminShopManager() {
                   placeholder="e.g. avatar-frame-rainbow"
                 />
               </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Image URL (Optional)</label>
+                <Input 
+                  value={formData.visual?.imageUrl || ''} 
+                  onChange={e => setFormData({...formData, visual: { ...formData.visual, imageUrl: e.target.value }})}
+                  placeholder="https://cdn.example.com/banner.png"
+                />
+                <p className="text-[10px] text-muted-foreground/70 ml-1">Used for image-based items like Profile Banner. Leave empty for CSS-only items.</p>
+              </div>
+
+              {formData.category === 'avatar_frame' && (
+                <div className="space-y-1.5 pt-1 border-t border-border/30">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Frame Overlay Asset URL (Optional)</label>
+                  <Input 
+                    value={formData.visual?.frameAssetUrl || ''} 
+                    onChange={e => setFormData({...formData, visual: { ...formData.visual, frameAssetUrl: e.target.value }})}
+                    placeholder="https://utfs.io/f/your-animated-frame.webm"
+                  />
+                  <p className="text-[10px] text-muted-foreground/70 ml-1 leading-relaxed">
+                    Upload a transparent-center GIF or WebM for animated frames (Discord-style overlay), or use the Color field above for a simple CSS glow frame.
+                    Square aspect ratio recommended; keep looping files ≤ 2MB so profile pages stay fast. GIFs loop natively; WebM/MP4 need a video-capable host (self-host via UploadThing/Appwrite).
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
