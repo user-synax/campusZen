@@ -39,6 +39,8 @@ const notificationSchema = new mongoose.Schema({
         'achievement',      // You unlocked an achievement
         'badge_earned',     // You earned a badge (gamification)
         'level_up',         // You reached a new level
+        'vp_earned',        // You earned Viper Coins (VP economy)
+        'shop_purchase',    // You bought a shop item
         'system'            // Platform announcement
       ]
    }, 
