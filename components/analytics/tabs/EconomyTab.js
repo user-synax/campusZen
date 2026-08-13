@@ -29,7 +29,7 @@ export default function EconomyTab({ data, range }) {
 
             <BarChart
                 data={chartData}
-                title="Coin Volume per Day"
+                title="VP Volume per Day"
                 rangeLabel={rangeLabel}
             />
 
