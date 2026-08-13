@@ -98,6 +98,20 @@ export async function POST(request) {
             // Auth passes — user can subscribe to their own DM channel
         }
 
+        // Extract userId from channel name: private-user-[userId]
+        if (channelName.startsWith("private-user-")) {
+            const channelUserId = channelName.replace("private-user-", "");
+
+            // Only allow subscribing to YOUR OWN user channel
+            if (channelUserId !== currentUser._id.toString()) {
+                return NextResponse.json(
+                    { error: "Cannot subscribe to another user's channel" },
+                    { status: 403 },
+                );
+            }
+            // Auth passes — user can subscribe to their own user channel
+        }
+
         // Generate Pusher auth response
         const pusher = getPusherServer();
 

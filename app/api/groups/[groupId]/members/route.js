@@ -128,7 +128,7 @@ export async function POST(request, { params }) {
     }).catch(err => console.error('Operation failed:', err))
 
     // Trigger on user's personal channel to notify them about being added
-    triggerPusher(`user-${userId}`, 'group-joined', group).catch(err => console.error('Operation failed:', err))
+    triggerPusher(`private-user-${userId}`, 'group-joined', group).catch(err => console.error('Operation failed:', err))
 
     return NextResponse.json({ 
       success: true, 
@@ -258,7 +258,7 @@ export async function DELETE(request, { params }) {
     }).catch(err => console.error('Operation failed:', err))
 
     // Trigger on user's personal channel to notify them about being removed/left
-    triggerPusher(`user-${targetUserIdStr}`, 'group-left', { groupId: group._id }).catch(err => console.error('Operation failed:', err))
+    triggerPusher(`private-user-${targetUserIdStr}`, 'group-left', { groupId: group._id }).catch(err => console.error('Operation failed:', err))
 
     return NextResponse.json({ success: true })
 

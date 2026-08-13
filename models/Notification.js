@@ -31,6 +31,7 @@ const notificationSchema = new mongoose.Schema({
         'comment_like',     // Someone liked your comment
         'group_invite',     // Added to a group
         'group_message',    // New message in a group (for muted users)
+        'dm_message',       // New direct message
         'event_reminder',   // Event happening soon
         'event_cancelled',  // Event was cancelled by organizer
         'resource_approved',// Your uploaded resource was approved

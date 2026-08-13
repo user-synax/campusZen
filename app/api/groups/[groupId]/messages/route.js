@@ -6,6 +6,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { sanitizeText, sanitizeMongoInput } from '@/lib/sanitize'
 import { applyRateLimit } from '@/lib/rate-limit'
 import { triggerPusher } from '@/lib/pusher-server'
+import { createNotification } from '@/lib/notifications'
 import { validateObjectId } from '@/utils/validators'
 
 /**
@@ -186,9 +187,30 @@ export async function POST(request, { params }) {
     // We await this to ensure delivery before function ends in serverless environment
     await triggerPusher(`private-group-${groupId}`, 'new-message', {
       ...populated,
-      clientId, 
+      clientId,
       reactions: []
     })
+
+    // 7. Create in-app notifications for each group member (except sender, respect mute)
+    const senderIdStr = currentUser._id.toString()
+    for (const member of group.members) {
+      const memberIdStr = member.userId.toString()
+      if (memberIdStr === senderIdStr) continue
+      if (member.isMuted) continue
+
+      await createNotification({
+        recipient: member.userId,
+        sender: currentUser._id,
+        type: 'group_message',
+        groupId,
+        meta: {
+          groupName: group.name,
+          messagePreview: content ? content.substring(0, 100) : '📷 Image',
+          senderName: currentUser.name
+        },
+        dedupe: false
+      }).catch(err => console.error('[GroupMessage] Notification failed for member:', memberIdStr, err.message))
+    }
 
     return NextResponse.json({ ...populated, clientId }, { status: 201 })
 

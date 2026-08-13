@@ -2,15 +2,11 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import DMConversation from "@/models/DMConversation";
 import DMMessage from "@/models/DMMessage";
-import PushSubscription from "@/models/PushSubscription";
 import { getCurrentUser } from "@/lib/auth";
 import { sanitizeText, sanitizeMongoInput } from "@/lib/sanitize";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { triggerPusher } from "@/lib/pusher-server";
-import {
-    configurePushNotifications,
-    sendPushNotification,
-} from "@/lib/push-notifications";
+import { createNotification } from "@/lib/notifications";
 import { validateObjectId } from "@/utils/validators";
 
 /**
@@ -120,9 +116,6 @@ export async function POST(request, { params }) {
                 { status: 401 },
             );
         }
-
-        // Configure push notifications
-        configurePushNotifications();
 
         // Rate limit: 30 messages per minute per conversation
         const { blocked, response: rateLimitResponse } = applyRateLimit(
@@ -249,48 +242,22 @@ export async function POST(request, { params }) {
             ).catch((err) => console.error("Pusher failed:", err));
         }
 
-        // Send push notifications to other participants
-        const otherParticipants = conversation.participants.filter(
-            (p) => p.userId.toString() !== currentUser._id.toString(),
-        );
-
-        for (const participant of otherParticipants) {
-            const subscriptions = await PushSubscription.find({
-                userId: participant.userId,
-            });
-            for (const sub of subscriptions) {
-                // Prepare payload
-                const payload = {
-                    title: `${currentUser.name}`,
-                    body: type === "text" ? content : "📷 Photo",
-                    icon: currentUser.avatar || "/android-chrome-192x192.png",
-                    badge: "/android-chrome-192x192.png",
-                    tag: `dm_${conversationId}`,
-                    renotify: true,
-                    vibrate: [200, 100, 200],
-                    data: {
-                        url: `/chats/dm/${conversationId}`,
-                        conversationId: conversationId,
-                        type: "dm",
-                    },
-                    actions: [
-                        {
-                            action: "reply",
-                            title: "Reply",
-                        },
-                        {
-                            action: "mark_read",
-                            title: "Mark Read",
-                        },
-                    ],
-                };
-
-                // Send push
-                const result = await sendPushNotification(sub, payload);
-                if (result.shouldDelete) {
-                    await PushSubscription.deleteOne({ _id: sub._id });
-                }
-            }
+        // Create in-app notification + push for the recipient (centralized pipeline)
+        const recipient = conversation.participants.find(
+            (p) => p.userId.toString() !== currentUser._id.toString()
+        )
+        if (recipient) {
+            await createNotification({
+                recipient: recipient.userId,
+                sender: currentUser._id,
+                type: 'dm_message',
+                meta: {
+                    conversationId: conversationId,
+                    messagePreview: content ? content.substring(0, 100) : '📷 Image',
+                    senderName: currentUser.name
+                },
+                dedupe: false
+            }).catch(err => console.error('[DMMessage] Notification failed:', err.message))
         }
 
         return NextResponse.json({ ...populated, clientId }, { status: 201 });
