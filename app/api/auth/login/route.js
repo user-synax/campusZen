@@ -9,6 +9,7 @@ import {
     migrateLegacyUser,
 } from "@/lib/auth";
 import { updateStreak } from "@/lib/gamification";
+import { awardDailyLoginVP } from "@/lib/coins";
 import { applyRateLimit, rateLimit } from "@/lib/rate-limit";
 import { sanitizeUser } from "@/lib/sanitize";
 import { sendSuspiciousLoginEmail } from "@/lib/email-templates";
@@ -187,6 +188,11 @@ export async function POST(request) {
         // Update streak and handle login history in background
         updateStreak(finalMongoUser._id).catch((err) =>
             console.error("Streak update error:", err),
+        );
+
+        // Award daily-login VP (idempotent per calendar day, background)
+        awardDailyLoginVP(finalMongoUser._id).catch((err) =>
+            console.error("Daily VP award error:", err),
         );
 
         // Check last 5 logins for this user
