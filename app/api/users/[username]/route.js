@@ -48,6 +48,31 @@ export async function GET(request, { params }) {
             ? currentUser._id.toString() === userResult._id.toString()
             : false;
 
+        // Resolve equipped shop cosmetics into a single flat, render-ready map.
+        // Data comes from the self-contained ownedShopItems snapshot, so this
+        // is a single in-memory pass — no extra queries (no N+1).
+        const equippedMap = userResult.equippedShopItems || {};
+        const ownedById = new Map(
+            (userResult.ownedShopItems || []).map((o) => [
+                o.itemId?.toString(),
+                o,
+            ]),
+        );
+        const equippedItems = {};
+        for (const [category, itemId] of Object.entries(equippedMap)) {
+            const owned = ownedById.get(itemId?.toString());
+            if (owned) {
+                equippedItems[category] = {
+                    category,
+                    itemId: itemId,
+                    slug: owned.slug,
+                    name: owned.name,
+                    rarity: owned.rarity,
+                    visual: owned.visual || {},
+                };
+            }
+        }
+
         const responseData = {
             ...sanitizeUser(userResult),
             role: userResult.role,
@@ -60,6 +85,8 @@ export async function GET(request, { params }) {
             isFounder: isFounder(userResult.username),
             pinnedPost: userResult.pinnedPost,
             founderData: userResult.founderData,
+            equippedShopItems: equippedMap,
+            equippedItems,
         };
 
         return NextResponse.json(responseData);

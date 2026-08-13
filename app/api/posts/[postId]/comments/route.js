@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { validateObjectId } from "@/utils/validators";
 import { createNotification } from "@/lib/notifications";
 import { awardXP } from "@/lib/gamification";
+import { awardVP } from "@/lib/coins";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/sanitize";
 import { cacheWithFallback, cacheDelPattern } from "@/lib/redis-cache";
@@ -188,6 +189,12 @@ export async function POST(request, { params }) {
         awardXP(currentUser._id, "comment").catch((err) =>
             console.error("XP award error:", err),
         );
+
+        // Award VP for adding a comment (actor earns). Self-guard:
+        // don't reward commenting on your own post.
+        awardVP(currentUser._id, "comment", comment._id, {
+            ownerId: post.author,
+        }).catch((err) => console.error("VP award error:", err));
 
         return NextResponse.json(populated, { status: 201 });
     } catch (error) {

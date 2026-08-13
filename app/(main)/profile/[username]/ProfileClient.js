@@ -39,6 +39,8 @@ import Link from "next/link";
 import { CrownIcon } from "lucide-react";
 import Image from "next/image";
 import { getLevelProgress } from "@/lib/ranks";
+import { cn } from "@/lib/utils";
+import CosmeticBadge from "@/components/profile/CosmeticBadge";
 
 const FollowListModal = dynamic(
     () => import("@/components/user/FollowListModal"),
@@ -165,6 +167,14 @@ export default function ProfileClient({ username: initialUsername }) {
             (id) => id.toString() === profileUser?._id?.toString(),
         );
 
+    // Equipped shop cosmetics (resolved server-side into a flat map).
+    const equipped = profileUser?.equippedItems || {};
+    const avatarFrame = equipped.avatar_frame;
+    const bgEffect = equipped.profile_bg;
+    const shopBanner = equipped.profile_banner?.visual?.imageUrl;
+    const layoutVariant = equipped.profile_layout?.visual?.className;
+    const isCompactLayout = layoutVariant === "layout-compact";
+
     useEffect(() => {
         const fetchProfileData = async () => {
             try {
@@ -283,10 +293,32 @@ export default function ProfileClient({ username: initialUsername }) {
 
     return (
         <div className="flex flex-col min-h-screen relative bg-background">
+            {/* Profile background effect (shop cosmetic) — subtle ambient wash
+                behind all profile content. pointer-events-none + low alpha
+                keeps text contrast intact in every theme. */}
+            {bgEffect?.visual?.color && (
+                <div
+                    className="pointer-events-none absolute inset-0 z-0"
+                    style={{
+                        background: `radial-gradient(120% 60% at 50% 0%, ${bgEffect.visual.color}1f, transparent 55%)`,
+                    }}
+                />
+            )}
+
             {/* Header */}
-            <div className="flex flex-col max-w-3xl w-full mx-auto sm:border-x sm:border-border/40">
+            <div className="relative z-10 flex flex-col max-w-3xl w-full mx-auto sm:border-x sm:border-border/40">
                 <div className="h-40 sm:h-56 relative overflow-hidden bg-secondary">
-                    {profileUser?.banner ? (
+                    {shopBanner ? (
+                        // Shop-equipped cosmetic banner (static image, lazy).
+                        // Plain <img> avoids next/image remote-domain config
+                        // for arbitrary admin-pasted CDN URLs.
+                        <img
+                            src={shopBanner}
+                            alt={`${profileUser?.name}'s cosmetic banner`}
+                            className="absolute inset-0 w-full h-full object-cover"
+                            loading="lazy"
+                        />
+                    ) : profileUser?.banner ? (
                         <Image
                             src={getBannerUrl(
                                 profileUser?.banner,
@@ -374,12 +406,74 @@ export default function ProfileClient({ username: initialUsername }) {
                                 ) && (
                                     <div className="absolute -inset-2 rounded-full animate-pulse bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 blur-md opacity-50" />
                                 )}
-                            <UserAvatar
-                                user={profileUser}
-                                size="xl"
-                                customSize="w-28 h-28 sm:w-32 sm:h-32"
-                                className={`border-4 border-background shadow-2xl ring-2 ring-black/10 relative z-10 transition-transform duration-300 ${profileUser.isPro && !(profileUser.role === "admin" || profileUser.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) ? "ring-4 ring-yellow-400/50" : ""}`}
-                            />
+                            {(() => {
+                                const frameAsset =
+                                    avatarFrame?.visual?.frameAssetUrl;
+                                const isVideoFrame = /\.(webm|mp4|ogg)$/i.test(
+                                    frameAsset || "",
+                                );
+                                return (
+                                    <>
+                                        {/* CSS-only frame (border/glow) — used when no
+                                            overlay asset is set. */}
+                                        <div
+                                            className={cn(
+                                                "rounded-full",
+                                                avatarFrame?.visual?.className ||
+                                                    "",
+                                                (avatarFrame?.rarity ===
+                                                    "legendary" ||
+                                                    avatarFrame?.rarity ===
+                                                        "mythic") &&
+                                                    "animate-pulse",
+                                            )}
+                                            style={
+                                                !frameAsset &&
+                                                avatarFrame?.visual?.color
+                                                    ? {
+                                                          border: `4px solid ${avatarFrame.visual.color}`,
+                                                          boxShadow: `0 0 0 2px ${avatarFrame.visual.color}55, 0 0 16px ${avatarFrame.visual.color}66`,
+                                                      }
+                                                    : undefined
+                                            }
+                                        >
+                                            <UserAvatar
+                                                user={profileUser}
+                                                size="xl"
+                                                customSize="w-28 h-28 sm:w-32 sm:h-32"
+                                                className={`border-4 border-background shadow-2xl ring-2 ring-black/10 relative z-10 transition-transform duration-300 ${profileUser.isPro && !(profileUser.role === "admin" || profileUser.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) ? "ring-4 ring-yellow-400/50" : ""}`}
+                                            />
+                                        </div>
+                                        {/* Discord-style overlay frame: transparent-center
+                                            GIF/WebM sitting on top of the avatar. */}
+                                        {frameAsset && (
+                                            <div
+                                                aria-hidden
+                                                className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[112%] h-[112%] z-20"
+                                            >
+                                                {isVideoFrame ? (
+                                                    <video
+                                                        src={frameAsset}
+                                                        autoPlay
+                                                        muted
+                                                        loop
+                                                        playsInline
+                                                        className="w-full h-full object-contain select-none"
+                                                    />
+                                                ) : (
+                                                    <img
+                                                        src={frameAsset}
+                                                        alt=""
+                                                        aria-hidden
+                                                        loading="lazy"
+                                                        className="w-full h-full object-contain select-none pointer-events-none"
+                                                    />
+                                                )}
+                                            </div>
+                                        )}
+                                    </>
+                                );
+                            })()}
                         </div>
 
                         {isOwnProfile ? (
@@ -472,6 +566,11 @@ export default function ProfileClient({ username: initialUsername }) {
                             <Badge className="bg-purple-600/20 text-purple-400 border-purple-600/30 hover:bg-purple-600/30 rounded-full px-3 py-1 text-xs font-bold">
                                 <CrownIcon className="w-4 h-4" /> &nbsp; Founder
                             </Badge>
+                        )}
+                        {/* Cosmetic shop badge — distinct dashed style so users
+                            don't confuse purchased flex with earned/verified badges */}
+                        {equipped.special_badge && (
+                            <CosmeticBadge item={equipped.special_badge} />
                         )}
                     </div>
                     <p className="text-muted-foreground text-sm font-medium">
@@ -619,49 +718,82 @@ export default function ProfileClient({ username: initialUsername }) {
                     )}
 
                     {/* Gamification Stats */}
-                    <div className="grid grid-cols-3 gap-2.5 sm:gap-3 mt-6">
-                        <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 rounded-2xl flex flex-col items-center justify-center text-center card-chunky card-chunky-interactive">
-                            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center mb-1.5">
-                                <Zap className="w-4 h-4 text-primary fill-primary" />
+                    {isCompactLayout ? (
+                        // Compact layout variant (shop cosmetic): inline row,
+                        // same data, no card chrome — purely cosmetic reorder.
+                        <div className="flex items-center justify-around mt-5 py-3 rounded-2xl bg-accent/20 card-chunky">
+                            <div className="flex flex-col items-center">
+                                <span className="text-base font-black">
+                                    {profileUser.totalXP || profileUser.xp || 0}
+                                </span>
+                                <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
+                                    Total XP
+                                </span>
                             </div>
-                            <span className="text-lg sm:text-xl font-black">
-                                {profileUser.totalXP || profileUser.xp || 0}
-                            </span>
-                            <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
-                                Total XP
-                            </span>
-                        </Card>
+                            <div className="w-px h-8 bg-border/60" />
+                            <div className="flex flex-col items-center">
+                                <span className="text-base font-black">
+                                    {profileUser.currentStreak || 0}
+                                </span>
+                                <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
+                                    Day Streak
+                                </span>
+                            </div>
+                            <div className="w-px h-8 bg-border/60" />
+                            <div className="flex flex-col items-center">
+                                <span className="text-base font-black">
+                                    Lvl {profileUser.level || 1}
+                                </span>
+                                <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
+                                    Level
+                                </span>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-3 gap-2.5 sm:gap-3 mt-6">
+                            <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 rounded-2xl flex flex-col items-center justify-center text-center card-chunky card-chunky-interactive">
+                                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center mb-1.5">
+                                    <Zap className="w-4 h-4 text-primary fill-primary" />
+                                </div>
+                                <span className="text-lg sm:text-xl font-black">
+                                    {profileUser.totalXP || profileUser.xp || 0}
+                                </span>
+                                <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
+                                    Total XP
+                                </span>
+                            </Card>
 
-                        <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 rounded-2xl flex flex-col items-center justify-center text-center card-chunky card-chunky-interactive">
-                            <div className="w-9 h-9 rounded-full bg-orange-500/10 flex items-center justify-center mb-1.5">
-                                <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
-                            </div>
-                            <span className="text-lg sm:text-xl font-black">
-                                {profileUser.currentStreak || 0}
-                            </span>
-                            <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
-                                Day Streak
-                            </span>
-                        </Card>
+                            <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 rounded-2xl flex flex-col items-center justify-center text-center card-chunky card-chunky-interactive">
+                                <div className="w-9 h-9 rounded-full bg-orange-500/10 flex items-center justify-center mb-1.5">
+                                    <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
+                                </div>
+                                <span className="text-lg sm:text-xl font-black">
+                                    {profileUser.currentStreak || 0}
+                                </span>
+                                <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
+                                    Day Streak
+                                </span>
+                            </Card>
 
-                        <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 rounded-2xl flex flex-col items-center justify-center text-center card-chunky card-chunky-interactive">
-                            <div className="w-9 h-9 rounded-full bg-yellow-500/10 flex items-center justify-center mb-1.5">
-                                <Trophy className="w-4 h-4 text-yellow-500" />
-                            </div>
-                            <span className="text-lg sm:text-xl font-black">
-                                Lvl {profileUser.level || 1}
-                            </span>
-                            <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
-                                {(() => {
-                                    const progress = getLevelProgress(
-                                        profileUser.xp || 0,
-                                        profileUser.level || 1,
-                                    );
-                                    return `${progress.remainingXP} XP to next`;
-                                })()}
-                            </span>
-                        </Card>
-                    </div>
+                            <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 rounded-2xl flex flex-col items-center justify-center text-center card-chunky card-chunky-interactive">
+                                <div className="w-9 h-9 rounded-full bg-yellow-500/10 flex items-center justify-center mb-1.5">
+                                    <Trophy className="w-4 h-4 text-yellow-500" />
+                                </div>
+                                <span className="text-lg sm:text-xl font-black">
+                                    Lvl {profileUser.level || 1}
+                                </span>
+                                <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
+                                    {(() => {
+                                        const progress = getLevelProgress(
+                                            profileUser.xp || 0,
+                                            profileUser.level || 1,
+                                        );
+                                        return `${progress.remainingXP} XP to next`;
+                                    })()}
+                                </span>
+                            </Card>
+                        </div>
+                    )}
 
                     {/* Exclusive Theme Widget for Premium */}
                     {profileUser.isPro && (
@@ -726,7 +858,7 @@ export default function ProfileClient({ username: initialUsername }) {
 
             {/* Activity Heatmap */}
             {profileUser && (
-                <div className="max-w-3xl w-full mx-auto px-4 sm:px-6 pb-2 mt-1">
+                <div className="relative z-10 max-w-3xl w-full mx-auto px-4 sm:px-6 pb-2 mt-1">
                     <ActivityHeatmap username={username} />
                 </div>
             )}
@@ -762,7 +894,7 @@ export default function ProfileClient({ username: initialUsername }) {
             </div>
 
             {/* Content Section */}
-            <div className="flex-1 max-w-3xl w-full mx-auto sm:border-x sm:border-border/40">
+            <div className="relative z-10 flex-1 max-w-3xl w-full mx-auto sm:border-x sm:border-border/40">
                 {activeTab === "posts" ? (
                     <>
                         {postsLoading && posts.length === 0 ? (

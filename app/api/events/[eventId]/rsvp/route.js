@@ -3,6 +3,7 @@ import connectDB from '@/lib/db';
 import Event from '@/models/Event';
 import { getCurrentUser } from '@/lib/auth';
 import { awardXP } from '@/lib/gamification';
+import { awardVP } from '@/lib/coins';
 import { validateObjectId } from '@/utils/validators';
 import { sanitizeMongoInput } from '@/lib/sanitize';
 
@@ -61,6 +62,9 @@ export async function POST(request, { params }) {
 
       // Award XP for RSVP (background)
       awardXP(currentUser._id, 'event_rsvp').catch(err => console.error('XP award error:', err));
+
+      // Award VP for RSVP (background, idempotent per event)
+      awardVP(currentUser._id, 'event_rsvp', eventId).catch(err => console.error('VP award error:', err));
 
       return NextResponse.json({ 
         rsvped: true, 

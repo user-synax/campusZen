@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import connectDB from '@/lib/db'
 import Post from '@/models/Post'
+import { getCurrentUser } from '@/lib/auth'
 import { validateObjectId } from '@/utils/validators'
+import { awardVP } from '@/lib/coins'
 
 export async function POST(request, { params }) {
   try {
@@ -21,6 +23,14 @@ export async function POST(request, { params }) {
 
     if (!post) {
       return NextResponse.json({ message: 'Post not found' }, { status: 404 })
+    }
+
+    // Award VP for sharing (actor earns, idempotent per post per user)
+    const currentUser = await getCurrentUser(request)
+    if (currentUser) {
+      awardVP(currentUser._id, 'resource_share', postId).catch((err) =>
+        console.error('VP award error:', err)
+      )
     }
 
     return NextResponse.json({ 
