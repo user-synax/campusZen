@@ -31,6 +31,8 @@ import {
     ShieldCheck,
     Video,
     CreditCard,
+    Wallet,
+    ShoppingBag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -412,6 +414,47 @@ export default function MobileNav() {
                                         </span>
                                     </Button>
                                 </Link>
+
+                                <Link
+                                    href="/wallet"
+                                    onClick={() => setOpen(false)}
+                                >
+                                    <Button
+                                        variant="ghost"
+                                        className={cn(
+                                            "w-full justify-start gap-4 h-12 px-3",
+                                            pathname === "/wallet"
+                                                ? "bg-accent text-accent-foreground"
+                                                : "text-muted-foreground",
+                                        )}
+                                    >
+                                        <Wallet className="w-5 h-5" />
+                                        <span className="text-base font-medium">
+                                            Wallet
+                                        </span>
+                                    </Button>
+                                </Link>
+
+                                <Link
+                                    href="/shop"
+                                    onClick={() => setOpen(false)}
+                                >
+                                    <Button
+                                        variant="ghost"
+                                        className={cn(
+                                            "w-full justify-start gap-4 h-12 px-3",
+                                            pathname === "/shop"
+                                                ? "bg-accent text-accent-foreground"
+                                                : "text-muted-foreground",
+                                        )}
+                                    >
+                                        <ShoppingBag className="w-5 h-5" />
+                                        <span className="text-base font-medium">
+                                            Shop
+                                        </span>
+                                    </Button>
+                                </Link>
+
                                 <Link
                                     href="/tools"
                                     onClick={() => setOpen(false)}
