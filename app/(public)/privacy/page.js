@@ -67,7 +67,7 @@ export default function PrivacyPage() {
           <ul className="grid gap-4 list-none pl-0">
             {[
               "Enabling college-specific content feeds.",
-              "Processing campus coin rewards and transfers.",
+              "Processing Viper Coins (VP) rewards and transfers.",
               "Platform verification and student safety.",
               "Improving student tools and resources."
             ].map((item, i) => (
