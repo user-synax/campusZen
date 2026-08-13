@@ -20,7 +20,7 @@ const nextConfig = {
             },
             {
                 protocol: "https",
-                hostname: "**.giphy.com"
+                hostname: "**.giphy.com",
             },
             {
                 protocol: "https",
@@ -30,25 +30,31 @@ const nextConfig = {
             {
                 protocol: "https",
                 hostname: "images.unsplash.com",
-            }, {
+            },
+            {
                 protocol: "https",
                 hostname: "api.dicebear.com",
             },
             {
                 protocol: "https",
-                hostname: "lh3.googleusercontent.com"
-            }, {
-                protocol: "https",
-                hostname: "res.cloudinary.com"
+                hostname: "lh3.googleusercontent.com",
             },
             {
                 protocol: "https",
-                hostname: "picsum.photos"
+                hostname: "res.cloudinary.com",
             },
             {
                 protocol: "https",
-                hostname: "campuszen.tech"
-            }
+                hostname: "picsum.photos",
+            },
+            {
+                protocol: "https",
+                hostname: "campuszen.tech",
+            },
+            {
+                protocol: "https",
+                hostname: "media*.giphy.com",
+            },
         ],
     },
     async headers() {
