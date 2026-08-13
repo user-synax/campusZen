@@ -53,8 +53,8 @@ const ACTION_CONFIGS = {
     requiresReason: false
   },
   award_coins: {
-    title: 'Award Coins',
-    description: 'Coins will be added to user\'s wallet (bypasses daily cap).',
+    title: 'Award VP',
+    description: 'Viper Coins (VP) will be added to user\'s wallet (bypasses daily cap).',
     icon: <Coins className="w-5 h-5 text-amber-500" />,
     color: 'default',
     requiresAmount: true,
