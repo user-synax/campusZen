@@ -7,6 +7,7 @@ import { sanitizeString } from "@/utils/validators";
 import { extractHashtags } from "@/utils/hashtags";
 import { indexHashtags } from "@/lib/hashtag-utils";
 import { awardXP } from "@/lib/gamification";
+import { awardVP } from "@/lib/coins";
 import { deleteCachePattern } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/sanitize";
@@ -137,6 +138,11 @@ export async function POST(request) {
 
         // Award XP for posting
         const xpResult = await awardXP(currentUser._id, "post");
+
+        // Award VP for posting (background, idempotent)
+        awardVP(currentUser._id, "post", post._id).catch((err) =>
+            console.error("VP award error:", err),
+        );
 
         return NextResponse.json(
             {
