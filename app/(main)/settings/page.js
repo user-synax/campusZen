@@ -843,7 +843,7 @@ export default function SettingsPage() {
                 </div>
                 <AlertDialogTitle className="text-2xl font-bold text-destructive">Delete Account?</AlertDialogTitle>
                 <AlertDialogDescription className="text-base leading-relaxed">
-                  This will permanently delete your account, all posts, coins, and data. This action <span className="font-bold text-foreground underline underline-offset-4">cannot be undone</span>.
+                  This will permanently delete your account, all posts, VP (Viper Coins), and data. This action <span className="font-bold text-foreground underline underline-offset-4">cannot be undone</span>.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter className="flex-col gap-2 mt-6 sm:flex-col">
