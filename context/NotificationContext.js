@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
+import { usePathname } from 'next/navigation'
 import { getPusherClient } from '@/lib/pusher-client'
 import useUser from '@/hooks/useUser'
 import { playNotificationSound, shouldPlaySound } from '@/lib/notificationSound'
@@ -9,6 +10,7 @@ const NotificationContext = createContext()
 
 export function NotificationProvider({ children }) {
   const { user } = useUser()
+  const pathname = usePathname()
   const [unreadCount, setUnreadCount] = useState(0)
   const [newNotification, setNewNotification] = useState(null)
   const channelRef = useRef(null)
@@ -43,16 +45,26 @@ export function NotificationProvider({ children }) {
 
     // New notification arrives
     channel.bind('new-notification', (data) => {
-      setUnreadCount(prev => Math.min(prev + 1, 99))
-      setNewNotification(data)
+      // Check if notification is for the chat the user is actively viewing
+      const isGroupMessage = data.type === 'group_message' && data.groupId
+      const isDMMessage = data.type === 'dm_message' && data.meta?.conversationId
+      const isActiveChat =
+        (isGroupMessage && pathname === `/chats/${data.groupId}`) ||
+        (isDMMessage && pathname === `/chats/dm/${data.meta.conversationId}`)
+
+      // Skip badge increment and bell shake if user is in the active chat
+      if (!isActiveChat) {
+        setUnreadCount(prev => Math.min(prev + 1, 99))
+        setNewNotification(data)
+      }
 
       // Play notification sound if:
-      // 1. Tab is hidden OR not on notifications page
+      // 1. Tab is hidden OR not on notifications page OR not viewing the active chat
       // 2. Sound is enabled in settings (default: enabled)
       const isOnNotificationsPage = typeof window !== 'undefined' && window.location.pathname === '/notifications'
       const isTabHidden = typeof document !== 'undefined' && document.hidden
 
-      if ((isTabHidden || !isOnNotificationsPage) && shouldPlaySound()) {
+      if ((isTabHidden || !isOnNotificationsPage) && !isActiveChat && shouldPlaySound()) {
         playNotificationSound()
       }
 
