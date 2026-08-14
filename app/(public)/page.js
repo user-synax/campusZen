@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import dynamic from "next/dynamic";
 import HeroClient from "@/components/landing/HeroClient";
-import WelcomeVideoOverlay from "@/components/WelcomeVideoOverlay";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
 import Post from "@/models/Post";
@@ -98,8 +97,7 @@ export default async function LandingPage() {
 
     return (
         <>
-            <WelcomeVideoOverlay />
-            <main>
+            <main className="pt-16">
                 <HeroClient />
                 <TechStack />
                 <Stats

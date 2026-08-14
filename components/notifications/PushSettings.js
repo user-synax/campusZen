@@ -194,10 +194,12 @@ export default function PushSettings() {
                            rounded-lg border border-border bg-card/50"> 
                 <div className="flex items-center gap-2.5"> 
                   <div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center"> 
-                    {device.deviceName.includes('Android') || device.deviceName.includes('iOS') 
-                      ? <Smartphone className="w-4 h-4 text-muted-foreground" /> 
-                      : <Laptop className="w-4 h-4 text-muted-foreground" /> 
-                    } 
+                    {(() => {
+                      const name = device.deviceName || 'Unknown Device'
+                      return name.includes('Android') || name.includes('iOS')
+                        ? <Smartphone className="w-4 h-4 text-muted-foreground" />
+                        : <Laptop className="w-4 h-4 text-muted-foreground" />
+                    })()} 
                   </div> 
                   <div> 
                     <p className="text-xs font-medium">{device.deviceName}</p> 
