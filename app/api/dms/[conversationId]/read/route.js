@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import connectDB from "@/lib/db";
 import DMConversation from "@/models/DMConversation";
 import { getCurrentUser } from "@/lib/auth";
@@ -28,8 +29,13 @@ export async function POST(request, { params }) {
         await connectDB();
 
         await DMConversation.findOneAndUpdate(
-            { _id: conversationId, "participants.userId": currentUser._id },
-            { $set: { "participants.$.lastReadAt": new Date() } },
+            { _id: conversationId, "participants.userId": new mongoose.Types.ObjectId(currentUser._id) },
+            {
+                $set: {
+                    "participants.$.lastReadAt": new Date(),
+                    "participants.$.unreadCount": 0,
+                },
+            },
         );
 
         return NextResponse.json({ success: true });
