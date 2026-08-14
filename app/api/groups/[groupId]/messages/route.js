@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import mongoose from 'mongoose'
 import connectDB from '@/lib/db'
 import GroupChat from '@/models/GroupChat'
 import GroupMessage from '@/models/GroupMessage'
@@ -172,7 +173,7 @@ export async function POST(request, { params }) {
       replyTo: populatedReplyTo
     }
 
-    // 5.5 Update group's lastMessage (fire and forget)
+    // 5.5 Update group's lastMessage and increment unreadCount for non-sender members (fire and forget)
     GroupChat.findByIdAndUpdate(groupId, {
       lastMessage: {
         content: type === 'text' ? content.slice(0, 60) : '📷 Image',
@@ -180,7 +181,12 @@ export async function POST(request, { params }) {
         sentAt: new Date(),
         type
       },
-      $inc: { messageCount: 1 }
+      $inc: { messageCount: 1, 'members.$[elem].unreadCount': 1 }
+    }, {
+      arrayFilters: [
+        { 'elem.userId': { $ne: new mongoose.Types.ObjectId(currentUser._id) } },
+        { 'elem.isMuted': { $ne: true } }
+      ]
     }).catch(err => console.error('Operation failed:', err))
 
     // 6. Trigger Pusher
@@ -210,6 +216,13 @@ export async function POST(request, { params }) {
         },
         dedupe: false
       }).catch(err => console.error('[GroupMessage] Notification failed for member:', memberIdStr, err.message))
+    }
+
+    // 8. Notify each member's user channel for inbox invalidation (fire and forget)
+    for (const member of group.members) {
+      if (member.userId.toString() === senderIdStr) continue
+      triggerPusher(`private-user-${member.userId}`, 'new-group-message', { groupId })
+        .catch(err => console.error('User channel push failed:', err))
     }
 
     return NextResponse.json({ ...populated, clientId }, { status: 201 })
