@@ -21,7 +21,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from 'sonner'
-import { useUploadThing } from '@/lib/uploadthing'
+import { ID, Permission, Role, Storage } from 'appwrite'
+import { createAppwriteClient } from '@/lib/appwrite/client'
 import { CATEGORY_CONFIG, formatFileSize } from '@/utils/resource-helpers'
 
 /**
@@ -55,75 +56,7 @@ export default function ResourceUploadModal({ open, onOpenChange, onSuccess }) {
   const [categoryError, setCategoryError] = useState('')
   const [fileError, setFileError] = useState('')
 
-  // ━━━ UploadThing Hook ━━━
-  const { startUpload } = useUploadThing('resourceUploader', {
-    onUploadProgress: (progress) => {
-      // Cap at 90% — remaining 10% is our server-side DB save
-      setUploadProgress(Math.min(progress, 90))
-    },
-    onClientUploadComplete: async (files) => {
-      const file = files[0]
-      try {
-        setUploadProgress(95)
-        
-        // Finalize by saving metadata to our MongoDB
-        const res = await fetch('/api/resources', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fileUrl: file.url,
-            fileKey: file.key,
-            fileName: file.name,
-            fileSize: file.size,
-            fileType: file.type, // mime type
-            title: title.trim(),
-            description: description.trim(),
-            category,
-            subject: subject.trim(),
-            semester: semester || null,
-            tags: tagsInput
-          })
-        })
-
-        const data = await res.json()
-        setUploadProgress(100)
-
-        if (res.ok) {
-          setStep('success')
-          onSuccess?.()
-        } else {
-          setErrorMessage(
-            data.errors?.join(', ') || 
-            data.error || 
-            'Failed to save resource details.'
-          )
-          setStep('error')
-        }
-      } catch (err) {
-        setErrorMessage('Network error. Please check your connection.')
-        setStep('error')
-      } finally {
-        setIsUploading(false)
-      }
-    },
-    onUploadError: (err) => {
-      let msg = 'Upload failed. Please try again.'
-      if (err.message.includes('FileSizeMismatch') || err.message.includes('size')) {
-        msg = 'File too large. Max 16MB for PDFs, 4MB for images.'
-      } else if (err.message.includes('Unauthorized') || err.message.includes('token')) {
-        msg = 'Session expired. Please refresh and try again.'
-      } else if (err.message.includes('type') || err.message.includes('mime')) {
-        msg = 'Invalid file type. Only PDF and images allowed.'
-      } else {
-        // Show the specific error from the server
-        msg = err.message || 'An unexpected error occurred.'
-      }
-      
-      setErrorMessage(msg)
-      setStep('error')
-      setIsUploading(false)
-    }
-  })
+  // ━━━ Appwrite Storage upload handled in handleUpload ━━━
 
   // ━━━ Handlers ━━━
   const validateStep1 = () => {
@@ -166,9 +99,7 @@ export default function ResourceUploadModal({ open, onOpenChange, onSuccess }) {
     }
 
     // Client-side size check
-    const maxSize = file.type === 'application/pdf' 
-      ? 16 * 1024 * 1024   // 16MB
-      : 4 * 1024 * 1024    // 4MB
+    const maxSize = 50 * 1024 * 1024   // 50MB
 
     if (file.size > maxSize) {
       const maxMB = (maxSize / (1024 * 1024)).toFixed(0)
@@ -190,10 +121,68 @@ export default function ResourceUploadModal({ open, onOpenChange, onSuccess }) {
     setStep(3)
 
     try {
-      await startUpload([selectedFile])
+      const client = createAppwriteClient()
+      const storage = new Storage(client)
+      const fileId = ID.unique()
+
+      // Direct client-side upload to Appwrite Storage (current session)
+      await storage.createFile(
+        process.env.NEXT_PUBLIC_APPWRITE_RESOURCES_BUCKET_ID,
+        fileId,
+        selectedFile,
+        [Permission.read(Role.any())],
+        (progress) => setUploadProgress(Math.min(progress.progress ?? 0, 90))
+      )
+
+      setUploadProgress(95)
+
+      // Finalize by saving metadata to MongoDB
+      const res = await fetch('/api/resources', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileId,
+          fileName: selectedFile.name,
+          fileSize: selectedFile.size,
+          fileType: selectedFile.type, // mime type
+          title: title.trim(),
+          description: description.trim(),
+          category,
+          subject: subject.trim(),
+          semester: semester || null,
+          tags: tagsInput
+        })
+      })
+
+      const data = await res.json()
+      setUploadProgress(100)
+
+      if (res.ok) {
+        setStep('success')
+        onSuccess?.()
+      } else {
+        setErrorMessage(
+          data.errors?.join(', ') ||
+          data.error ||
+          'Failed to save resource details.'
+        )
+        setStep('error')
+      }
     } catch (err) {
-      setErrorMessage('Upload failed unexpectedly. Please try again.')
+      let msg = 'Upload failed. Please try again.'
+      const message = err?.message || ''
+      if (message.includes('File size') || message.includes('limit') || message.includes('too large')) {
+        msg = 'File too large. Max file size is 50 MB.'
+      } else if (message.includes('session') || message.includes('unauthorized') || message.includes('401')) {
+        msg = 'Session expired. Please refresh and try again.'
+      } else if (message.includes('type') || message.includes('extension')) {
+        msg = 'Invalid file type. Only PDF and images allowed.'
+      } else {
+        msg = message || msg
+      }
+      setErrorMessage(msg)
       setStep('error')
+    } finally {
       setIsUploading(false)
     }
   }
@@ -433,7 +422,7 @@ export default function ResourceUploadModal({ open, onOpenChange, onSuccess }) {
                       Drop file here or click to browse 
                     </p> 
                     <p className="text-[10px] font-bold text-muted-foreground/60 mt-2 uppercase tracking-widest"> 
-                      PDF (16MB) · Images (4MB) 
+                       Max file size: 50 MB · PDF or image
                     </p> 
                   </> 
                 )} 
