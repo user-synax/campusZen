@@ -96,10 +96,10 @@ export default function ResourceCard({ resource, currentUserId }) {
         CATEGORY_CONFIG[resource.category] || CATEGORY_CONFIG.other;
 
     return (
-        <Card className="overflow-hidden hover:bg-accent/10 transition-all duration-300 group border border-border/50 bg-card/20 backdrop-blur-sm shadow-md hover:shadow-xl">
+        <Card className="overflow-hidden rounded-2xl hover:bg-accent/10 hover:-translate-y-0.5 transition-all duration-300 group border border-border/50 bg-card/20 backdrop-blur-sm shadow-md hover:shadow-xl">
             {/* Category color bar */}
             <div
-                className="h-1 shrink-0 transition-all"
+                className="h-1.5 shrink-0 transition-all"
                 style={{ background: category.color }}
             />
 
@@ -120,11 +120,11 @@ export default function ResourceCard({ resource, currentUserId }) {
                             >
                                 {category.emoji} {category.label}
                             </Badge>
-                            <span className="text-[9px] font-black border border-border/50 rounded-md px-1.5 py-0.5 text-muted-foreground uppercase bg-accent/30">
+                            <span className="text-[9px] font-black border border-border/50 rounded-full px-1.5 py-0.5 text-muted-foreground uppercase bg-accent/30">
                                 {resource.fileType}
                             </span>
                             {resource.isFeatured && (
-                                <span className="text-[9px] font-black text-amber-500 flex items-center gap-0.5 uppercase tracking-wider">
+                                <span className="text-[9px] font-black text-amber-500 flex items-center gap-0.5 uppercase tracking-wider rounded-full bg-amber-500/10 px-1.5 py-0.5">
                                     ⭐ Featured
                                 </span>
                             )}
@@ -158,7 +158,7 @@ export default function ResourceCard({ resource, currentUserId }) {
                         {resource.tags.slice(0, 3).map((tag) => (
                             <span
                                 key={tag}
-                                className="text-[9px] font-black bg-primary/5 text-primary/70 border border-primary/10 px-1.5 py-0.5 rounded-md"
+                                className="text-[9px] font-black bg-primary/5 text-primary/70 border border-primary/10 px-1.5 py-0.5 rounded-full"
                             >
                                 #{tag}
                             </span>
@@ -213,7 +213,7 @@ export default function ResourceCard({ resource, currentUserId }) {
                     >
                         <Button
                             size="sm"
-                            className="w-full h-9 text-xs font-black tracking-tight bg-primary hover:bg-primary/80 hover:cursor-pointer"
+                            className="group/btn w-full h-9 rounded-full text-xs font-black tracking-tight bg-primary hover:bg-primary/80 hover:cursor-pointer shadow-[0_2px_0_0_hsl(var(--primary)/0.45)] transition-transform active:translate-y-[1.5px] active:shadow-none"
                         >
                             <Download className="w-3.5 h-3.5 mr-1.5" />
                             Download
@@ -227,11 +227,10 @@ export default function ResourceCard({ resource, currentUserId }) {
                             variant="outline"
                             onClick={handleSave}
                             disabled={isSaving}
-                            className={`h-9 px-3.5 rounded-xl border-border/50 transition-all ${
-                                isSaved
+                            className={`icon-chunky h-9 px-3.5 rounded-xl border-border/50 transition-all ${isSaved
                                     ? "text-amber-500 border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10"
                                     : "hover:bg-accent/50"
-                            }`}
+                                }`}
                             title={
                                 isSaved ? "Remove from saved" : "Save resource"
                             }
@@ -247,7 +246,7 @@ export default function ResourceCard({ resource, currentUserId }) {
                         size="sm"
                         variant="outline"
                         onClick={handleShare}
-                        className="h-9 px-3.5 rounded-xl border-border/50 hover:bg-accent/50 text-muted-foreground"
+                        className="icon-chunky h-9 px-3.5 rounded-xl border-border/50 hover:bg-accent/50 text-muted-foreground"
                         title="Share link"
                     >
                         <Share2 className="w-3.5 h-3.5" />
