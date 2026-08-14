@@ -9,11 +9,20 @@ export function useChatUnreadCount() {
  
   const fetchCount = useCallback(async () => { 
     try { 
-      const res = await fetch('/api/groups') 
-      if (!res.ok) return
-      const { groups } = await res.json() 
-      const total = groups.reduce((sum, g) => sum + (g.unreadCount || 0), 0) 
-      setTotalUnread(Math.min(total, 99)) 
+      const [groupsRes, dmsRes] = await Promise.all([
+        fetch('/api/groups'),
+        fetch('/api/dms'),
+      ])
+      let total = 0
+      if (groupsRes.ok) {
+        const { groups } = await groupsRes.json()
+        total += groups.reduce((sum, g) => sum + (g.unreadCount || 0), 0)
+      }
+      if (dmsRes.ok) {
+        const { conversations } = await dmsRes.json()
+        total += conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0)
+      }
+      setTotalUnread(Math.min(total, 99))
     } catch (error) {
       console.error('Failed to fetch unread count:', error)
     } 
