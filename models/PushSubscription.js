@@ -16,8 +16,16 @@ const pushSubscriptionSchema = new mongoose.Schema(
         userAgent: { type: String },
         isActive: { type: Boolean, default: true },
         lastActive: { type: Date, default: Date.now },
+        deactivatedAt: { type: Date, default: null },
+        malformedKeysDetectedAt: { type: Date, default: null },
     },
     { timestamps: true },
+);
+
+// Auto-delete inactive subscriptions after 30 days
+pushSubscriptionSchema.index(
+    { deactivatedAt: 1 },
+    { expireAfterSeconds: 30 * 24 * 60 * 60, partialFilterExpression: { isActive: false } }
 );
 
 export default mongoose.models.PushSubscription ||
