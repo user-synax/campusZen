@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import connectDB from '@/lib/db'
 import Resource from '@/models/Resource'
 import { getCurrentUser } from '@/lib/auth'
+import { getFileViewUrlString } from '@/lib/appwrite'
 import { awardXP } from '@/lib/gamification'
 import { awardVP } from '@/lib/coins'
 import { applyRateLimit } from '@/lib/rate-limit'
@@ -14,8 +15,8 @@ import {
 } from '@/utils/resource-helpers'
 
 /**
- * POST /api/resources — Save resource after UploadThing upload
- * Called by client AFTER UploadThing upload completes.
+ * POST /api/resources — Save resource after Appwrite Storage upload
+ * Called by client AFTER the direct Appwrite Storage upload completes.
  */
 export async function POST(request) {
   // ━━━ 1. Rate limit FIRST ━━━
@@ -42,23 +43,20 @@ export async function POST(request) {
     }
 
     const {
-      fileUrl, fileKey, fileName,
+      fileId, fileName,
       fileSize, fileType: mimeType,
       title, description, category,
       subject, semester, tags: tagsRaw
     } = body
 
     // ━━━ 4. Validate file fields ━━━
-    if (!fileUrl || !fileKey || !fileName || !fileSize || !mimeType) {
+    if (!fileId || !fileName || !fileSize || !mimeType) {
       return NextResponse.json({ error: 'Missing file information' }, { status: 400 })
     }
 
-    // Validate fileUrl is from trusted domains
-    const allowedDomains = ['utfs.io', 'uploadthing.com', 'ufs.sh']
-    const isValidUrl = allowedDomains.some(domain => fileUrl.includes(domain))
-    if (!isValidUrl) {
-      return NextResponse.json({ error: 'Invalid file URL' }, { status: 400 })
-    }
+    // Derive the public view URL server-side from the Appwrite file ID
+    const bucketId = process.env.NEXT_PUBLIC_APPWRITE_RESOURCES_BUCKET_ID
+    const fileUrl = getFileViewUrlString(fileId, bucketId)
 
     // ━━━ 5. Validate content fields ━━━
     const errors = []
@@ -94,13 +92,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Invalid file type' }, { status: 400 })
     }
 
-    // ━━━ 7. Duplicate file check ━━━
-    const existing = await Resource.findOne({ fileKey }).lean()
-    if (existing) {
-      return NextResponse.json({ error: 'This file has already been uploaded' }, { status: 409 })
-    }
-
-    // ━━━ 8. Copyright risk detection ━━━
+    // ━━━ 7. Copyright risk detection ━━━
     const isFlagged = detectCopyrightRisk(cleanTitle, fileName)
 
     // ━━━ 9. Save to MongoDB ━━━
@@ -113,7 +105,7 @@ export async function POST(request) {
       semester: cleanSemester,
       tags: cleanTags,
       fileUrl,
-      fileKey,       // stored but select: false — never in responses
+      fileKey: fileId,       // Appwrite file $id, select: false — never in responses
       fileName: sanitizeText(fileName).slice(0, 255),
       fileSize: Number(fileSize),
       fileType: fileTypeParsed,
