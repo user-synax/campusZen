@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import DMConversation from "@/models/DMConversation";
-import DMMessage from "@/models/DMMessage";
 import User from "@/models/User";
-import { getCurrentUser, isAdmin } from "@/lib/auth";
-import { sanitizeText, sanitizeMongoInput } from "@/lib/sanitize";
+import { getCurrentUser } from "@/lib/auth";
+import { sanitizeMongoInput } from "@/lib/sanitize";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { triggerPusher } from "@/lib/pusher-server";
 import { validateObjectId } from "@/utils/validators";
 
 /**
@@ -33,7 +31,7 @@ export async function GET(request) {
             .populate("participants.userId", "name username avatar isVerified")
             .lean();
 
-        // 2. For each conversation, calculate unread count and get the other user
+        // 2. For each conversation, get the other user and denormalized unread count
         const conversationsWithUnread = await Promise.all(
             conversations.map(async (conv) => {
                 // Find the other participant
@@ -47,22 +45,15 @@ export async function GET(request) {
                     (p) =>
                         p.userId._id.toString() === currentUser._id.toString(),
                 );
-                const lastReadAt =
-                    currentUserParticipant?.lastReadAt || new Date(0);
 
-                // Calculate unread count
-                const unreadCount = await DMMessage.countDocuments({
-                    conversationId: conv._id,
-                    createdAt: { $gt: lastReadAt },
-                    sender: { $ne: currentUser._id },
-                });
-
-                return {
+                const result = {
                     ...conv,
                     otherParticipant,
-                    unreadCount,
+                    unreadCount: currentUserParticipant?.unreadCount || 0,
                     isMuted: currentUserParticipant?.isMuted || false,
                 };
+
+                return result;
             }),
         );
 
