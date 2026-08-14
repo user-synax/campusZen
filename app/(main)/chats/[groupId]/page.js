@@ -33,6 +33,7 @@ export default function ChatRoomPage({ params: paramsPromise }) {
 
     const messagesContainerRef = useRef(null);
     const bottomRef = useRef(null);
+    const pendingTimeoutsRef = useRef({});
 
     const messagesVirtualizer = useVirtualizer({
         count: messages.length,
@@ -79,6 +80,14 @@ export default function ChatRoomPage({ params: paramsPromise }) {
         if (groupId) fetchInitialData();
     }, [groupId, fetchInitialData]);
 
+    // Clean up pending recovery timeouts on unmount
+    useEffect(() => {
+        return () => {
+            Object.values(pendingTimeoutsRef.current).forEach(clearTimeout);
+            pendingTimeoutsRef.current = {};
+        };
+    }, []);
+
     const loadOlderMessages = async () => {
         if (!cursor || loadingOlder) return;
 
@@ -117,6 +126,20 @@ export default function ChatRoomPage({ params: paramsPromise }) {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, []);
 
+    const refetchLatestMessages = useCallback(async () => {
+        try {
+            const res = await fetch(`/api/groups/${groupId}/messages?limit=30`);
+            const data = await res.json();
+            if (res.ok) {
+                setMessages(data.messages);
+                setHasMore(data.hasMore);
+                setCursor(data.nextCursor);
+            }
+        } catch (err) {
+            // Silent — will be retried by next optimistic timeout or user refresh
+        }
+    }, [groupId]);
+
     const isNearBottom = useCallback(() => {
         const container = messagesContainerRef.current;
         if (!container) return true;
@@ -138,6 +161,11 @@ export default function ChatRoomPage({ params: paramsPromise }) {
                         (m) => m.clientId === message.clientId,
                     );
                     if (index !== -1) {
+                        // Clear the recovery timeout for this message
+                        if (pendingTimeoutsRef.current[message.clientId]) {
+                            clearTimeout(pendingTimeoutsRef.current[message.clientId]);
+                            delete pendingTimeoutsRef.current[message.clientId];
+                        }
                         const next = [...prev];
                         next[index] = { ...message, isOptimistic: false };
                         return next;
@@ -202,6 +230,13 @@ export default function ChatRoomPage({ params: paramsPromise }) {
         router.push("/chats");
     }, [router]);
 
+    const onGroupUpdated = useCallback(({ name, avatar, description }) => {
+        setGroup((prev) => {
+            if (!prev) return prev;
+            return { ...prev, ...(name && { name }), ...(avatar !== undefined && { avatar }), ...(description !== undefined && { description }) };
+        });
+    }, []);
+
     const onMemberRemoved = useCallback(
         ({ userId }) => {
             if (userId === currentUser?._id) {
@@ -225,13 +260,14 @@ export default function ChatRoomPage({ params: paramsPromise }) {
             .catch(() => {});
     }, [groupId]);
 
-    useGroupChat(groupId, {
+    const { onlineMembers } = useGroupChat(groupId, {
         onNewMessage,
         onMessageDeleted,
         onTypingStart,
         onTypingStop,
         onReaction,
         onGroupDeleted,
+        onGroupUpdated,
         onMemberRemoved,
         onMemberAdded,
     });
@@ -291,7 +327,17 @@ export default function ChatRoomPage({ params: paramsPromise }) {
                     }),
                 });
 
-                if (!res.ok) {
+                if (res.ok) {
+                    // Start recovery timeout — if Pusher confirmation doesn't arrive in 7s, refetch
+                    pendingTimeoutsRef.current[clientId] = setTimeout(() => {
+                        setMessages((prev) => {
+                            const stuck = prev.some((m) => m.clientId === clientId && m.isOptimistic);
+                            if (stuck) refetchLatestMessages();
+                            return prev;
+                        });
+                        delete pendingTimeoutsRef.current[clientId];
+                    }, 7000);
+                } else {
                     const data = await res.json();
                     toast.error(data.message || "Failed to send message");
                     // Remove optimistic message on error
@@ -402,6 +448,11 @@ export default function ChatRoomPage({ params: paramsPromise }) {
                         </p>
                         <p className="text-[11px] text-muted-foreground">
                             {group?.members?.length} members
+                            {onlineMembers.length > 0 && (
+                                <span className="ml-1">
+                                    · <span className="text-green-500">{onlineMembers.length} online</span>
+                                </span>
+                            )}
                         </p>
                     </div>
 

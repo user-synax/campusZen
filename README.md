@@ -112,7 +112,7 @@ How to Earn XP : Users gain XP for:
 | Database | MongoDB + Mongoose |
 | Realtime | Pusher Channels |
 | Cache and rate limiting | Redis / Upstash |
-| File uploads | UploadThing, Cloudinary |
+| File uploads | Appwrite Storage |
 | Auth | Better Auth, JWT, bcryptjs, jose |
 | Notifications | Web Push, Nodemailer |
 | Motion and visuals | Framer Motion, GSAP, motion |
@@ -159,7 +159,6 @@ models/            Mongoose models
 - Node.js 18 or newer
 - MongoDB Atlas or another MongoDB instance
 - Pusher account
-- UploadThing account
 - Redis / Upstash for cache and rate limiting features
 
 ### 📦 Install
@@ -182,9 +181,6 @@ PUSHER_SECRET=
 PUSHER_CLUSTER=
 NEXT_PUBLIC_PUSHER_KEY=
 NEXT_PUBLIC_PUSHER_CLUSTER=
-
-UPLOADTHING_SECRET=
-UPLOADTHING_APP_ID=
 
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```

@@ -31,6 +31,7 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
 
     const messagesContainerRef = useRef(null);
     const bottomRef = useRef(null);
+    const pendingTimeoutsRef = useRef({});
 
     const messagesVirtualizer = useVirtualizer({
         count: messages.length,
@@ -81,6 +82,14 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
         if (conversationId) fetchInitialData();
     }, [conversationId, fetchInitialData]);
 
+    // Clean up pending recovery timeouts on unmount
+    useEffect(() => {
+        return () => {
+            Object.values(pendingTimeoutsRef.current).forEach(clearTimeout);
+            pendingTimeoutsRef.current = {};
+        };
+    }, []);
+
     const loadOlderMessages = async () => {
         if (!cursor || loadingOlder) return;
         const savedScrollHeight = messagesContainerRef.current.scrollHeight;
@@ -114,6 +123,20 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, []);
 
+    const refetchLatestMessages = useCallback(async () => {
+        try {
+            const res = await fetch(`/api/dms/${conversationId}/messages?limit=30`);
+            const data = await res.json();
+            if (res.ok) {
+                setMessages(data.messages);
+                setHasMore(data.hasMore);
+                setCursor(data.nextCursor);
+            }
+        } catch (err) {
+            // Silent — will be retried by next optimistic timeout or user refresh
+        }
+    }, [conversationId]);
+
     const isNearBottom = useCallback(() => {
         const container = messagesContainerRef.current;
         if (!container) return true;
@@ -133,6 +156,11 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
                         (m) => m.clientId === message.clientId,
                     );
                     if (index !== -1) {
+                        // Clear the recovery timeout for this message
+                        if (pendingTimeoutsRef.current[message.clientId]) {
+                            clearTimeout(pendingTimeoutsRef.current[message.clientId]);
+                            delete pendingTimeoutsRef.current[message.clientId];
+                        }
                         const next = [...prev];
                         next[index] = { ...message, isOptimistic: false };
                         return next;
@@ -227,7 +255,17 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
                         replyTo: replyTarget?._id,
                     }),
                 });
-                if (!res.ok) {
+                if (res.ok) {
+                    // Start recovery timeout — if Pusher confirmation doesn't arrive in 7s, refetch
+                    pendingTimeoutsRef.current[clientId] = setTimeout(() => {
+                        setMessages((prev) => {
+                            const stuck = prev.some((m) => m.clientId === clientId && m.isOptimistic);
+                            if (stuck) refetchLatestMessages();
+                            return prev;
+                        });
+                        delete pendingTimeoutsRef.current[clientId];
+                    }, 7000);
+                } else {
                     const data = await res.json();
                     toast.error(data.message || "Failed to send message");
                     setMessages((prev) =>
