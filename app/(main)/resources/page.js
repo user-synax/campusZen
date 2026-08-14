@@ -6,7 +6,8 @@ import {
   X,
   Upload,
   BookOpen,
-  Filter
+  Filter,
+  ChevronDown
 } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { Button } from "@/components/ui/button"
@@ -92,7 +93,7 @@ function ResourcesContent() {
   })
 
   return (
-    <div className="flex flex-col min-h-screen pb-20 md:pb-6">
+    <div className="dark flex flex-col min-h-screen bg-background text-foreground pb-20 md:pb-6">
 
       {/* ── Sticky header ── */}
       <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-border">
@@ -100,8 +101,8 @@ function ResourcesContent() {
         {/* Title row */}
         <div className="flex items-center justify-between px-4 py-3.5">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <BookOpen className="w-4 h-4 text-primary" />
+            <div className="w-9 h-9 rounded-2xl bg-primary flex items-center justify-center shrink-0 shadow-[0_2px_0_0_hsl(var(--primary)/0.4)]">
+              <BookOpen className="w-4 h-4 text-primary-foreground" />
             </div>
             <div>
               <h1 className="text-base font-bold leading-tight text-foreground">Resources</h1>
@@ -111,7 +112,7 @@ function ResourcesContent() {
           <Button
             size="sm"
             onClick={() => setUploadOpen(true)}
-            className="h-8 px-3 rounded-lg text-xs font-semibold"
+            className="group h-8 px-3.5 rounded-full text-xs font-semibold shadow-[0_2px_0_0_hsl(var(--primary)/0.45)] transition-transform active:translate-y-[1.5px] active:shadow-none"
           >
             <Upload className="w-3.5 h-3.5 mr-1.5" />
             Upload
@@ -126,7 +127,7 @@ function ResourcesContent() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by title, subject or tags…"
-              className="pl-10 pr-9 h-9 text-sm bg-accent/50 border-border/60 focus-visible:border-primary/40 focus-visible:ring-0 rounded-lg"
+              className="pl-10 pr-9 h-9 text-sm bg-accent/50 border-border/60 focus-visible:border-primary/40 focus-visible:ring-0 rounded-xl"
             />
             {search && (
               <button
@@ -146,8 +147,8 @@ function ResourcesContent() {
               key={cat.id}
               onClick={() => setCategory(cat.id)}
               className={`
-                flex items-center gap-1 px-3 py-1.5 rounded-lg
-                text-xs whitespace-nowrap border font-medium transition-colors shrink-0
+                pill-chunky flex items-center gap-1 px-3 py-1.5 rounded-full
+                text-xs whitespace-nowrap font-medium transition-colors shrink-0
                 ${category === cat.id
                   ? 'bg-primary text-primary-foreground border-primary'
                   : 'bg-transparent border-border/60 text-muted-foreground hover:text-foreground hover:border-border'
@@ -168,26 +169,29 @@ function ResourcesContent() {
               value={college}
               onChange={(e) => setCollege(e.target.value)}
               placeholder="Filter by college…"
-              className="pl-8 h-8 text-xs bg-accent/30 border-border/50 rounded-lg"
+              className="pl-8 h-8 text-xs bg-accent/30 border-border/50 rounded-xl"
             />
           </div>
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
-            className="h-8 px-2.5 text-xs bg-accent/30 border border-border/50 rounded-lg outline-none focus:ring-1 focus:ring-primary/30 text-foreground"
-          >
-            <option value="newest">Newest</option>
-            <option value="popular">Popular</option>
-            <option value="saved">Bookmarked</option>
-            <option value="oldest">Oldest</option>
-          </select>
+          <div className="relative shrink-0 w-32 sm:w-36">
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="h-8 w-full appearance-none px-2.5 pr-7 text-xs bg-accent/30 border border-border/50 rounded-xl outline-none focus:ring-1 focus:ring-primary/30 text-foreground"
+            >
+              <option value="newest">Newest</option>
+              <option value="popular">Popular</option>
+              <option value="saved">Bookmarked</option>
+              <option value="oldest">Oldest</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          </div>
         </div>
       </div>
 
       {/* ── Grid ── */}
       <div className="flex-1 p-4">
         {loading && resources.length === 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 gap-3 sm:gap-4">
             {Array(6).fill(0).map((_, i) => <ResourceSkeleton key={i} />)}
           </div>
         ) : resources.length === 0 ? (
@@ -206,7 +210,7 @@ function ResourcesContent() {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 gap-3 sm:gap-4">
               {resources.map(r => (
                 <ResourceCard
                   key={r._id}
@@ -239,9 +243,9 @@ function ResourcesContent() {
 export default function ResourcesPage() {
   return (
     <Suspense fallback={
-      <div className="p-4 space-y-4">
-        <div className="h-16 w-full bg-accent/20 rounded-xl animate-pulse" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="dark min-h-screen bg-background text-foreground p-4 space-y-4">
+        <div className="h-16 w-full bg-accent/20 border border-border/50 rounded-2xl animate-pulse" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {Array(6).fill(0).map((_, i) => <ResourceSkeleton key={i} />)}
         </div>
       </div>
