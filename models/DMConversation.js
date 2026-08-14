@@ -10,6 +10,7 @@ const participantSchema = new mongoose.Schema(
         joinedAt: { type: Date, default: Date.now },
         lastReadAt: { type: Date, default: null },
         isMuted: { type: Boolean, default: false },
+        unreadCount: { type: Number, default: 0 },
     },
     { _id: false },
 );
@@ -40,10 +41,6 @@ const dmConversationSchema = new mongoose.Schema(
 // ━━━ Indexes ━━━
 // Find all conversations for a user
 dmConversationSchema.index({ "participants.userId": 1 });
-// Find specific conversation between two users
-dmConversationSchema.index({
-    "participants.userId": 1,
-});
 // For sorting by latest message
 dmConversationSchema.index({ "lastMessage.sentAt": -1 });
 
