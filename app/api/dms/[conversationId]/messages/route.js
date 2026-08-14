@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import connectDB from "@/lib/db";
 import DMConversation from "@/models/DMConversation";
 import DMMessage from "@/models/DMMessage";
@@ -217,7 +218,7 @@ export async function POST(request, { params }) {
             replyTo: populatedReplyTo,
         };
 
-        // Update conversation's lastMessage
+        // Update conversation's lastMessage and increment recipient's unreadCount
         DMConversation.findByIdAndUpdate(conversationId, {
             lastMessage: {
                 content: type === "text" ? content.slice(0, 60) : "📷 Image",
@@ -225,11 +226,14 @@ export async function POST(request, { params }) {
                 sentAt: new Date(),
                 type,
             },
-            $inc: { messageCount: 1 },
+            $inc: { messageCount: 1, [`participants.$[elem].unreadCount`]: 1 },
+        }, {
+            arrayFilters: [{ "elem.userId": { $ne: new mongoose.Types.ObjectId(currentUser._id) } }, { "elem.isMuted": { $ne: true } }],
         }).catch((err) => console.error("Update last message failed:", err));
 
-        // Trigger Pusher for both participants
+        // Trigger Pusher for both participants, but skip muted recipient
         for (const participant of conversation.participants) {
+            if (participant.userId.toString() !== currentUser._id.toString() && participant.isMuted) continue;
             await triggerPusher(
                 `private-dm-${participant.userId}`,
                 "new-dm-message",
@@ -242,11 +246,11 @@ export async function POST(request, { params }) {
             ).catch((err) => console.error("Pusher failed:", err));
         }
 
-        // Create in-app notification + push for the recipient (centralized pipeline)
+        // Create in-app notification + push for the recipient (respect mute)
         const recipient = conversation.participants.find(
             (p) => p.userId.toString() !== currentUser._id.toString()
         )
-        if (recipient) {
+        if (recipient && !recipient.isMuted) {
             await createNotification({
                 recipient: recipient.userId,
                 sender: currentUser._id,
