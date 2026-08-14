@@ -15,7 +15,9 @@ const memberSchema = new mongoose.Schema({
   // Last message they read — for unread count 
   lastReadAt: { type: Date, default: null }, 
   // Muted this group? 
-  isMuted: { type: Boolean, default: false } 
+  isMuted: { type: Boolean, default: false },
+  // Denormalized unread count for inbox performance
+  unreadCount: { type: Number, default: 0 }
 }, { _id: false }) 
  
 const groupChatSchema = new mongoose.Schema({ 
