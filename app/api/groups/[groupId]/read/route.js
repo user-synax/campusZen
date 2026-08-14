@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import mongoose from 'mongoose'
 import connectDB from '@/lib/db'
 import GroupChat from '@/models/GroupChat'
 import { getCurrentUser } from '@/lib/auth'
@@ -30,14 +31,17 @@ export async function POST(request, { params }) {
 
     await connectDB()
 
-    // Find group and update the specific member's lastReadAt
+    // Find group and update the specific member's lastReadAt and unreadCount
     const updatedGroup = await GroupChat.findOneAndUpdate(
       { 
         _id: groupId, 
-        'members.userId': currentUser._id 
+        'members.userId': new mongoose.Types.ObjectId(currentUser._id) 
       },
       { 
-        $set: { 'members.$.lastReadAt': new Date() } 
+        $set: { 
+          'members.$.lastReadAt': new Date(),
+          'members.$.unreadCount': 0
+        } 
       },
       { new: true }
     )
