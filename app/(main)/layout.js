@@ -1,6 +1,7 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useCallback } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import RightPanel from "@/components/layout/RightPanel";
 import MobileNav from "@/components/layout/MobileNav";
@@ -11,10 +12,12 @@ import VerificationBanner from "@/components/shared/VerificationBanner";
 import useUser from "@/hooks/useUser";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { CatProvider } from "@/context/CatContext";
+import { useUserChannel } from "@/hooks/useUserChannel";
 import CustomCursor from "@/components/shared/FloatingCat";
 import CursorSelector from "@/components/shared/CursorSelector";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useTabTitle } from "@/hooks/useTabTitle";
+import clientCache from "@/lib/client-cache";
 
 // Component to initialize tab title
 function TabTitleInitializer() {
@@ -25,9 +28,36 @@ function TabTitleInitializer() {
 export default function MainLayout({ children }) {
     const { user } = useUser();
     const pathname = usePathname();
+    const router = useRouter();
 
     // Register service worker and handle push permissions
     usePushNotifications();
+
+    // Subscribe to user-level Pusher channel for cross-device group sync
+    const invalidateGroupCache = useCallback(() => {
+        clientCache.delete(JSON.stringify(["tab", "chats-groups"]));
+    }, []);
+    const invalidateDMCache = useCallback(() => {
+        clientCache.delete(JSON.stringify(["tab", "chats-dms"]));
+    }, []);
+    useUserChannel(user?._id, {
+        onGroupCreated: invalidateGroupCache,
+        onGroupJoined: invalidateGroupCache,
+        onGroupLeft: useCallback(({ groupId }) => {
+            invalidateGroupCache();
+            if (pathname === `/chats/${groupId}`) {
+                router.push("/chats");
+            }
+        }, [invalidateGroupCache, pathname, router]),
+        onNewGroupMessage: useCallback(() => {
+            invalidateGroupCache();
+            window.dispatchEvent(new CustomEvent("chat-inbox-invalidate", { detail: { tab: "groups" } }));
+        }, [invalidateGroupCache]),
+        onNewDMMessage: useCallback(() => {
+            invalidateDMCache();
+            window.dispatchEvent(new CustomEvent("chat-inbox-invalidate", { detail: { tab: "dms" } }));
+        }, [invalidateDMCache]),
+    });
 
     // Check if we are inside a specific chat room
     const isChatRoom = pathname.startsWith("/chats/") && pathname !== "/chats";
