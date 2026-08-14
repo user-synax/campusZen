@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import config from "@/lib/config";
 
 export async function GET() {
-  const key = config.webpush.publicKey;
+  const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || process.env.VAPID_PUBLIC_KEY || "";
   if (!key) {
+    console.error("[VAPID] No public key found in process.env. Checked: NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PUBLIC_KEY");
     return NextResponse.json(
       { error: "VAPID public key not configured" },
       { status: 503 }
