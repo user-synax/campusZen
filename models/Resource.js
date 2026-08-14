@@ -61,7 +61,7 @@ const resourceSchema = new mongoose.Schema(
             default: [],
         },
 
-        // ━━━ File Info (from UploadThing) ━━━
+        // ━━━ File Info (from Appwrite Storage) ━━━
         fileUrl: {
             type: String,
             required: [true, "File URL is required"],
