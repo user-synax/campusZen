@@ -31,24 +31,17 @@ export async function GET(request) {
     .select('name avatar college members lastMessage messageCount createdAt')
     .lean()
 
-    // 2. For each group, calculate unread count in parallel
-    const groupsWithUnread = await Promise.all(groups.map(async (group) => {
+    // 2. For each group, read denormalized unread count
+    const groupsWithUnread = groups.map((group) => {
       const member = group.members.find(
         m => m.userId.toString() === currentUser._id.toString()
       )
-      const lastReadAt = member?.lastReadAt || new Date(0)
-
-      const unreadCount = await GroupMessage.countDocuments({
-        groupId: group._id,
-        createdAt: { $gt: lastReadAt },
-        sender: { $ne: currentUser._id }
-      })
 
       return {
         ...group,
-        unreadCount
+        unreadCount: member?.unreadCount || 0
       }
-    }))
+    })
 
     return NextResponse.json({ groups: groupsWithUnread })
 
@@ -166,7 +159,7 @@ export async function POST(request) {
 
     // Trigger Pusher for all members to notify them about the new group
     for (const memberId of [currentUser._id, ...validMemberIds]) {
-      triggerPusher(`user-${memberId}`, 'group-created', group).catch(err => console.error('Operation failed:', err))
+      triggerPusher(`private-user-${memberId}`, 'group-created', group).catch(err => console.error('Operation failed:', err))
     }
 
     return NextResponse.json(group, { status: 201 })
