@@ -60,6 +60,20 @@ export default function ChatsPage() {
         }
     }, [activeTab]);
 
+    // Refetch when Pusher-driven cache invalidation fires
+    useEffect(() => {
+        const handleInvalidate = async (e) => {
+            const { tab } = e.detail;
+            if (tab === "groups" && activeTab === "groups") {
+                await fetchGroups(true);
+            } else if (tab === "dms" && activeTab === "dms") {
+                await fetchDMs(true);
+            }
+        };
+        window.addEventListener("chat-inbox-invalidate", handleInvalidate);
+        return () => window.removeEventListener("chat-inbox-invalidate", handleInvalidate);
+    }, [activeTab, fetchGroups, fetchDMs]);
+
     const filteredGroups = groups
         ? groups.filter((group) =>
               group.name.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -103,14 +117,14 @@ export default function ChatsPage() {
                     <TabsList className="w-full mb-3">
                         <TabsTrigger
                             value="dms"
-                            className="flex-1 flex items-center gap-2"
+                            className="flex-1 flex items-center gap-2 hover:cursor-pointer"
                         >
                             <MessageSquare className="w-4 h-4" />
                             Direct Messages
                         </TabsTrigger>
                         <TabsTrigger
                             value="groups"
-                            className="flex-1 flex items-center gap-2"
+                            className="flex-1 flex items-center gap-2 hover:cursor-pointer"
                         >
                             <Users className="w-4 h-4" />
                             Groups
