@@ -41,7 +41,33 @@ self.addEventListener("push", (event) => {
         priority: data.priority || "high",
     };
 
-    event.waitUntil(self.registration.showNotification(data.title, options));
+    const showNotification = async () => {
+        // Skip OS notification if user is focused on the matching chat route
+        const targetUrl = data.data?.url;
+        if (targetUrl && targetUrl.startsWith("/chats/")) {
+            try {
+                const clientList = await clients.matchAll({ type: "window", includeUncontrolled: true });
+                const isViewingChat = clientList.some((client) => {
+                    try {
+                        const clientPath = new URL(client.url).pathname;
+                        return client.focused && (
+                            clientPath === targetUrl ||
+                            clientPath.startsWith(targetUrl + "/")
+                        );
+                    } catch {
+                        return false;
+                    }
+                });
+                if (isViewingChat) return;
+            } catch {
+                // clients.matchAll failed — show notification as fallback
+            }
+        }
+
+        await self.registration.showNotification(data.title, options);
+    };
+
+    event.waitUntil(showNotification());
 });
 
 self.addEventListener("notificationclick", (event) => {
