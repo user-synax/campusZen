@@ -3,7 +3,7 @@ import connectDB from '@/lib/db'
 import Resource from '@/models/Resource'
 import { getCurrentUser } from '@/lib/auth'
 import { isValidObjectId } from '@/utils/validators'
-import { utapi } from '@/lib/ut-api'
+import { getAppwriteAdminStorage } from '@/lib/appwrite'
 
 /**
  * DELETE /api/resources/[resourceId]
@@ -45,13 +45,16 @@ export async function DELETE(request, { params }) {
       )
     }
 
-    // 6. Delete from UploadThing
+    // 6. Delete from Appwrite Storage
     if (resource.fileKey) {
       try {
-        await utapi.deleteFiles(resource.fileKey)
-      } catch (utErr) {
-        console.error('[Resource Delete] UploadThing error:', utErr.message)
-        // We continue deleting from DB even if UT fails to avoid broken states
+        await getAppwriteAdminStorage().deleteFile(
+          process.env.NEXT_PUBLIC_APPWRITE_RESOURCES_BUCKET_ID,
+          resource.fileKey
+        )
+      } catch (awErr) {
+        console.error('[Resource Delete] Appwrite Storage error:', awErr.message)
+        // We continue deleting from DB even if storage deletion fails to avoid broken states
       }
     }
 
