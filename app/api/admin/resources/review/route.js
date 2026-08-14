@@ -6,7 +6,7 @@ import { isAdmin } from '@/lib/admin'
 import { isValidObjectId } from '@/utils/validators'
 import { sanitizeText } from '@/lib/sanitize'
 import { createNotification } from '@/lib/notifications'
-import { utapi } from '@/lib/ut-api'
+import { getAppwriteAdminStorage } from '@/lib/appwrite'
 
 /**
  * POST /api/admin/resources/review
@@ -67,13 +67,16 @@ export async function POST(request) {
 
     // ━━━ Process action ━━━
     if (action === 'reject') {
-      // Delete file from UploadThing (save storage quota)
+      // Delete file from Appwrite Storage (save storage quota)
       if (resource.fileKey) {
         try {
-          await utapi.deleteFiles(resource.fileKey)
+          await getAppwriteAdminStorage().deleteFile(
+            process.env.NEXT_PUBLIC_APPWRITE_RESOURCES_BUCKET_ID,
+            resource.fileKey
+          )
         } catch (err) {
-          // Don't block rejection if UT deletion fails
-          console.error('[Admin Review] UT delete failed:', err.message)
+          // Don't block rejection if storage deletion fails
+          console.error('[Admin Review] Appwrite Storage delete failed:', err.message)
         }
       }
 
