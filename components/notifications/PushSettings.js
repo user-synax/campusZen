@@ -19,9 +19,9 @@ export default function PushSettings() {
   const { 
     isSupported, 
     permission, 
-    isSubscribed, 
-    isLoading, 
-    subscribe, 
+    subscription,
+    loading: isLoading,
+    requestPermissionAndSubscribe: subscribe, 
     unsubscribe 
   } = usePushNotifications() 
  
@@ -42,7 +42,7 @@ export default function PushSettings() {
       } 
     } 
     fetchStatus() 
-  }, [isSubscribed]) 
+  }, [subscription]) 
  
   const handleTest = async () => { 
     try { 
@@ -147,12 +147,12 @@ export default function PushSettings() {
             <div> 
               <p className="text-sm font-medium">This Device</p> 
               <p className="text-xs text-muted-foreground"> 
-                {isSubscribed ? 'Notifications enabled' : 'Notifications disabled'} 
+                {subscription ? 'Notifications enabled' : 'Notifications disabled'} 
               </p> 
             </div> 
           </div> 
           <Switch 
-            checked={isSubscribed} 
+            checked={!!subscription} 
             disabled={isLoading} 
             onCheckedChange={(checked) => { 
               if (checked) subscribe() 
@@ -163,7 +163,7 @@ export default function PushSettings() {
       )} 
  
       {/* Test button — only if subscribed */} 
-      {isSubscribed && ( 
+      {subscription && ( 
         <Button 
           variant="outline" 
           size="sm" 
