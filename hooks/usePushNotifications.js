@@ -61,7 +61,7 @@ export function usePushNotifications() {
                 return existing;
             }
 
-            const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+            const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || await fetchVapidKey();
             if (!vapidKey) {
                 console.error("[Push] VAPID public key not configured");
                 return;
@@ -128,4 +128,19 @@ function urlBase64ToUint8Array(base64String) {
         .replace(/_/g, "/");
     const rawData = window.atob(base64);
     return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
+}
+
+// Fetch VAPID public key from server (fallback when NEXT_PUBLIC_ build-time value is missing)
+let cachedVapidKey = null;
+async function fetchVapidKey() {
+    if (cachedVapidKey) return cachedVapidKey;
+    try {
+        const res = await fetch("/api/notifications/vapid-key");
+        if (!res.ok) return null;
+        const data = await res.json();
+        cachedVapidKey = data.publicKey || null;
+        return cachedVapidKey;
+    } catch {
+        return null;
+    }
 }
