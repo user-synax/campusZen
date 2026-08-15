@@ -44,7 +44,6 @@ const promoCodeSchema = new mongoose.Schema(
     { timestamps: true },
 );
 
-promoCodeSchema.index({ code: 1 });
 promoCodeSchema.index({ isActive: 1 });
 
 const PromoCode =

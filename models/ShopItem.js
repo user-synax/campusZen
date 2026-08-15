@@ -111,7 +111,6 @@ const shopItemSchema = new mongoose.Schema(
 );
 
 // Indexes
-shopItemSchema.index({ slug: 1 });
 shopItemSchema.index({ category: 1, sortOrder: 1, createdAt: -1 });
 shopItemSchema.index({ isActive: 1 });
 

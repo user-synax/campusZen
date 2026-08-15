@@ -76,7 +76,7 @@ export default function FeedPage() {
     const postsVirtualizer = useWindowVirtualizer({
         count: posts.length,
         estimateSize: () => 350,
-        overscan: 4,
+        overscan: 6,
         scrollMargin,
         key: modeKey,
     });
@@ -350,6 +350,9 @@ export default function FeedPage() {
                                                         post={post}
                                                         currentUserId={
                                                             currentUser?._id
+                                                        }
+                                                        currentUser={
+                                                            currentUser
                                                         }
                                                         onDelete={
                                                             handleDeletePost

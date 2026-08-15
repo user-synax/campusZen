@@ -7,7 +7,6 @@ import {
     Home,
     GraduationCap,
     Bell,
-
     Bookmark,
     Search,
     Calendar,
@@ -17,7 +16,7 @@ import {
     Shield,
     Terminal,
     Type,
-    Palette as PaletteIcon,
+    Palette,
     BookOpen,
     History,
     Heart,
@@ -27,7 +26,6 @@ import {
     Moon,
     Crown,
     Zap,
-    Palette,
     Lock,
     Star,
     Rocket,
@@ -38,7 +36,8 @@ import {
     ChevronRight,
     Coins,
     Link2,
-    Wallet
+    Wallet,
+    Check
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useChatUnreadCount } from "@/hooks/useChatUnreadCount";
@@ -53,6 +52,7 @@ import { cn } from "@/lib/utils";
 import { isFounder } from "@/lib/founder";
 import { isAdmin } from "@/lib/admin";
 import { useCat } from "@/context/CatContext";
+import clientCache from "@/lib/client-cache";
 import {
     Dialog,
     DialogContent,
@@ -60,6 +60,15 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    DropdownMenuSeparator,
+    DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
+import { PREMIUM_THEMES } from "@/context/ThemeContext";
 import { getLevelProgress } from "@/lib/ranks";
 import { CircleStar } from "lucide-react";
 
@@ -98,19 +107,21 @@ function CollapsibleSection({
         <div className="mt-2">
             <button
                 onClick={toggle}
-                className="chip-chunky hover:cursor-pointer flex items-center justify-between w-full px-3 py-1.5 group"
+                className="hover:cursor-pointer flex items-center gap-2 w-full px-3 py-2 rounded-lg group transition-all duration-200 hover:bg-accent/60 border border-transparent hover:border-border/40"
                 aria-expanded={open}
             >
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 select-none group-hover:text-foreground transition-colors duration-150">
+                <span className={`text-[11px] font-semibold uppercase tracking-wider select-none transition-colors duration-150 flex-1 text-left ${open ? 'text-foreground' : 'text-muted-foreground/80 group-hover:text-foreground'}`}>
                     {label}
                 </span>
-                {open ? (
-                    <ChevronDown className="w-3 h-3 text-muted-foreground/70 group-hover:text-foreground transition-colors duration-150 shrink-0" />
-                ) : (
-                    <ChevronRight className="w-3 h-3 text-muted-foreground/70 group-hover:text-foreground transition-colors duration-150 shrink-0" />
-                )}
+                <div className={`p-0.5 rounded transition-all duration-200 ${open ? 'bg-primary/10' : 'bg-transparent group-hover:bg-accent'}`}>
+                    {open ? (
+                        <ChevronDown className="w-3 h-3 text-muted-foreground/70 group-hover:text-foreground transition-colors duration-150 shrink-0" />
+                    ) : (
+                        <ChevronRight className="w-3 h-3 text-muted-foreground/70 group-hover:text-foreground transition-colors duration-150 shrink-0" />
+                    )}
+                </div>
             </button>
-            {open && <div className="space-y-0.5">{children}</div>}
+            {open && <div className="space-y-0.5 mt-0.5">{children}</div>}
         </div>
     );
 }
@@ -136,14 +147,31 @@ export default function Sidebar() {
     const { unreadCount } = useNotifications();
     const chatUnread = useChatUnreadCount();
     const [pendingResources, setPendingResources] = useState(0);
-    const { theme, toggleTheme } = useTheme();
+    const { theme, setTheme, toggleTheme } = useTheme();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
+    // Compute admin/founder status once per render instead of calling repeatedly
+    const isAdminUser = user ? isAdmin(user) : false;
+    const isFounderUser = user ? isFounder(user.username) : false;
+
     useEffect(() => {
-        if (user && isAdmin(user)) {
+        if (user && isAdminUser) {
+            const CACHE_KEY = "cx_admin_pending_resources";
+            const CACHE_TTL = 60 * 1000; // 60 seconds
+
+            const cached = clientCache.get(CACHE_KEY);
+            if (cached !== null) {
+                setPendingResources(cached);
+                return;
+            }
+
             fetch("/api/admin/resources?status=pending")
                 .then((res) => res.json())
-                .then((data) => setPendingResources(data.total || 0))
+                .then((data) => {
+                    const count = data.total || 0;
+                    setPendingResources(count);
+                    clientCache.set(CACHE_KEY, count, CACHE_TTL);
+                })
                 .catch(() => {});
         }
     }, [user]);
@@ -183,21 +211,8 @@ export default function Sidebar() {
 
     const bottomNavItems = [
         { label: "Billing", href: "/billing", icon: CreditCard },
-        {
-            label: "Customize",
-            href: "/customize",
-            icon: PaletteIcon,
-            isCustomize: true,
-        },
         { label: "Settings", href: "/settings", icon: Settings },
     ];
-
-    const handleCustomizeClick = (e) => {
-        if (!user?.isPro) {
-            e.preventDefault();
-            setShowUpgradeModal(true);
-        }
-    };
 
     const progress = user
         ? getLevelProgress(user.xp || 0, user.level || 1)
@@ -265,9 +280,6 @@ export default function Sidebar() {
                     )}
                     <Link
                         href={item.href}
-                        onClick={
-                            item.isCustomize ? handleCustomizeClick : undefined
-                        }
                     >
                         <Button
                             variant="ghost"
@@ -286,9 +298,6 @@ export default function Sidebar() {
                                         isActive ? "text-primary" : "",
                                     )}
                                 />
-                                {item.isCustomize && !user?.isPro && (
-                                    <Lock className="w-2.5 h-2.5 absolute -bottom-0.5 -right-0.5 text-muted-foreground" />
-                                )}
                                 {item.badge > 0 && (
                                     <span className="absolute -top-1.5 -right-1.5 min-w-3.75 h-3.75 bg-primary text-[9px] text-primary-foreground font-bold flex items-center justify-center rounded-full px-0.5 border-2 border-background">
                                         {item.badge > 9 ? "9+" : item.badge}
@@ -430,7 +439,7 @@ export default function Sidebar() {
                         {bottomNavItems.map(renderNavItem)}
                     </div>
 
-                    {user && isAdmin(user) && (
+                    {user && isAdminUser && (
                         <div className="mt-3 pt-3 border-t border-border/40">
                             <p className="hidden lg:block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40 px-3 mb-1.5 select-none">
                                 Admin
@@ -527,7 +536,7 @@ export default function Sidebar() {
                                 <div
                                     className={cn(
                                         "card-chunky card-chunky-interactive flex items-center gap-2.5 p-2 group",
-                                        isFounder(user.username)
+                                        isFounderUser
                                             ? "bg-primary/5 border-primary/20"
                                             : "hover:bg-accent/70",
                                     )}
@@ -550,12 +559,12 @@ export default function Sidebar() {
                                         <p
                                             className={cn(
                                                 "text-[11px] truncate leading-tight",
-                                                isFounder(user.username)
+                                                isFounderUser
                                                     ? "text-primary/70 font-medium"
                                                     : "text-muted-foreground",
                                             )}
                                         >
-                                            {isFounder(user.username)
+                                            {isFounderUser
                                                 ? "✦ Founder"
                                                 : `@${user.username}`}
                                         </p>
@@ -595,6 +604,83 @@ export default function Sidebar() {
                                     {(user.vp || 0).toLocaleString()} VP
                                 </span>
                             </div>
+                        )}
+
+                        {/* Theme Picker */}
+                        {user?.isPro ? (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        className="chip-chunky w-full justify-start gap-3 h-9 px-3 text-muted-foreground hover:text-foreground hover:cursor-pointer"
+                                    >
+                                        <Palette className="w-4 h-4 shrink-0" />
+                                        <span className="hidden lg:block text-xs font-semibold">
+                                            Theme
+                                        </span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                    side="right"
+                                    align="start"
+                                    sideOffset={8}
+                                    className="w-52 max-h-80 overflow-y-auto"
+                                >
+                                    <DropdownMenuLabel>Theme</DropdownMenuLabel>
+                                    <DropdownMenuItem
+                                        onClick={() => setTheme("light")}
+                                        className="gap-3 cursor-pointer"
+                                    >
+                                        <span className="w-3 h-3 rounded-full bg-[#ffffff] border border-border shrink-0" />
+                                        Light
+                                        {theme === "light" && (
+                                            <Check className="w-3.5 h-3.5 ml-auto text-primary" />
+                                        )}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onClick={() => setTheme("dark")}
+                                        className="gap-3 cursor-pointer"
+                                    >
+                                        <span className="w-3 h-3 rounded-full bg-[#0a0a0a] border border-border shrink-0" />
+                                        Dark
+                                        {theme === "dark" && (
+                                            <Check className="w-3.5 h-3.5 ml-auto text-primary" />
+                                        )}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuLabel>Premium</DropdownMenuLabel>
+                                    {PREMIUM_THEMES.map((preset) => (
+                                        <DropdownMenuItem
+                                            key={preset.id}
+                                            onClick={() => setTheme(preset.id)}
+                                            className="gap-3 cursor-pointer"
+                                        >
+                                            <span
+                                                className="w-3 h-3 rounded-full shrink-0"
+                                                style={{ backgroundColor: preset.colors.primary }}
+                                            />
+                                            {preset.name}
+                                            {theme === preset.id && (
+                                                <Check className="w-3.5 h-3.5 ml-auto text-primary" />
+                                            )}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        ) : (
+                            <Button
+                                variant="ghost"
+                                onClick={() => setShowUpgradeModal(true)}
+                                className="chip-chunky w-full justify-start gap-3 h-9 px-3 text-muted-foreground hover:text-foreground hover:cursor-pointer"
+                            >
+                                <div className="relative shrink-0">
+                                    <Palette className="w-4 h-4" />
+                                    <Lock className="w-2.5 h-2.5 absolute -bottom-0.5 -right-0.5 text-muted-foreground" />
+                                </div>
+                                <span className="hidden lg:block text-xs font-semibold">
+                                    Customize
+                                </span>
+                            </Button>
                         )}
                     </div>
                 </div>

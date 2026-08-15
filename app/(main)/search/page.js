@@ -350,6 +350,7 @@ export default function SearchPage() {
                                             key={post._id}
                                             post={post}
                                             currentUserId={currentUser?._id}
+                                            currentUser={currentUser}
                                             onLike={handleLikePost}
                                         />
                                     ))}

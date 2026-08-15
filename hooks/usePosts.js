@@ -3,12 +3,21 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import clientCache from "@/lib/client-cache";
 
+// Stable serialization: sort object keys so identical values always produce
+// the same cache key regardless of object reference order.
+function stableStringify(obj) {
+    if (obj === null || typeof obj !== "object") return JSON.stringify(obj);
+    if (Array.isArray(obj)) return `[${obj.map(stableStringify).join(",")}]`;
+    const sorted = Object.keys(obj).sort();
+    return `{${sorted.map(k => `${JSON.stringify(k)}:${stableStringify(obj[k])}`).join(",")}}`;
+}
+
 export function usePosts(queryParams = {}, initialPosts = []) {
     const isDiscover = queryParams.feedType === "discover";
     const cacheTtl = isDiscover ? 90 * 1000 : 5 * 60 * 1000;
 
     const cacheKey = useMemo(() => {
-        return JSON.stringify(["feed", queryParams]);
+        return JSON.stringify(["feed", stableStringify(queryParams)]);
     }, [queryParams]);
 
     const cachedData = clientCache.get(cacheKey);

@@ -20,13 +20,11 @@ const PollDisplay = dynamic(() => import('@/components/post/PollDisplay'), { ssr
 const PostImageGrid = dynamic(() => import('@/components/post/PostImageGrid'), { ssr: false })
 
 import { cn } from "@/lib/utils"
-import useUser from "@/hooks/useUser"
 import FormattedTime from "@/components/shared/FormattedTime"
 import VerifiedBadge from '@/components/shared/VerifiedBadge'
 
-const PostCard = memo(function PostCard({ post, currentUserId, onDelete, onLike, onBookmark, isPinned = false }) {
+const PostCard = memo(function PostCard({ post, currentUserId, currentUser, onDelete, onLike, onBookmark, isPinned = false }) {
   const router = useRouter()
-  const { user: currentUser } = useUser()
   const [commentsCount, setCommentsCount] = useState(post.commentsCount || 0)
   const [showComments, setShowComments] = useState(false)
   const [isBookmarked, setIsBookmarked] = useState(post._isBookmarked || false)

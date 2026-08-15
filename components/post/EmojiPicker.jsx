@@ -1,11 +1,21 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Picker from "emoji-picker-react";
+import dynamic from "next/dynamic";
 import { Smile, Clock, Heart, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+// Lazy load the heavy emoji picker component
+const Picker = dynamic(() => import("emoji-picker-react"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-[350px] text-muted-foreground">
+      Loading...
+    </div>
+  ),
+});
 
 // Storage keys
 const RECENT_EMOJIS_KEY = "campuszen_recent_emojis";

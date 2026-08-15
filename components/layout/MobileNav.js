@@ -34,6 +34,9 @@ import {
     Wallet,
     ShoppingBag,
     Link2,
+    Check,
+    ChevronDown,
+    ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -55,6 +58,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import useUser from "@/hooks/useUser";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useChatUnreadCount } from "@/hooks/useChatUnreadCount";
+import { useTheme, PREMIUM_THEMES } from "@/context/ThemeContext";
 import CreatePostDialog from "@/components/post/CreatePostDialog";
 import Logo from "@/components/shared/Logo";
 import { cn } from "@/lib/utils";
@@ -66,8 +70,10 @@ export default function MobileNav() {
     const { user, loading } = useUser();
     const { unreadCount } = useNotifications();
     const chatUnread = useChatUnreadCount();
+    const { theme, setTheme } = useTheme();
     const [open, setOpen] = useState(false);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [themeOpen, setThemeOpen] = useState(false);
 
     const handleLogout = async () => {
         try {
@@ -75,16 +81,6 @@ export default function MobileNav() {
             window.location.href = "/login";
         } catch (error) {
             console.error("Logout failed:", error);
-        }
-    };
-
-    const handleCustomizeClick = (e) => {
-        e.preventDefault();
-        if (!user?.isPro) {
-            setOpen(false);
-            setShowUpgradeModal(true);
-        } else {
-            setOpen(false);
         }
     };
 
@@ -561,32 +557,71 @@ export default function MobileNav() {
                                     </Button>
                                 </Link>
 
-                                {/* Customize Link */}
+                                {/* Theme Picker */}
                                 {user?.isPro ? (
-                                    <Button
-                                        asChild
-                                        variant="ghost"
-                                        className={cn(
-                                            "w-full justify-start gap-4 h-12 px-3",
-                                            pathname.startsWith("/customize")
-                                                ? "bg-accent text-accent-foreground"
-                                                : "text-muted-foreground",
-                                        )}
-                                    >
-                                        <Link
-                                            href="/customize"
-                                            onClick={() => setOpen(false)}
+                                    <>
+                                        <Button
+                                            variant="ghost"
+                                            onClick={() => setThemeOpen(!themeOpen)}
+                                            className={cn(
+                                                "w-full justify-start gap-4 h-12 px-3",
+                                                themeOpen ? "bg-accent text-accent-foreground" : "text-muted-foreground",
+                                            )}
                                         >
                                             <Palette className="w-5 h-5" />
-                                            <span className="text-base font-medium">
+                                            <span className="text-base font-medium flex-1 text-left">
                                                 Customize
                                             </span>
-                                        </Link>
-                                    </Button>
+                                            {themeOpen ? (
+                                                <ChevronDown className="w-4 h-4 shrink-0" />
+                                            ) : (
+                                                <ChevronRight className="w-4 h-4 shrink-0" />
+                                            )}
+                                        </Button>
+                                        {themeOpen && (
+                                            <div className="pl-12 pr-3 py-2 space-y-1">
+                                                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 px-2 mb-1">Standard</p>
+                                                <button
+                                                    onClick={() => { setTheme("light"); setThemeOpen(false); setOpen(false); }}
+                                                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all hover:bg-accent"
+                                                >
+                                                    <span className="w-4 h-4 rounded-full bg-[#ffffff] border border-border shrink-0" />
+                                                    Light
+                                                    {theme === "light" && <Check className="w-4 h-4 ml-auto text-primary" />}
+                                                </button>
+                                                <button
+                                                    onClick={() => { setTheme("dark"); setThemeOpen(false); setOpen(false); }}
+                                                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all hover:bg-accent"
+                                                >
+                                                    <span className="w-4 h-4 rounded-full bg-[#0a0a0a] border border-border shrink-0" />
+                                                    Dark
+                                                    {theme === "dark" && <Check className="w-4 h-4 ml-auto text-primary" />}
+                                                </button>
+                                                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 px-2 mt-2 mb-1">Premium</p>
+                                                {PREMIUM_THEMES.map((preset) => (
+                                                    <button
+                                                        key={preset.id}
+                                                        onClick={() => { setTheme(preset.id); setThemeOpen(false); setOpen(false); }}
+                                                        className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all hover:bg-accent"
+                                                    >
+                                                        <span
+                                                            className="w-4 h-4 rounded-full shrink-0"
+                                                            style={{ backgroundColor: preset.colors.primary }}
+                                                        />
+                                                        {preset.name}
+                                                        {theme === preset.id && <Check className="w-4 h-4 ml-auto text-primary" />}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </>
                                 ) : (
                                     <Button
                                         variant="ghost"
-                                        onClick={handleCustomizeClick}
+                                        onClick={() => {
+                                            setOpen(false);
+                                            setShowUpgradeModal(true);
+                                        }}
                                         className={cn(
                                             "w-full justify-start gap-4 h-12 px-3 text-muted-foreground",
                                         )}
@@ -595,7 +630,6 @@ export default function MobileNav() {
                                             <Palette className="w-5 h-5" />
                                             <Lock className="w-3 h-3 absolute -bottom-0.5 -right-0.5 text-muted-foreground" />
                                         </div>
-
                                         <span className="text-base font-medium">
                                             Customize
                                         </span>

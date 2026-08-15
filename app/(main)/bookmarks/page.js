@@ -176,6 +176,7 @@ export default function BookmarksPage() {
                   key={post._id} 
                   post={post} 
                   currentUserId={currentUser?._id} 
+                  currentUser={currentUser}
                   onBookmarkToggle={handleBookmarkToggle}
                   onDelete={handleDeletePost}
                   onLike={handleLikePost}

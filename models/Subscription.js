@@ -28,7 +28,6 @@ const subscriptionSchema = new mongoose.Schema(
     { timestamps: true },
 );
 
-subscriptionSchema.index({ userId: 1 });
 subscriptionSchema.index({ endsAt: 1 });
 subscriptionSchema.index({ isActive: 1 });
 

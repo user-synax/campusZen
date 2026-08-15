@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import FollowButton from "@/components/user/FollowButton";
 import useUser from "@/hooks/useUser";
 import TrendingPosts from "@/components/feed/TrendingPosts";
+import clientCache from "@/lib/client-cache";
 
 // ─── localStorage helpers ─────────────────────────────────────────────────────
 function readLocalBool(key, defaultValue) {
@@ -79,7 +80,21 @@ export default function RightPanel() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        const CACHE_KEY = "cx_right_panel_data";
+        const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
         const fetchData = async () => {
+            // Check client cache first
+            const cached = clientCache.get(CACHE_KEY);
+            if (cached) {
+                setTrending(cached.trending || []);
+                setSuggestions(cached.suggestions || []);
+                setTrendingHashtags(cached.trendingHashtags || []);
+                setUpcomingEvents(cached.upcomingEvents || []);
+                setLoading(false);
+                return;
+            }
+
             try {
                 setLoading(true);
                 const [trendRes, suggestRes, hashtagRes, eventRes] =
@@ -95,11 +110,23 @@ export default function RightPanel() {
                 const hashtagData = await hashtagRes.json();
                 const eventData = await eventRes.json();
 
-                if (trendRes.ok) setTrending(trendData);
-                if (suggestRes.ok) setSuggestions(suggestData);
-                if (hashtagRes.ok)
-                    setTrendingHashtags(hashtagData.hashtags || []);
-                if (eventRes.ok) setUpcomingEvents(eventData.events || []);
+                const trendingVal = trendRes.ok ? trendData : [];
+                const suggestionsVal = suggestRes.ok ? suggestData : [];
+                const hashtagsVal = hashtagRes.ok ? (hashtagData.hashtags || []) : [];
+                const eventsVal = eventRes.ok ? (eventData.events || []) : [];
+
+                setTrending(trendingVal);
+                setSuggestions(suggestionsVal);
+                setTrendingHashtags(hashtagsVal);
+                setUpcomingEvents(eventsVal);
+
+                // Cache the combined result
+                clientCache.set(CACHE_KEY, {
+                    trending: trendingVal,
+                    suggestions: suggestionsVal,
+                    trendingHashtags: hashtagsVal,
+                    upcomingEvents: eventsVal,
+                }, CACHE_TTL);
             } catch (error) {
                 console.error("Right panel fetch error:", error);
             } finally {

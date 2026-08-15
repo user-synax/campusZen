@@ -15,6 +15,7 @@ export function NotificationProvider({ children }) {
   const [newNotification, setNewNotification] = useState(null)
   const channelRef = useRef(null)
   const timerRef = useRef(null)
+  const prevUserIdRef = useRef(null)
 
   // Fetch initial unread count
   const fetchCount = useCallback(async () => {
@@ -31,7 +32,12 @@ export function NotificationProvider({ children }) {
   }, [user?._id])
 
   useEffect(() => {
-    if (!user?._id) return
+    const userId = user?._id
+    if (!userId) return
+
+    // Only resubscribe if userId actually changed (not on every effect run)
+    if (prevUserIdRef.current === userId) return
+    prevUserIdRef.current = userId
 
     fetchCount()
 
@@ -39,7 +45,7 @@ export function NotificationProvider({ children }) {
     const pusher = getPusherClient()
     if (!pusher) return
 
-    const channelName = `private-notifications-${user._id}`
+    const channelName = `private-notifications-${userId}`
     const channel = pusher.subscribe(channelName)
     channelRef.current = channel
 
@@ -95,7 +101,7 @@ export function NotificationProvider({ children }) {
         channelRef.current = null
       }
     }
-  }, [user?._id, fetchCount])
+  }, [user?._id, fetchCount, pathname])
 
   const markAllRead = useCallback(async () => {
     try {

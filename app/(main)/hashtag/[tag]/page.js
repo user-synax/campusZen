@@ -135,6 +135,7 @@ export default function HashtagPage({ params }) {
                 key={post._id} 
                 post={post} 
                 currentUserId={currentUser?._id} 
+                currentUser={currentUser}
                 onLike={handleLikePost} 
               />
             ))}

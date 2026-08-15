@@ -950,6 +950,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                                       )
                                             }
                                             currentUserId={currentUser?._id}
+                                            currentUser={currentUser}
                                             onDelete={handleDeletePost}
                                             onLike={handleLikePost}
                                             isPinned={true}
@@ -967,6 +968,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                                 key={post._id}
                                                 post={post}
                                                 currentUserId={currentUser?._id}
+                                                currentUser={currentUser}
                                                 onDelete={handleDeletePost}
                                                 onLike={handleLikePost}
                                                 isPinned={false}

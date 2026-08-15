@@ -114,6 +114,7 @@ export default function CollegeCommunityPage() {
                   key={post._id} 
                   post={post} 
                   currentUserId={currentUser?._id} 
+                  currentUser={currentUser}
                   onDelete={handleDeletePost} 
                   onLike={handleLikePost} 
                 />
