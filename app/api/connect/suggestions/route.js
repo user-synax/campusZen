@@ -11,6 +11,8 @@ export async function GET(request) {
 
         const { searchParams } = new URL(request.url);
         const limit = Math.min(Number(searchParams.get("limit")) || 12, 50);
+        const page = Math.max(Number(searchParams.get("page")) || 1, 1);
+        const skip = (page - 1) * limit;
         const query = searchParams.get("q");
 
         // Build exclusion set: self + already connected + blocked
@@ -36,6 +38,7 @@ export async function GET(request) {
 
         let suggestions = await User.find(filter)
             .sort({ createdAt: -1 })
+            .skip(skip)
             .limit(limit)
             .select(
                 "name username avatar college course branch bio interests isVerified verificationType isPro role",

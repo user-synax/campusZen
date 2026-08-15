@@ -7,7 +7,7 @@ import {
     Home,
     GraduationCap,
     Bell,
-    LogOut,
+
     Bookmark,
     Search,
     Calendar,
@@ -38,6 +38,7 @@ import {
     ChevronRight,
     Coins,
     Link2,
+    Wallet
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useChatUnreadCount } from "@/hooks/useChatUnreadCount";
@@ -170,7 +171,7 @@ export default function Sidebar() {
         { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
         { label: "Ranks", href: "/ranks", icon: CircleStar },
         { label: "Shop", href: "/shop", icon: ShoppingBag },
-        { label: "Wallet", href: "/wallet", icon: Coins },
+        { label: "Wallet", href: "/wallet", icon: Wallet },
     ];
 
     const moreItems = [
@@ -190,16 +191,6 @@ export default function Sidebar() {
         },
         { label: "Settings", href: "/settings", icon: Settings },
     ];
-
-    const handleLogout = async () => {
-        try {
-            await fetch("/api/auth/logout", { method: "POST" });
-            router.push("/login");
-            window.location.reload();
-        } catch (error) {
-            console.error("Logout failed:", error);
-        }
-    };
 
     const handleCustomizeClick = (e) => {
         if (!user?.isPro) {
@@ -597,19 +588,14 @@ export default function Sidebar() {
                                 </span>
                             </Button>
                         </div>
-                        <div className="flex items-center gap-1">
-                            <div className="shrink-0 w-9" />
-                            <Button
-                                variant="ghost"
-                                onClick={handleLogout}
-                                className="chip-chunky flex-1 justify-start gap-3 h-9 px-3 text-muted-foreground hover:text-destructive hover:bg-destructive/8"
-                            >
-                                <LogOut className="w-4 h-4 shrink-0" />
-                                <span className="hidden lg:block text-xs font-semibold">
-                                    Log out
+                        {user && (
+                            <div className="flex items-center gap-2 w-full px-2 py-1.5">
+                                <img src="/icon/vp-coin.png" alt="VP" className="w-5 h-5 shrink-0" />
+                                <span className="hidden lg:block text-sm font-semibold text-foreground">
+                                    {(user.vp || 0).toLocaleString()} VP
                                 </span>
-                            </Button>
-                        </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </aside>
