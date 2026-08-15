@@ -8,7 +8,7 @@ export function HeroSectionDemo() {
     return (
         <HeroSection
             badge={{
-                text: `Made in India: 🇮🇳`,
+                text: `Made in India: 🇮🇳 `,
             }}
             titleRotatingText={{
                 component: (

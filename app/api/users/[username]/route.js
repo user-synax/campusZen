@@ -80,6 +80,7 @@ export async function GET(request, { params }) {
             postCount,
             followersCount: userResult.followers?.length || 0,
             followingCount: userResult.following?.length || 0,
+            connectionsCount: userResult.connections?.length || 0,
             isFollowing: isFollowingUser,
             isMe,
             isFounder: isFounder(userResult.username),

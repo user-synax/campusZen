@@ -49,7 +49,7 @@ export function useInfiniteScroll({
             }
             observer.disconnect();
         };
-    }, [hasMore, rootMargin, threshold]);
+    }, [hasMore, loading, rootMargin, threshold]);
 
     return { sentinelRef: observerRef };
 }

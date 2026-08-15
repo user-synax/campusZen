@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
-import DMConversation from "@/models/DMConversation";
 import User from "@/models/User";
+import DMConversation from "@/models/DMConversation";
 import { getCurrentUser } from "@/lib/auth";
 import { sanitizeMongoInput } from "@/lib/sanitize";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateObjectId } from "@/utils/validators";
+import { findOrCreateDMConversation } from "@/lib/dms";
 
 /**
  * GET /api/dms - Get current user's DM conversations
@@ -142,36 +143,10 @@ export async function POST(request) {
         }
 
         // Find or create the conversation
-        let conversation = await DMConversation.findOne({
-            $and: [
-                { "participants.userId": currentUser._id },
-                { "participants.userId": userId },
-            ],
-        }).populate("participants.userId", "name username avatar isVerified");
-
-        if (!conversation) {
-            // Create new conversation
-            conversation = await DMConversation.create({
-                participants: [
-                    { userId: currentUser._id },
-                    { userId: targetUser._id },
-                ],
-                lastMessage: {
-                    content: "Started a conversation",
-                    senderName: "System",
-                    sentAt: new Date(),
-                    type: "system",
-                },
-            });
-
-            // Populate the new conversation
-            conversation = await DMConversation.findById(
-                conversation._id,
-            ).populate(
-                "participants.userId",
-                "name username avatar isVerified",
-            );
-        }
+        const conversation = await findOrCreateDMConversation(
+            currentUser._id.toString(),
+            userId.toString(),
+        );
 
         return NextResponse.json({ conversation }, { status: 200 });
     } catch (err) {

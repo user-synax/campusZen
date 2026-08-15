@@ -33,6 +33,7 @@ import {
     CreditCard,
     Wallet,
     ShoppingBag,
+    Link2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -354,6 +355,25 @@ export default function MobileNav() {
                                         <Bookmark className="w-5 h-5" />
                                         <span className="text-base font-medium">
                                             Bookmarks
+                                        </span>
+                                    </Button>
+                                </Link>
+                                <Link
+                                    href="/connect"
+                                    onClick={() => setOpen(false)}
+                                >
+                                    <Button
+                                        variant="ghost"
+                                        className={cn(
+                                            "w-full justify-start gap-4 h-12 px-3",
+                                            pathname === "/connect"
+                                                ? "bg-accent text-accent-foreground"
+                                                : "text-muted-foreground",
+                                        )}
+                                    >
+                                        <Link2 className="w-5 h-5" />
+                                        <span className="text-base font-medium">
+                                            Connect
                                         </span>
                                     </Button>
                                 </Link>

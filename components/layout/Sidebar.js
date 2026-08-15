@@ -37,6 +37,7 @@ import {
     ChevronDown,
     ChevronRight,
     Coins,
+    Link2,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useChatUnreadCount } from "@/hooks/useChatUnreadCount";
@@ -161,6 +162,7 @@ export default function Sidebar() {
             icon: Bell,
             badge: unreadCount,
         },
+        { label: "Connect", href: "/connect", icon: Link2 },
         { label: "Bookmarks", href: "/bookmarks", icon: Bookmark },
     ];
 

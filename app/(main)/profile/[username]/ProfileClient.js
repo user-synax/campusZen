@@ -58,6 +58,10 @@ const ProfileCardExportModal = dynamic(
     () => import("@/components/user/ProfileCardExportModal"),
     { ssr: false },
 );
+const ConnectionsListModal = dynamic(
+    () => import("@/components/user/ConnectionsListModal"),
+    { ssr: false },
+);
 
 export default function ProfileClient({ username: initialUsername }) {
     const params = useParams();
@@ -155,6 +159,7 @@ export default function ProfileClient({ username: initialUsername }) {
     // Follow modal state
     const [followModal, setFollowModal] = useState(false);
     const [followModalTab, setFollowModalTab] = useState("followers");
+    const [connectionsModal, setConnectionsModal] = useState(false);
 
     // Derived state
     const isOwnProfile =
@@ -846,6 +851,19 @@ export default function ProfileClient({ username: initialUsername }) {
                                 Followers
                             </span>
                         </button>
+                        {(profileUser.connectionsCount > 0 || isOwnProfile) && (
+                            <button
+                                onClick={() => setConnectionsModal(true)}
+                                className="flex hover:cursor-pointer gap-1.5 hover:opacity-70 transition-opacity"
+                            >
+                                <strong className="font-black">
+                                    {profileUser.connectionsCount || 0}
+                                </strong>{" "}
+                                <span className="text-muted-foreground">
+                                    Connections
+                                </span>
+                            </button>
+                        )}
                         <span className="flex gap-1.5">
                             <strong className="font-black">
                                 {profileUser.postCount}
@@ -1048,6 +1066,15 @@ export default function ProfileClient({ username: initialUsername }) {
                 followingCount={profileUser.followingCount}
                 open={followModal}
                 onOpenChange={setFollowModal}
+                currentUserId={currentUser?._id}
+            />
+
+            {/* Connections list modal */}
+            <ConnectionsListModal
+                username={username}
+                connectionsCount={profileUser.connectionsCount || 0}
+                open={connectionsModal}
+                onOpenChange={setConnectionsModal}
                 currentUserId={currentUser?._id}
             />
 

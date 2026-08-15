@@ -43,6 +43,10 @@ const nextConfig = {
                 protocol: "https",
                 hostname: "media*.giphy.com",
             },
+            {
+                protocol: "https",
+                hostname: "utfs.io",
+            },
         ],
     },
     async headers() {

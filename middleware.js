@@ -16,6 +16,7 @@ const protectedRoutes = [
     "/events",
     "/billing",
     "/clips",
+    "/connect",
 ];
 
 export default function middleware(request) {

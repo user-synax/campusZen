@@ -89,6 +89,12 @@ const userSchema = new mongoose.Schema(
                 ref: "User",
             },
         ],
+        connections: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "User",
+            },
+        ],
         bookmarks: [
             {
                 type: mongoose.Schema.Types.ObjectId,
@@ -347,6 +353,7 @@ userSchema.methods.toSafeObject = function () {
 userSchema.index({ college: 1 });
 userSchema.index({ followers: 1 });
 userSchema.index({ following: 1 });
+userSchema.index({ connections: 1 });
 userSchema.index({ totalXP: -1 });
 userSchema.index({ weeklyXP: -1 });
 userSchema.index({ college: 1, weeklyXP: -1 });
