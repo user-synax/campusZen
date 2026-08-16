@@ -850,10 +850,29 @@ export const PREMIUM_THEMES = [
     },
 ];
 
-function hexToHsl(hex) {
-    let r = parseInt(hex.slice(1, 3), 16) / 255;
-    let g = parseInt(hex.slice(3, 5), 16) / 255;
-    let b = parseInt(hex.slice(5, 7), 16) / 255;
+function parseColorToRgb(color) {
+    if (color.startsWith("#")) {
+        return {
+            r: parseInt(color.slice(1, 3), 16) / 255,
+            g: parseInt(color.slice(3, 5), 16) / 255,
+            b: parseInt(color.slice(5, 7), 16) / 255,
+        };
+    }
+    const rgbaMatch = color.match(
+        /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/,
+    );
+    if (rgbaMatch) {
+        return {
+            r: parseInt(rgbaMatch[1]) / 255,
+            g: parseInt(rgbaMatch[2]) / 255,
+            b: parseInt(rgbaMatch[3]) / 255,
+        };
+    }
+    return { r: 0, g: 0, b: 0 };
+}
+
+function hexToHsl(color) {
+    const { r, g, b } = parseColorToRgb(color);
 
     let max = Math.max(r, g, b),
         min = Math.min(r, g, b);
@@ -883,19 +902,53 @@ function hexToHsl(hex) {
     return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
 
+const CSS_VARS = [
+    "--background",
+    "--foreground",
+    "--card",
+    "--card-foreground",
+    "--popover",
+    "--popover-foreground",
+    "--primary",
+    "--primary-foreground",
+    "--secondary",
+    "--secondary-foreground",
+    "--muted",
+    "--muted-foreground",
+    "--accent",
+    "--accent-foreground",
+    "--destructive",
+    "--destructive-foreground",
+    "--border",
+    "--input",
+    "--ring",
+];
+
+function removeCssVars(root) {
+    CSS_VARS.forEach((v) => root.style.removeProperty(v));
+}
+
+function findThemeColors(themeId, customThemes) {
+    const custom = customThemes.find((t) => t.id === themeId);
+    if (custom) return custom.colors;
+    const premium = PREMIUM_THEMES.find((t) => t.id === themeId);
+    if (premium) return premium.colors;
+    return null;
+}
+
 export function ThemeProvider({ children }) {
     const [theme, setThemeState] = useState(undefined);
     const [customThemes, setCustomThemes] = useState([]);
     const pathname = usePathname();
 
-    // Check if route is public or auth
     const isPublicOrAuthRoute =
         pathname === "/" ||
         pathname.startsWith("/login") ||
         pathname.startsWith("/signup") ||
         pathname.startsWith("/privacy") ||
         pathname.startsWith("/terms") ||
-        pathname.startsWith("/forgot-password");
+        pathname.startsWith("/forgot-password") ||
+        pathname.startsWith("/docs");
 
     // Initialize custom themes and selected theme
     useEffect(() => {
@@ -922,97 +975,39 @@ export function ThemeProvider({ children }) {
         const root = window.document.documentElement;
 
         if (isPublicOrAuthRoute) {
-            // Force dark mode for public/auth routes
             root.classList.remove("light");
             root.classList.add("dark");
-            // Remove any custom theme styles
-            root.style.removeProperty("--background");
-            root.style.removeProperty("--foreground");
-            root.style.removeProperty("--card");
-            root.style.removeProperty("--card-foreground");
-            root.style.removeProperty("--popover");
-            root.style.removeProperty("--popover-foreground");
-            root.style.removeProperty("--primary");
-            root.style.removeProperty("--primary-foreground");
-            root.style.removeProperty("--secondary");
-            root.style.removeProperty("--secondary-foreground");
-            root.style.removeProperty("--muted");
-            root.style.removeProperty("--muted-foreground");
-            root.style.removeProperty("--accent");
-            root.style.removeProperty("--accent-foreground");
-            root.style.removeProperty("--destructive");
-            root.style.removeProperty("--destructive-foreground");
-            root.style.removeProperty("--border");
-            root.style.removeProperty("--input");
-            root.style.removeProperty("--ring");
+            removeCssVars(root);
             return;
         }
 
-        // Remove all theme classes and custom styles
         root.classList.remove("light", "dark");
-        root.style.removeProperty("--background");
-        root.style.removeProperty("--foreground");
-        root.style.removeProperty("--card");
-        root.style.removeProperty("--card-foreground");
-        root.style.removeProperty("--popover");
-        root.style.removeProperty("--popover-foreground");
-        root.style.removeProperty("--primary");
-        root.style.removeProperty("--primary-foreground");
-        root.style.removeProperty("--secondary");
-        root.style.removeProperty("--secondary-foreground");
-        root.style.removeProperty("--muted");
-        root.style.removeProperty("--muted-foreground");
-        root.style.removeProperty("--accent");
-        root.style.removeProperty("--accent-foreground");
-        root.style.removeProperty("--destructive");
-        root.style.removeProperty("--destructive-foreground");
-        root.style.removeProperty("--border");
-        root.style.removeProperty("--input");
-        root.style.removeProperty("--ring");
+        removeCssVars(root);
 
         if (theme === "light" || theme === "dark") {
             root.classList.add(theme);
         } else {
-            // Apply custom theme
-            const customTheme = customThemes.find((t) => t.id === theme);
-            if (customTheme) {
-                const primaryHsl = hexToHsl(customTheme.colors.primary);
-                const bgHsl = hexToHsl(customTheme.colors.background);
-                const fgHsl = hexToHsl(customTheme.colors.foreground);
-                const cardHsl = hexToHsl(customTheme.colors.card);
-                const cardFgHsl = hexToHsl(customTheme.colors.cardForeground);
-                const mutedHsl = hexToHsl(customTheme.colors.muted);
-                const mutedFgHsl = hexToHsl(customTheme.colors.mutedForeground);
-                const accentHsl = hexToHsl(customTheme.colors.accent);
-                const accentFgHsl = hexToHsl(
-                    customTheme.colors.accentForeground,
-                );
-                const borderHsl = hexToHsl(customTheme.colors.border);
-                const destructiveHsl = hexToHsl("#ef4444");
-                const destructiveFgHsl = hexToHsl("#ffffff");
-
-                root.style.setProperty("--background", bgHsl);
-                root.style.setProperty("--foreground", fgHsl);
-                root.style.setProperty("--card", cardHsl);
-                root.style.setProperty("--card-foreground", cardFgHsl);
-                root.style.setProperty("--popover", cardHsl);
-                root.style.setProperty("--popover-foreground", cardFgHsl);
-                root.style.setProperty("--primary", primaryHsl);
-                root.style.setProperty("--primary-foreground", bgHsl);
-                root.style.setProperty("--secondary", mutedHsl);
-                root.style.setProperty("--secondary-foreground", fgHsl);
-                root.style.setProperty("--muted", mutedHsl);
-                root.style.setProperty("--muted-foreground", mutedFgHsl);
-                root.style.setProperty("--accent", accentHsl);
-                root.style.setProperty("--accent-foreground", accentFgHsl);
-                root.style.setProperty("--destructive", destructiveHsl);
-                root.style.setProperty(
-                    "--destructive-foreground",
-                    destructiveFgHsl,
-                );
-                root.style.setProperty("--border", borderHsl);
-                root.style.setProperty("--input", borderHsl);
-                root.style.setProperty("--ring", primaryHsl);
+            const colors = findThemeColors(theme, customThemes);
+            if (colors) {
+                root.style.setProperty("--background", hexToHsl(colors.background));
+                root.style.setProperty("--foreground", hexToHsl(colors.foreground));
+                root.style.setProperty("--card", hexToHsl(colors.card));
+                root.style.setProperty("--card-foreground", hexToHsl(colors.cardForeground));
+                root.style.setProperty("--popover", hexToHsl(colors.card));
+                root.style.setProperty("--popover-foreground", hexToHsl(colors.cardForeground));
+                root.style.setProperty("--primary", hexToHsl(colors.primary));
+                root.style.setProperty("--primary-foreground", hexToHsl(colors.background));
+                root.style.setProperty("--secondary", hexToHsl(colors.muted));
+                root.style.setProperty("--secondary-foreground", hexToHsl(colors.foreground));
+                root.style.setProperty("--muted", hexToHsl(colors.muted));
+                root.style.setProperty("--muted-foreground", hexToHsl(colors.mutedForeground));
+                root.style.setProperty("--accent", hexToHsl(colors.accent));
+                root.style.setProperty("--accent-foreground", hexToHsl(colors.accentForeground));
+                root.style.setProperty("--destructive", hexToHsl("#ef4444"));
+                root.style.setProperty("--destructive-foreground", hexToHsl("#ffffff"));
+                root.style.setProperty("--border", hexToHsl(colors.border));
+                root.style.setProperty("--input", hexToHsl(colors.border));
+                root.style.setProperty("--ring", hexToHsl(colors.primary));
             }
         }
     }, [theme, customThemes, isPublicOrAuthRoute]);

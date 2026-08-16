@@ -108,9 +108,8 @@ export default function RootLayout({ children }) {
                         __html: `
                             (function() {
                                 try {
-                                    const pathname = window.location.pathname;
-                                    // Check if we're on landing, signup, login, auth or public routes
-                                    const isPublicOrAuthRoute = pathname === '/' ||
+                                    var pathname = window.location.pathname;
+                                    var isPublicOrAuthRoute = pathname === '/' ||
                                         pathname.startsWith('/login') ||
                                         pathname.startsWith('/signup') ||
                                         pathname.startsWith('/privacy') ||
@@ -118,36 +117,27 @@ export default function RootLayout({ children }) {
                                         pathname.startsWith('/docs') ||
                                         pathname.startsWith('/forgot-password');
                                     
+                                    var CSS_VARS = ['--background','--foreground','--card','--card-foreground','--popover','--popover-foreground','--primary','--primary-foreground','--secondary','--secondary-foreground','--muted','--muted-foreground','--accent','--accent-foreground','--destructive','--destructive-foreground','--border','--input','--ring'];
+                                    function removeCssVars() {
+                                        CSS_VARS.forEach(function(v) { document.documentElement.style.removeProperty(v); });
+                                    }
+                                    
                                     if (isPublicOrAuthRoute) {
-                                        // Force dark mode for these routes
                                         document.documentElement.classList.remove('light');
                                         document.documentElement.classList.add('dark');
-                                        // Remove any custom theme styles
-                                        document.documentElement.style.removeProperty('--background');
-                                        document.documentElement.style.removeProperty('--foreground');
-                                        document.documentElement.style.removeProperty('--card');
-                                        document.documentElement.style.removeProperty('--card-foreground');
-                                        document.documentElement.style.removeProperty('--popover');
-                                        document.documentElement.style.removeProperty('--popover-foreground');
-                                        document.documentElement.style.removeProperty('--primary');
-                                        document.documentElement.style.removeProperty('--primary-foreground');
-                                        document.documentElement.style.removeProperty('--secondary');
-                                        document.documentElement.style.removeProperty('--secondary-foreground');
-                                        document.documentElement.style.removeProperty('--muted');
-                                        document.documentElement.style.removeProperty('--muted-foreground');
-                                        document.documentElement.style.removeProperty('--accent');
-                                        document.documentElement.style.removeProperty('--accent-foreground');
-                                        document.documentElement.style.removeProperty('--destructive');
-                                        document.documentElement.style.removeProperty('--destructive-foreground');
-                                        document.documentElement.style.removeProperty('--border');
-                                        document.documentElement.style.removeProperty('--input');
-                                        document.documentElement.style.removeProperty('--ring');
+                                        removeCssVars();
                                     } else {
-                                        // Use normal theme logic for app routes
-                                        const theme = localStorage.getItem('theme');
-                                        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                                        const activeTheme = theme || (prefersDark ? 'dark' : 'light');
-                                        document.documentElement.classList.add(activeTheme);
+                                        var theme = localStorage.getItem('theme');
+                                        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                                        var activeTheme = theme || (prefersDark ? 'dark' : 'light');
+                                        
+                                        if (activeTheme === 'light' || activeTheme === 'dark') {
+                                            removeCssVars();
+                                            document.documentElement.classList.add(activeTheme);
+                                        } else {
+                                            document.documentElement.classList.remove('light', 'dark');
+                                            removeCssVars();
+                                        }
                                     }
                                 } catch (e) {}
                             })();
