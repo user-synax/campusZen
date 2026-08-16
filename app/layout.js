@@ -110,11 +110,12 @@ export default function RootLayout({ children }) {
                                 try {
                                     const pathname = window.location.pathname;
                                     // Check if we're on landing, signup, login, auth or public routes
-                                    const isPublicOrAuthRoute = pathname === '/' || 
-                                        pathname.startsWith('/login') || 
-                                        pathname.startsWith('/signup') || 
-                                        pathname.startsWith('/privacy') || 
+                                    const isPublicOrAuthRoute = pathname === '/' ||
+                                        pathname.startsWith('/login') ||
+                                        pathname.startsWith('/signup') ||
+                                        pathname.startsWith('/privacy') ||
                                         pathname.startsWith('/terms') ||
+                                        pathname.startsWith('/docs') ||
                                         pathname.startsWith('/forgot-password');
                                     
                                     if (isPublicOrAuthRoute) {
