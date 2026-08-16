@@ -9,6 +9,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { triggerPusher } from "@/lib/pusher-server";
 import { createNotification } from "@/lib/notifications";
 import { validateObjectId } from "@/utils/validators";
+import { attachBubbleThemes } from "@/lib/server/attachBubbleThemes";
 
 /**
  * GET /api/dms/[conversationId]/messages - Get DM messages
@@ -74,6 +75,9 @@ export async function GET(request, { params }) {
 
         // 5. Reverse for display (oldest first)
         const reversedMessages = [...paginatedMessages].reverse();
+
+        // 5.5 Attach sender bubble themes
+        await attachBubbleThemes(reversedMessages);
 
         // 6. Mark as read (fire and forget)
         DMConversation.findOneAndUpdate(
@@ -206,6 +210,16 @@ export async function POST(request, { params }) {
         }
 
         // Populate message
+        // Resolve sender's equipped bubble theme
+        let senderBubbleTheme = null;
+        const equippedBubbleItemId = currentUser.equippedShopItems?.chat_bubble;
+        if (equippedBubbleItemId) {
+            const ownedBubble = (currentUser.ownedShopItems || []).find(
+                (o) => o.itemId?.toString() === equippedBubbleItemId.toString(),
+            );
+            if (ownedBubble?.slug) senderBubbleTheme = ownedBubble.slug;
+        }
+
         const populated = {
             ...message.toObject(),
             sender: {
@@ -214,6 +228,7 @@ export async function POST(request, { params }) {
                 username: currentUser.username,
                 avatar: currentUser.avatar,
                 isVerified: currentUser.isVerified || false,
+                bubbleTheme: senderBubbleTheme,
             },
             replyTo: populatedReplyTo,
         };
