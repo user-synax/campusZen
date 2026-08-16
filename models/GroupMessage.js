@@ -1,9 +1,5 @@
-import mongoose from 'mongoose' 
- 
-const reactionSchema = new mongoose.Schema({ 
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, 
-  emoji: { type: String, maxlength: 4 } 
-}, { _id: false }) 
+import mongoose from 'mongoose'
+import reactionSchema from './shared/reactionSchema'
  
 const groupMessageSchema = new mongoose.Schema({ 
   groupId: { 
