@@ -12,6 +12,7 @@ import LinkPreview from "@/components/shared/LinkPreview";
 import FormattedTime from "@/components/shared/FormattedTime";
 import { Trash, } from "lucide-react";
 import EmojiPicker from "@/components/post/EmojiPicker";
+import { getBubbleTheme } from "@/lib/chatBubbleThemes";
 
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "🔥", "😮", "😢", "🙏", "🎉"];
 function MessageBubble({
@@ -109,6 +110,10 @@ function MessageBubble({
 
     const urls = message.content ? extractUrls(message.content) : [];
 
+    // Resolve bubble theme (sender.bubbleTheme is set by the API)
+    const bubbleTheme = getBubbleTheme(message.sender?.bubbleTheme);
+    const bubbleStyle = isOwn ? bubbleTheme.ownBubble : bubbleTheme.otherBubble;
+
     // SYSTEM MESSAGE
     if (message.type === "system") {
         return (
@@ -173,16 +178,56 @@ function MessageBubble({
                 )}
 
                 {/* Message bubble */}
-                <div
-                    className={cn(
-                        "relative px-3 py-2 rounded-2xl text-sm leading-relaxed",
-                        isOwn
-                            ? "bg-linear-to-br from-[#7130f3] to-[#5b1fd0] text-white text-md rounded-br-md"
-                            : "bg-card border border-border text-md rounded-bl-md",
+                <div className="relative">
+                    {/* Hard offset shadow (solid, no blur) */}
+                    {(bubbleTheme.borderStyle === "animated" || bubbleTheme.pattern) && (
+                        <div
+                            className={cn(
+                                "absolute inset-0 rounded-2xl -z-10",
+                                isOwn
+                                    ? "translate-x-[3px] translate-y-[3px]"
+                                    : "-translate-x-[3px] translate-y-[3px]",
+                            )}
+                            style={{
+                                backgroundColor: isOwn
+                                    ? "rgba(0,0,0,0.25)"
+                                    : "rgba(0,0,0,0.15)",
+                            }}
+                        />
                     )}
-                >
-                    {/* Mobile swipe reply indicator */}
-                    {dragX > 0 && (
+                    <div
+                        className={cn(
+                            "relative px-3 py-2 rounded-2xl text-sm leading-relaxed overflow-hidden",
+                            bubbleStyle.className,
+                        )}
+                        style={bubbleStyle.style}
+                    >
+                        {/* Pattern overlay — z-0, low opacity */}
+                        {bubbleTheme.pattern && (
+                            <div
+                                className="absolute inset-0 z-0 pointer-events-none rounded-[inherit]"
+                                style={{ opacity: 0.15 }}
+                            >
+                                {bubbleTheme.pattern.type === "svg" ? (
+                                    <div
+                                        className="absolute inset-0"
+                                        dangerouslySetInnerHTML={{
+                                            __html: bubbleTheme.pattern.value,
+                                        }}
+                                    />
+                                ) : bubbleTheme.pattern.type === "css" ? (
+                                    <div
+                                        className="absolute inset-0"
+                                        style={{
+                                            backgroundImage:
+                                                bubbleTheme.pattern.value,
+                                        }}
+                                    />
+                                ) : null}
+                            </div>
+                        )}
+                        {/* Mobile swipe reply indicator */}
+                        {dragX > 0 && (
                         <div
                             className="absolute right-full mr-2 top-1/2 -translate-y-1/2 pointer-events-none"
                             style={{
@@ -345,6 +390,7 @@ function MessageBubble({
                         )}
                     </div>
                 </div>
+                </div>
 
                 {/* Reactions */}
                 {message.reactions?.length > 0 && (
@@ -488,6 +534,7 @@ export default memo(MessageBubble, (prevProps, nextProps) => {
         prevProps.message.imageUrl === nextProps.message.imageUrl &&
         prevProps.message.isDeleted === nextProps.message.isDeleted &&
         prevProps.message.isOptimistic === nextProps.message.isOptimistic &&
+        prevProps.message.sender?.bubbleTheme === nextProps.message.sender?.bubbleTheme &&
         prevProps.isOwn === nextProps.isOwn &&
         prevProps.showAvatar === nextProps.showAvatar &&
         prevProps.currentUserId === nextProps.currentUserId &&
