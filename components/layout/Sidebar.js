@@ -37,7 +37,8 @@ import {
     Coins,
     Link2,
     Wallet,
-    Check
+    Check,
+    BookText
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useChatUnreadCount } from "@/hooks/useChatUnreadCount";
@@ -210,6 +211,7 @@ export default function Sidebar() {
     ];
 
     const bottomNavItems = [
+        { label: "Docs", href: "/docs", icon: BookText },
         { label: "Billing", href: "/billing", icon: CreditCard },
         { label: "Settings", href: "/settings", icon: Settings },
     ];
