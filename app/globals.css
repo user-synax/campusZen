@@ -493,3 +493,129 @@
     position: relative;
     overflow: hidden;
 }
+
+/* ── Docs prose (rendered markdown on /docs) ── */
+.docs-prose {
+    color: hsl(var(--foreground));
+    font-size: 1.0625rem;
+    line-height: 1.8;
+}
+
+.docs-prose > * + * {
+    margin-top: 1.25rem;
+}
+
+.docs-prose h1 {
+    font-size: 2.1rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-top: 0.5rem;
+    line-height: 1.15;
+    color: hsl(var(--foreground));
+}
+
+.docs-prose h2 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid hsl(var(--border));
+    color: hsl(var(--foreground));
+    scroll-margin-top: 6rem;
+}
+
+.docs-prose h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-top: 2rem;
+    color: hsl(var(--foreground));
+}
+
+.docs-prose p {
+    color: hsl(var(--muted-foreground));
+}
+
+.docs-prose strong {
+    color: hsl(var(--foreground));
+    font-weight: 700;
+}
+
+.docs-prose a {
+    color: hsl(var(--primary));
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.docs-prose ul {
+    list-style: disc;
+    padding-left: 1.5rem;
+}
+
+.docs-prose ol {
+    list-style: decimal;
+    padding-left: 1.5rem;
+}
+
+.docs-prose li {
+    margin-top: 0.5rem;
+    color: hsl(var(--muted-foreground));
+}
+
+.docs-prose li::marker {
+    color: hsl(var(--primary));
+}
+
+.docs-prose code {
+    background: hsl(var(--accent));
+    padding: 0.15rem 0.4rem;
+    border-radius: 6px;
+    font-size: 0.85em;
+}
+
+.docs-prose pre {
+    background: hsl(var(--accent));
+    padding: 1.1rem;
+    border-radius: 14px;
+    overflow-x: auto;
+    border: 2px solid hsl(var(--border));
+}
+
+.docs-prose pre code {
+    background: transparent;
+    padding: 0;
+}
+
+.docs-prose blockquote {
+    border-left: 3px solid hsl(var(--primary));
+    padding-left: 1.1rem;
+    color: hsl(var(--muted-foreground));
+}
+
+.docs-prose hr {
+    border-color: hsl(var(--border));
+}
+
+.docs-prose table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    margin-top: 1.25rem;
+}
+
+.docs-prose th,
+.docs-prose td {
+    border: 2px solid hsl(var(--border));
+    padding: 0.7rem 0.9rem;
+    text-align: left;
+}
+
+.docs-prose th {
+    background: hsl(var(--accent));
+    font-weight: 700;
+    color: hsl(var(--foreground));
+}
+
+.docs-prose td {
+    color: hsl(var(--muted-foreground));
+}
