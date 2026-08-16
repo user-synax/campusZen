@@ -39,10 +39,14 @@ export function useDMChat(conversationId, currentUserId, handlers = {}) {
         bindEvent("new-dm-message", "onNewMessage");
         bindEvent("dm-typing-start", "onTypingStart");
         bindEvent("dm-typing-stop", "onTypingStop");
+        bindEvent("dm-message-deleted", "onMessageDeleted");
+        bindEvent("dm-message-reaction", "onReaction");
 
         return () => {
+            // Only unbind our handlers — do NOT unsubscribe from the channel.
+            // useUserChannel (layout-level) also subscribes to private-dm-{userId}
+            // and would lose its listeners if we unsubscribed here.
             channel.unbind_all();
-            pusher.unsubscribe(channelName);
             channelRef.current = null;
         };
     }, [conversationId, currentUserId]);
