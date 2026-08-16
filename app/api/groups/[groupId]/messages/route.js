@@ -9,6 +9,7 @@ import { applyRateLimit } from '@/lib/rate-limit'
 import { triggerPusher } from '@/lib/pusher-server'
 import { createNotification } from '@/lib/notifications'
 import { validateObjectId } from '@/utils/validators'
+import { attachBubbleThemes } from '@/lib/server/attachBubbleThemes'
 
 /**
  * GET /api/groups/[groupId]/messages - Get messages for a group (cursor-based pagination)
@@ -60,6 +61,9 @@ export async function GET(request, { params }) {
     
     // 5. Reverse for display (oldest first)
     const reversedMessages = [...paginatedMessages].reverse()
+
+    // 5.5 Attach sender bubble themes
+    await attachBubbleThemes(reversedMessages)
 
     // 6. Mark as read (fire and forget)
     GroupChat.findOneAndUpdate(
@@ -161,6 +165,16 @@ export async function POST(request, { params }) {
     }
 
     // 5. Construct populated message for immediate return & Pusher
+    // Resolve sender's equipped bubble theme
+    let senderBubbleTheme = null;
+    const equippedBubbleItemId = currentUser.equippedShopItems?.chat_bubble;
+    if (equippedBubbleItemId) {
+      const ownedBubble = (currentUser.ownedShopItems || []).find(
+        (o) => o.itemId?.toString() === equippedBubbleItemId.toString()
+      );
+      if (ownedBubble?.slug) senderBubbleTheme = ownedBubble.slug;
+    }
+
     const populated = {
       ...message.toObject(),
       sender: {
@@ -168,7 +182,8 @@ export async function POST(request, { params }) {
         name: currentUser.name,
         username: currentUser.username,
         avatar: currentUser.avatar,
-        isVerified: currentUser.isVerified || false
+        isVerified: currentUser.isVerified || false,
+        bubbleTheme: senderBubbleTheme,
       },
       replyTo: populatedReplyTo
     }
@@ -197,33 +212,38 @@ export async function POST(request, { params }) {
       reactions: []
     })
 
-    // 7. Create in-app notifications for each group member (except sender, respect mute)
+    // 7. Create in-app notifications for each group member (except sender, respect mute) — batched
     const senderIdStr = currentUser._id.toString()
-    for (const member of group.members) {
-      const memberIdStr = member.userId.toString()
-      if (memberIdStr === senderIdStr) continue
-      if (member.isMuted) continue
-
-      await createNotification({
-        recipient: member.userId,
-        sender: currentUser._id,
-        type: 'group_message',
-        groupId,
-        meta: {
-          groupName: group.name,
-          messagePreview: content ? content.substring(0, 100) : '📷 Image',
-          senderName: currentUser.name
-        },
-        dedupe: false
-      }).catch(err => console.error('[GroupMessage] Notification failed for member:', memberIdStr, err.message))
-    }
+    const notificationPromises = group.members
+      .filter(member => {
+        const memberIdStr = member.userId.toString()
+        return memberIdStr !== senderIdStr && !member.isMuted
+      })
+      .map(member =>
+        createNotification({
+          recipient: member.userId,
+          sender: currentUser._id,
+          type: 'group_message',
+          groupId,
+          meta: {
+            groupName: group.name,
+            messagePreview: content ? content.substring(0, 100) : '📷 Image',
+            senderName: currentUser.name
+          },
+          dedupe: false
+        }).catch(err => console.error('[GroupMessage] Notification failed for member:', member.userId.toString(), err.message))
+      )
 
     // 8. Notify each member's user channel for inbox invalidation (fire and forget)
-    for (const member of group.members) {
-      if (member.userId.toString() === senderIdStr) continue
-      triggerPusher(`private-user-${member.userId}`, 'new-group-message', { groupId })
-        .catch(err => console.error('User channel push failed:', err))
-    }
+    const pusherPromises = group.members
+      .filter(member => member.userId.toString() !== senderIdStr)
+      .map(member =>
+        triggerPusher(`private-user-${member.userId}`, 'new-group-message', { groupId })
+          .catch(err => console.error('User channel push failed:', err))
+      )
+
+    // Fire all notifications and user-channel pushes concurrently
+    await Promise.all([...notificationPromises, ...pusherPromises])
 
     return NextResponse.json({ ...populated, clientId }, { status: 201 })
 
