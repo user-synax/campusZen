@@ -36,7 +36,8 @@ import {
     Link2,
     Check,
     ChevronDown,
-    ChevronRight
+    ChevronRight,
+    BookText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -735,6 +736,25 @@ export default function MobileNav() {
                                         <Settings className="w-5 h-5" />
                                         <span className="text-base font-medium">
                                             Settings
+                                        </span>
+                                    </Button>
+                                </Link>
+                                <Link
+                                    href="/docs"
+                                    onClick={() => setOpen(false)}
+                                >
+                                    <Button
+                                        variant="ghost"
+                                        className={cn(
+                                            "w-full justify-start gap-4 h-12 px-3",
+                                            pathname === "/docs"
+                                                ? "bg-accent text-accent-foreground"
+                                                : "text-muted-foreground",
+                                        )}
+                                    >
+                                        <BookText className="w-5 h-5" />
+                                        <span className="text-base font-medium">
+                                            Docs
                                         </span>
                                     </Button>
                                 </Link>
