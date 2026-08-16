@@ -26,7 +26,7 @@ export async function GET(request) {
     const groups = await GroupChat.find({
       'members.userId': currentUser._id,
       isActive: true
-    }).lean()
+    })
     .sort({ 'lastMessage.sentAt': -1 })
     .select('name avatar college members lastMessage messageCount createdAt')
     .lean()
