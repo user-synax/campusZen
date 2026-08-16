@@ -44,7 +44,7 @@ export default function Navbar() {
                 const res = await fetch("/api/users/me");
                 if (res.ok) {
                     const data = await res.json();
-                    if (active) setUser(data);
+                    if (active) setUser(data.user);
                 }
             } catch (error) {
                 console.error("Failed to fetch session:", error);
@@ -138,7 +138,7 @@ export default function Navbar() {
                                         )}
                                     </span>
                                     <span className="text-sm font-medium text-foreground hidden sm:inline">
-                                        {user.name.split(" ")[0]}
+                                        {(user.name || user.username || "").split(" ")[0]}
                                     </span>
                                 </button>
                             </PopoverTrigger>
