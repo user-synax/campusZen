@@ -55,6 +55,13 @@ import { isAdmin } from "@/lib/admin";
 import { useCat } from "@/context/CatContext";
 import clientCache from "@/lib/client-cache";
 import {
+    primaryNavItems as basePrimaryNavItems,
+    gamificationItems,
+    moreItems,
+    bottomNavItems,
+    adminItems as baseAdminItems,
+} from "./navItems";
+import {
     Dialog,
     DialogContent,
     DialogDescription,
@@ -177,44 +184,21 @@ export default function Sidebar() {
         }
     }, [user]);
 
-    const primaryNavItems = [
-        { label: "Feed", href: "/feed", icon: Home },
-        { label: "Communities", href: "/community", icon: GraduationCap },
-        {
-            label: "Chats",
-            href: "/chats",
-            icon: MessageSquare,
-            badge: chatUnread,
-        },
-        {
-            label: "Notifications",
-            href: "/notifications",
-            icon: Bell,
-            badge: unreadCount,
-        },
-        { label: "Connect", href: "/connect", icon: Link2 },
-        { label: "Bookmarks", href: "/bookmarks", icon: Bookmark },
-    ];
+    const primaryNavItems = basePrimaryNavItems.map((item) =>
+        item.href === "/chats"
+            ? { ...item, badge: chatUnread }
+            : item.href === "/notifications"
+              ? { ...item, badge: unreadCount }
+              : item,
+    );
 
-    const gamificationItems = [
-        { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
-        { label: "Ranks", href: "/ranks", icon: CircleStar },
-        { label: "Shop", href: "/shop", icon: ShoppingBag },
-        { label: "Wallet", href: "/wallet", icon: Wallet },
-    ];
-
-    const moreItems = [
-        { label: "Clips", href: "/clips", icon: Video },
-        { label: "Resources", href: "/resources", icon: BookOpen },
-        { label: "Events", href: "/events", icon: Calendar },
-        { label: "Tools", href: "/tools", icon: Terminal },
-    ];
-
-    const bottomNavItems = [
-        { label: "Docs", href: "/docs", icon: BookText },
-        { label: "Billing", href: "/billing", icon: CreditCard },
-        { label: "Settings", href: "/settings", icon: Settings },
-    ];
+    const adminNavItems = isAdminUser
+        ? baseAdminItems.map((item) =>
+              item.href === "/admin/resources"
+                  ? { ...item, badge: pendingResources }
+                  : item,
+          )
+        : [];
 
     const progress = user
         ? getLevelProgress(user.xp || 0, user.level || 1)
@@ -447,25 +431,7 @@ export default function Sidebar() {
                                 Admin
                             </p>
 
-                            {[
-                                {
-                                    href: "/admin",
-                                    icon: Shield,
-                                    label: "Dashboard",
-                                    color: "text-amber-500",
-                                },
-                                {
-                                    href: "/admin/resources",
-                                    icon: BookOpen,
-                                    label: "Review",
-                                    badge: pendingResources,
-                                },
-                                {
-                                    href: "/analytics",
-                                    icon: BarChart2,
-                                    label: "Analytics",
-                                },
-                            ].map((item) => {
+                            {adminNavItems.map((item) => {
                                 const isActive = pathname === item.href;
                                 const Icon = item.icon;
 

@@ -33,6 +33,8 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import useUser from "@/hooks/useUser"
+import { useLayoutMode } from "@/context/LayoutModeContext"
+import { cn } from "@/lib/utils"
 import PushSettings from '@/components/notifications/PushSettings'
 
 import ConfirmDeleteModal from '@/components/chat/ConfirmDeleteModal'
@@ -62,6 +64,7 @@ import { Progress } from "@/components/ui/progress"
 export default function SettingsPage() {
   const router = useRouter()
   const { user, loading: userLoading, refetch: refetchUser } = useUser()
+  const { layoutMode, setLayoutMode } = useLayoutMode()
 
   const [saving, setSaving] = useState(false)
   const [editDrawerOpen, setEditDrawerOpen] = useState(false)
@@ -612,6 +615,54 @@ export default function SettingsPage() {
                 checked={settings.showOnlineStatus} 
                 onCheckedChange={() => handleToggle('showOnlineStatus')}
               />
+            </div>
+          </div>
+        </section>
+
+        {/* Appearance Section */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2 text-primary">
+            <Monitor className="w-5 h-5" />
+            <h2 className="font-bold uppercase tracking-wider text-xs">Appearance</h2>
+          </div>
+          <div className="bg-card rounded-3xl border border-border p-4">
+            <p className="text-xs text-muted-foreground mb-4">
+              Choose how navigation appears on desktop. This is saved on this device only.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { mode: "sidebar", title: "Sidebar", desc: "Classic left navigation" },
+                { mode: "dock", title: "Dock", desc: "Floating bottom dock" },
+              ].map((opt) => {
+                const selected = layoutMode === opt.mode
+                return (
+                  <button
+                    key={opt.mode}
+                    onClick={() => setLayoutMode(opt.mode)}
+                    className={cn(
+                      "card-chunky text-left p-4 space-y-3 transition-colors hover:cursor-pointer",
+                      selected ? "border-primary bg-primary/5" : "hover:bg-accent/50",
+                    )}
+                  >
+                    <div className="h-20 rounded-xl border border-border bg-background overflow-hidden relative">
+                      {opt.mode === "sidebar" ? (
+                        <div className="absolute left-0 top-0 h-full w-1/4 bg-primary/20 border-r border-primary/30" />
+                      ) : (
+                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1/2 h-3 rounded-full bg-primary/30 border border-primary/40" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{opt.title}</p>
+                      <p className="text-[11px] text-muted-foreground">{opt.desc}</p>
+                    </div>
+                    {selected && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Selected
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
             </div>
           </div>
         </section>

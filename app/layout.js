@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import SchemaMarkup from "@/components/shared/SchemaMarkup";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { LayoutModeProvider } from "@/context/LayoutModeContext";
 
 export const metadata = {
     metadataBase: new URL("https://campuszen.tech"),
@@ -147,10 +148,12 @@ export default function RootLayout({ children }) {
             </head>
             <body suppressHydrationWarning>
                 <ThemeProvider>
-                    <SchemaMarkup />
-                    {children}
-                    <Analytics />
-                    <SpeedInsights />
+                    <LayoutModeProvider>
+                        <SchemaMarkup />
+                        {children}
+                        <Analytics />
+                        <SpeedInsights />
+                    </LayoutModeProvider>
                 </ThemeProvider>
             </body>
         </html>
