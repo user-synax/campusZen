@@ -50,7 +50,7 @@ export async function GET(request, { params }) {
             const comments = await Comment.find(query)
                 .sort({ createdAt: 1 })
                 .limit(limit + 1)
-                .populate("author", "name username avatar college")
+                .populate("author", "name username avatar")
                 .lean();
 
             // Check if there are more comments

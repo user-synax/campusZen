@@ -51,57 +51,47 @@ export async function POST(request) {
 
         await connectDB();
 
-        const post = await Post.findById(postId);
-        if (!post) {
+        const currentUserIdStr = currentUser._id.toString();
+        const isLiked = !!(await Post.exists({
+            _id: postId,
+            likes: currentUser._id,
+        }));
+
+        // Single atomic update — no separate existence/author fetch.
+        const updatedPost = await Post.findOneAndUpdate(
+            { _id: postId },
+            isLiked
+                ? { $pull: { likes: currentUser._id }, $inc: { likesCount: -1 } }
+                : { $addToSet: { likes: currentUser._id }, $inc: { likesCount: 1 } },
+            { new: true, select: "author content likesCount" },
+        );
+
+        if (!updatedPost) {
             return NextResponse.json(
                 { message: "Post not found" },
                 { status: 404 },
             );
         }
 
-        const currentUserIdStr = currentUser._id.toString();
-        const isLiked = post.likes.some(
-            (id) => id.toString() === currentUserIdStr,
-        );
+        const postAuthor = updatedPost.author;
 
-        let updatedPost;
         if (isLiked) {
-            // Unlike optimized: $pull and $inc -1
-            updatedPost = await Post.findOneAndUpdate(
-                { _id: postId },
-                {
-                    $pull: { likes: currentUser._id },
-                    $inc: { likesCount: -1 },
-                },
-                { new: true },
-            );
-
             // Delete notification
             await deleteNotification({
                 sender: currentUser._id,
-                recipient: post.author,
+                recipient: postAuthor,
                 type: "like",
                 postId: postId,
             }).catch((err) => console.error("Notification error:", err));
         } else {
-            // Like optimized: $addToSet and $inc +1
-            updatedPost = await Post.findOneAndUpdate(
-                { _id: postId },
-                {
-                    $addToSet: { likes: currentUser._id },
-                    $inc: { likesCount: 1 },
-                },
-                { new: true },
-            );
-
             // Create notification - only if author is not the current user
-            if (post.author && post.author.toString() !== currentUserIdStr) {
+            if (postAuthor && postAuthor.toString() !== currentUserIdStr) {
                 await createNotification({
-                    recipient: post.author,
+                    recipient: postAuthor,
                     sender: currentUser._id,
                     type: "like",
                     postId: postId,
-                    meta: { postPreview: post.content?.substring(0, 50) },
+                    meta: { postPreview: updatedPost.content?.substring(0, 50) },
                 }).catch((err) => console.error("Notification error:", err));
             }
 
@@ -113,7 +103,7 @@ export async function POST(request) {
             // Award VP for giving a like (actor earns). Self-guard:
             // don't reward liking your own post.
             awardVP(currentUser._id, "like", postId, {
-                ownerId: post.author,
+                ownerId: postAuthor,
             }).catch((err) => console.error("VP award error:", err));
         }
 

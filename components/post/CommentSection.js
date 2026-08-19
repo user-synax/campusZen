@@ -28,6 +28,21 @@ export default function CommentSection({ postId, currentUser, onCountChange }) {
             if (cursor) params.set("cursor", cursor);
             const cacheKey = `comments:${postId}:10:${cursor || "first"}`;
 
+            // Serve from client cache on a hit to avoid a network round-trip
+            // (and the loading skeleton) when comments were already fetched
+            // within the 1-minute TTL.
+            const cached = clientCache.get(cacheKey);
+            if (cached) {
+                if (append) {
+                    setComments((prev) => [...prev, ...cached.comments]);
+                } else {
+                    setComments(cached.comments);
+                }
+                setHasNextPage(cached.hasNextPage);
+                setNextCursor(cached.nextCursor);
+                return;
+            }
+
             try {
                 const res = await fetch(
                     `/api/posts/${postId}/comments?${params.toString()}`,

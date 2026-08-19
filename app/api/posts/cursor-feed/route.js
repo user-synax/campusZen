@@ -141,7 +141,7 @@ export async function GET(request) {
                     posts = await Post.find(interestQuery)
                         .sort({ createdAt: -1 })
                         .limit(limit + 1)
-                        .select("-__v -updatedAt")
+                        .select("-__v -updatedAt -likes")
                         .populate({
                             path: "author",
                             select: "name username avatar college isVerified verificationType isBot botType",
@@ -158,7 +158,7 @@ export async function GET(request) {
                     const pageWindow = await Post.find(query)
                         .sort({ _id: -1 })
                         .limit(limit + 1)
-                        .select("-__v -updatedAt")
+                        .select("-__v -updatedAt -likes")
                         .populate({
                             path: "author",
                             select: "name username avatar college isVerified verificationType isBot botType",
@@ -191,7 +191,7 @@ export async function GET(request) {
                     posts = await Post.find(query)
                         .sort({ _id: -1 })
                         .limit(limit + 1)
-                        .select("-__v -updatedAt")
+                        .select("-__v -updatedAt -likes")
                         .populate({
                             path: "author",
                             select: "name username avatar college isVerified verificationType isBot botType",
@@ -232,11 +232,24 @@ export async function GET(request) {
                 return acc;
             }, {});
 
+            // Compute liked-state per post using index-backed existence
+            // checks so we never materialize the full `likes` array.
+            const likedSet = new Set();
+            if (currentUser && resultPosts.length > 0) {
+                await Promise.all(
+                    resultPosts.map(async (post) => {
+                        const liked = await Post.exists({
+                            _id: post._id,
+                            likes: currentUser._id,
+                        });
+                        if (liked) likedSet.add(post._id.toString());
+                    }),
+                );
+            }
+
             const processedPosts = resultPosts.map((post) => {
                 const isLiked = currentUser
-                    ? post.likes?.some(
-                          (id) => id.toString() === currentUser._id.toString(),
-                      )
+                    ? likedSet.has(post._id.toString())
                     : false;
                 const isBookmarked =
                     currentUser && currentUser.bookmarks
