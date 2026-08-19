@@ -461,7 +461,54 @@ export default function AdminShopManager() {
               </div>
 
               {formData.category === 'avatar_frame' && (
-                <div className="space-y-1.5 pt-1 border-t border-border/30">
+                <div className="space-y-3 pt-1 border-t border-border/30">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Frame Style</label>
+                    <select
+                      value={formData.visual?.frameStyle || ''}
+                      onChange={e => setFormData({ ...formData, visual: { ...formData.visual, frameStyle: e.target.value || undefined } })}
+                      className="w-full bg-input border border-border rounded-md h-10 px-3 text-sm focus:ring-2 focus:ring-primary outline-none"
+                    >
+                      <option value="">— None (use Color / Overlay Asset below) —</option>
+                      <option value="solid">Solid (static color ring)</option>
+                      <option value="gradient">Gradient (static ring)</option>
+                      <option value="gradient-rotate">Gradient + Rotate (slow spin)</option>
+                    </select>
+                    <p className="text-[10px] text-muted-foreground/70 ml-1 leading-relaxed">
+                      Tier 1/2/3 render technique. Solid uses the Color field above; Gradient / Gradient+Rotate use the two color stops below. No glow or blur on any tier.
+                    </p>
+                  </div>
+
+                  {formData.visual?.frameStyle === 'gradient' || formData.visual?.frameStyle === 'gradient-rotate' ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Gradient Color 1</label>
+                        <Input
+                          value={formData.visual?.gradientColors?.[0] || ''}
+                          onChange={e => {
+                            const g = [...(formData.visual?.gradientColors || [])];
+                            g[0] = e.target.value;
+                            setFormData({ ...formData, visual: { ...formData.visual, gradientColors: g } });
+                          }}
+                          placeholder="#ff6b6b"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Gradient Color 2</label>
+                        <Input
+                          value={formData.visual?.gradientColors?.[1] || ''}
+                          onChange={e => {
+                            const g = [...(formData.visual?.gradientColors || [])];
+                            g[1] = e.target.value;
+                            setFormData({ ...formData, visual: { ...formData.visual, gradientColors: g } });
+                          }}
+                          placeholder="#4ecdc4"
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div className="space-y-1.5">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Frame Overlay Asset URL (Optional)</label>
                   <Input 
                     value={formData.visual?.frameAssetUrl || ''} 
@@ -472,6 +519,7 @@ export default function AdminShopManager() {
                     Upload a transparent-center GIF or WebM for animated frames (Discord-style overlay), or use the Color field above for a simple CSS glow frame.
                     Square aspect ratio recommended; keep looping files ≤ 2MB so profile pages stay fast. GIFs loop natively; WebM/MP4 need a video-capable host (self-host via UploadThing/Appwrite).
                   </p>
+                </div>
                 </div>
               )}
             </div>
