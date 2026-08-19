@@ -82,7 +82,6 @@ export async function GET(request) {
                 isVerified: false,
                 verificationStatus: "none",
                 gender: "unspecified",
-                isOnboarded: false,
             });
 
             try {
@@ -113,7 +112,7 @@ export async function GET(request) {
             username: user.username,
         });
 
-        const redirectTo = user.isOnboarded ? "/feed" : "/onboarding";
+        const redirectTo = "/feed";
         const response = NextResponse.redirect(`${origin}${redirectTo}`);
         await setAuthCookie(response, token);
 
@@ -240,7 +239,6 @@ export async function POST(request) {
                 isVerified: false,
                 verificationStatus: "none",
                 gender: "unspecified",
-                isOnboarded: false,
             });
 
             // Auto-follow founder
@@ -301,7 +299,7 @@ export async function POST(request) {
         });
 
         // Determine redirect URL
-        const redirectTo = user.isOnboarded ? "/feed" : "/onboarding";
+        const redirectTo = "/feed";
 
         const response = NextResponse.json({ redirectTo });
         await setAuthCookie(response, token);

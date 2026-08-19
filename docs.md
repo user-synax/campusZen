@@ -6,7 +6,6 @@ CampusZen is a social app made for college students. Think of it as a campus tow
 
 - [Getting Started: Sign Up & Log In](#getting-started-sign-up-log-in)
 - [Verifying Your Student Status](#verifying-your-student-status)
-- [Setting Up Your Profile (Onboarding)](#setting-up-your-profile-onboarding)
 - [Your Home Feed](#your-home-feed)
 - [Creating a Post](#creating-a-post)
 - [Posts: Likes, Comments, Sharing & More](#posts-likes-comments-sharing-more)
@@ -58,20 +57,6 @@ A verified badge (✓) next to your name tells everyone you're a real student. I
   - **Under review** — a friendly "you'll be notified within 24 hours" screen.
   - **Verified** — shows your ✓ badge and a button to view your profile.
 - Your ID is kept private and is only used to confirm you're a student — it's never shown publicly.
-
----
-
-## Setting Up Your Profile (Onboarding)
-
-Right after you create an account, a friendly 5-step welcome wizard helps you set up your profile. You can skip most steps.
-
-1. **Profile basics** (required) — Add a profile photo and your full name, plus a short bio about yourself.
-2. **Education** — Pick your college from a searchable list (or type your own), and optionally add your course, branch, and year of study.
-3. **Interests** — Tap topics you like (Technology, Music, Sports, Gaming, Photography, and many more) so CampusZen can show you relevant posts.
-4. **Follow people** — The app suggests a few students to follow; tap **Follow** on anyone you'd like to keep up with.
-5. **Notifications** — Choose to turn on alerts, or tap "Maybe later."
-
-When you finish, you land on your campus feed. (If you've already set up before, you go straight to the feed.)
 
 ---
 

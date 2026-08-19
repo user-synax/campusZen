@@ -297,12 +297,6 @@ const userSchema = new mongoose.Schema(
         // Password reset fields
         resetToken: { type: String, default: null },
         resetTokenExpiry: { type: Date, default: null },
-        // Onboarding status
-        isOnboarded: {
-            type: Boolean,
-            default: false,
-        },
-
         // Google OAuth
         googleId: { type: String, unique: true, sparse: true },
         googleAccessToken: { type: String },

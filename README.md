@@ -17,7 +17,7 @@ CampusZen is a student-focused social platform for Indian colleges. The app comb
 
 ## ✨ Highlights
 
-- Verified student onboarding with email/password, Google sign-in, OTP flows, and forgot-password recovery.
+- Verified student accounts with email/password, Google sign-in, OTP flows, and forgot-password recovery.
 - Social feed with posts, comments, reactions, shares, bookmarks, hashtags, and trending discovery.
 - Real-time direct messages and group chats with typing indicators and read states.
 - Resources, events, and clips for campus content beyond the main feed.
@@ -145,7 +145,7 @@ models/            Mongoose models
 ## 🚦 Key Routes
 
 - `/` public landing page
-- `/login`, `/signup`, `/onboarding`, `/verify-student`
+- `/login`, `/signup`, `/verify-student`
 - `/feed`, `/community`, `/chats`, `/notifications`, `/search`
 - `/events`, `/resources`, `/clips`, `/bookmarks`, `/leaderboard`
 - `/settings`, `/billing`, `/customize`, `/analytics`

@@ -80,7 +80,7 @@ The project is mid-rename from **campusX → campusZen**:
 ```
 campusX/
 ├── app/
-│   ├── (auth)/        login, signup, onboarding, verify-student
+│   ├── (auth)/        login, signup, verify-student
 │   ├── (main)/        feed, chats, community, events, resources, clips,
 │   │                  notifications, profile, settings, billing, customize,
 │   │                  analytics, leaderboard, ranks, bookmarks, search, tools/*

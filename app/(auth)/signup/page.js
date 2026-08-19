@@ -222,7 +222,7 @@ export default function SignupPage() {
                         "Something went wrong",
                     );
 
-                window.location.href = "/onboarding";
+                window.location.href = "/feed";
             }
         } catch (err) {
             // Zod validation errors might come in an array

@@ -6,7 +6,7 @@ export async function GET() {
     const markdown = `# CampusZen Project Overview
 ## CampusZen — Student-first social platform
 
-CampusZen is a student-only social platform built for Indian college communities. It focuses on verified onboarding, safe campus discovery, collaborative tools, and real-time social features tailored to students.
+CampusZen is a student-only social platform built for Indian college communities. It focuses on safe campus discovery, collaborative tools, and real-time social features tailored to students.
 
 ## Key Information
 - **Project Name:** CampusZen (campusX)
