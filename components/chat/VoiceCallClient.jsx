@@ -13,8 +13,17 @@ import { ConnectionState, RoomEvent } from "livekit-client";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { micErrorMessage } from "@/lib/callErrors";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Mic, MicOff, PhoneOff, Loader2, Settings2, MicOffIcon } from "lucide-react";
+import {
+    Mic,
+    MicOff,
+    MicOffIcon,
+    PhoneOff,
+    Loader2,
+    Settings2,
+    Volume2,
+} from "lucide-react";
 
 function parseMeta(meta) {
     try {
@@ -36,40 +45,86 @@ function MediaErrorWatcher() {
     return null;
 }
 
-function ParticipantRow() {
-    const participants = useParticipants();
+function ParticipantTile({ p }) {
+    const meta = parseMeta(p.metadata);
+    const name = p.name || meta.name || "User";
+    const avatar = meta.avatar;
+    const speaking = p.isSpeaking;
+    const muted = !p.isMicrophoneEnabled;
+    const initial = (name.charAt(0) || "?").toUpperCase();
+
     return (
-        <div className="flex flex-wrap gap-5 justify-center px-4 py-6">
-            {participants.map((p) => {
-                const meta = parseMeta(p.metadata);
-                const name = p.name || meta.name || "User";
-                const avatar = meta.avatar;
-                return (
-                    <div key={p.identity} className="flex flex-col items-center gap-1.5 w-20">
-                        <div
-                            className={`w-16 h-16 rounded-full overflow-hidden border-2 flex items-center justify-center bg-muted transition-colors ${
-                                p.isSpeaking ? "border-green-500" : "border-border"
-                            }`}
-                        >
-                            {avatar ? (
-                                <img
-                                    src={avatar}
-                                    alt={name}
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : (
-                                <span className="text-xl font-bold">
-                                    {name.charAt(0).toUpperCase()}
-                                </span>
-                            )}
+        <div className="flex w-full max-w-[7.5rem] flex-col items-center gap-2">
+            <div className="relative">
+                <div
+                    className={cn(
+                        "h-20 w-20 sm:h-24 sm:w-24 overflow-hidden rounded-full bg-muted ring-2 transition-all duration-200",
+                        speaking
+                            ? "scale-[1.04] ring-green-500 shadow-[0_0_0_5px_rgba(34,197,94,0.18)]"
+                            : "ring-border",
+                    )}
+                >
+                    {avatar ? (
+                        <img
+                            src={avatar}
+                            alt={name}
+                            className="h-full w-full object-cover"
+                        />
+                    ) : (
+                        <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-muted-foreground">
+                            {initial}
                         </div>
-                        <span className="text-[11px] text-muted-foreground truncate w-full text-center">
-                            {name}
-                            {p.isLocal ? " (you)" : ""}
-                        </span>
-                    </div>
-                );
-            })}
+                    )}
+                </div>
+
+                {muted && (
+                    <span className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground ring-2 ring-background">
+                        <MicOff className="h-3 w-3" />
+                    </span>
+                )}
+            </div>
+
+            <span
+                className={cn(
+                    "max-w-[6.5rem] truncate text-center text-xs font-medium",
+                    speaking ? "text-foreground" : "text-muted-foreground",
+                )}
+            >
+                {name}
+                {p.isLocal ? " (you)" : ""}
+            </span>
+        </div>
+    );
+}
+
+function RoomView() {
+    const participants = useParticipants();
+    const count = participants.length;
+
+    return (
+        <div className="flex min-h-0 flex-1 flex-col">
+            <header className="flex items-center gap-2 border-b border-border px-4 py-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <Volume2 className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">Voice Channel</p>
+                    <p className="text-xs text-muted-foreground">
+                        {count} {count === 1 ? "person" : "people"} connected
+                    </p>
+                </div>
+                <div className="ml-auto">
+                    <CallStatus />
+                </div>
+            </header>
+
+            <div className="flex-1 overflow-y-auto p-4">
+                <div className="grid grid-cols-2 place-items-center gap-x-4 gap-y-7 sm:grid-cols-3 md:grid-cols-4">
+                    {participants.map((p) => (
+                        <ParticipantTile key={p.identity} p={p} />
+                    ))}
+                </div>
+            </div>
         </div>
     );
 }
@@ -136,7 +191,7 @@ function Controls({ selectedDeviceId, onLeave }) {
     };
 
     return (
-        <div className="flex items-center justify-center gap-3 py-4 border-t border-border bg-background/90 backdrop-blur">
+        <div className="flex items-center justify-center gap-3 border-t border-border bg-background/90 py-4 backdrop-blur">
             <Button
                 variant="ghost"
                 size="icon"
@@ -145,9 +200,9 @@ function Controls({ selectedDeviceId, onLeave }) {
                 title={muted ? "Unmute" : "Mute"}
             >
                 {muted ? (
-                    <MicOffIcon className="w-5 h-5 text-red-500" />
+                    <MicOffIcon className="h-5 w-5 text-red-500" />
                 ) : (
-                    <Mic className="w-5 h-5" />
+                    <Mic className="h-5 w-5" />
                 )}
             </Button>
 
@@ -162,15 +217,15 @@ function Controls({ selectedDeviceId, onLeave }) {
                     className="rounded-full active:scale-[0.98]"
                     title="Switch microphone"
                 >
-                    <Settings2 className="w-5 h-5" />
+                    <Settings2 className="h-5 w-5" />
                 </Button>
                 {picking && (
-                    <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-56 bg-background border border-border rounded-lg p-2 z-20">
-                        <p className="text-[11px] text-muted-foreground px-1 pb-1">
+                    <div className="absolute bottom-12 left-1/2 z-20 w-56 -translate-x-1/2 rounded-lg border border-border bg-background p-2">
+                        <p className="px-1 pb-1 text-[11px] text-muted-foreground">
                             Microphone
                         </p>
                         {devices.length === 0 && (
-                            <p className="text-[11px] text-muted-foreground px-1">
+                            <p className="px-1 text-[11px] text-muted-foreground">
                                 No devices found
                             </p>
                         )}
@@ -178,11 +233,12 @@ function Controls({ selectedDeviceId, onLeave }) {
                             <button
                                 key={d.deviceId}
                                 onClick={() => chooseDevice(d.deviceId)}
-                                className={`w-full text-left text-xs px-2 py-1.5 rounded-md hover:bg-accent/50 ${
+                                className={cn(
+                                    "w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent/50",
                                     d.deviceId === currentDevice
-                                        ? "text-primary font-semibold"
-                                        : ""
-                                }`}
+                                        ? "font-semibold text-primary"
+                                        : "",
+                                )}
                             >
                                 {d.label || "Microphone"}
                             </button>
@@ -198,15 +254,18 @@ function Controls({ selectedDeviceId, onLeave }) {
                 className="rounded-full active:scale-[0.98] hover:bg-red-500/10"
                 title="Leave call"
             >
-                <PhoneOff className="w-5 h-5 text-red-500" />
+                <PhoneOff className="h-5 w-5 text-red-500" />
             </Button>
         </div>
     );
 }
 
-function CallStatus({ onEnded }) {
+function CallStatus() {
     const connState = useConnectionState();
     const wasConnected = useRef(false);
+    const router = useRouter();
+    const groupIdRef = useRef(null);
+    groupIdRef.current = typeof window !== "undefined" ? window.location.pathname.split("/")[2] : null;
 
     useEffect(() => {
         if (connState === ConnectionState.Connected) wasConnected.current = true;
@@ -215,10 +274,12 @@ function CallStatus({ onEnded }) {
     useEffect(() => {
         if (wasConnected.current && connState === ConnectionState.Disconnected) {
             toast("The voice chat ended");
-            const t = setTimeout(() => onEnded(), 1500);
+            const t = setTimeout(() => {
+                if (groupIdRef.current) router.push(`/chats/${groupIdRef.current}`);
+            }, 1500);
             return () => clearTimeout(t);
         }
-    }, [connState, onEnded]);
+    }, [connState, router]);
 
     let label = "Connecting…";
     let color = "text-muted-foreground";
@@ -237,9 +298,9 @@ function CallStatus({ onEnded }) {
     }
 
     return (
-        <div className={`flex items-center justify-center gap-2 text-xs ${color}`}>
+        <div className={cn("flex items-center gap-2 text-xs", color)}>
             {connState !== ConnectionState.Connected && (
-                <Loader2 className="w-3 h-3 animate-spin" />
+                <Loader2 className="h-3 w-3 animate-spin" />
             )}
             <span>{label}</span>
         </div>
@@ -257,15 +318,19 @@ export default function VoiceCallClient({ token, serverUrl, groupId, selectedDev
             connect={true}
             video={false}
             audio={true}
-            className="flex flex-col h-full"
+            onError={(e) => {
+                console.error("[lk] onError", e);
+                toast.error(e?.message || "Could not connect to the voice server");
+            }}
+            onDisconnected={(reason) => {
+                console.error("[lk] onDisconnected", reason);
+            }}
+            className="flex h-full flex-col"
         >
             <MediaErrorWatcher />
             <RoomAudioRenderer />
-            <div className="flex-1 overflow-y-auto">
-                <ParticipantRow />
-            </div>
-            <CallStatus onEnded={handleEnded} />
-            <Controls selectedDeviceId={selectedDeviceId} onLeave={onLeave} />
+            <RoomView />
+            <Controls selectedDeviceId={selectedDeviceId} onLeave={onLeave || handleEnded} />
         </LiveKitRoom>
     );
 }

@@ -99,9 +99,9 @@ function getDevelopmentCSP() {
         // media-src covers <video> avatar-frame overlays (WebM/MP4). GIFs are
         // <img> and are covered by img-src. Self-host via UploadThing/Appwrite
         // (whitelisted here) for consistency with the rest of the app.
-        "media-src 'self' data: blob: https://*.cloud.appwrite.io https://utfs.io https://*.uploadthing.com https://*.ufs.sh",
+        "media-src 'self' data: blob: https://*.cloud.appwrite.io https://utfs.io https://*.uploadthing.com https://*.ufs.sh https://*.livekit.cloud wss://*.livekit.cloud",
 
-        "connect-src 'self' https://api.anthropic.com https://api.dicebear.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://*.uploadthing.com https://*.ingest.uploadthing.com https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com https://*.pusher.com wss://*.pusher.com blob: data: http://localhost:* ws://localhost:* https://*.cloud.appwrite.io",
+        "connect-src 'self' https://api.anthropic.com https://api.dicebear.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://*.uploadthing.com https://*.ingest.uploadthing.com https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com https://*.pusher.com wss://*.pusher.com blob: data: http://localhost:* ws://localhost:* https://*.cloud.appwrite.io https://*.livekit.cloud wss://*.livekit.cloud",
 
         "font-src 'self' data: https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com",
 
@@ -132,9 +132,9 @@ function getProductionCSP() {
         // media-src covers <video> avatar-frame overlays (WebM/MP4). GIFs are
         // <img> and are covered by img-src. Self-host via UploadThing/Appwrite
         // (whitelisted here) for consistency with the rest of the app.
-        "media-src 'self' data: blob: https://*.cloud.appwrite.io https://utfs.io https://*.uploadthing.com https://*.ufs.sh",
+        "media-src 'self' data: blob: https://*.cloud.appwrite.io https://utfs.io https://*.uploadthing.com https://*.ufs.sh https://*.livekit.cloud wss://*.livekit.cloud",
 
-        "connect-src 'self' https://api.anthropic.com https://api.dicebear.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://*.uploadthing.com https://*.ingest.uploadthing.com https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com https://*.pusher.com wss://*.pusher.com blob: data: https://*.cloud.appwrite.io",
+        "connect-src 'self' https://api.anthropic.com https://api.dicebear.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://*.uploadthing.com https://*.ingest.uploadthing.com https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com https://*.pusher.com wss://*.pusher.com blob: data: https://*.cloud.appwrite.io https://*.livekit.cloud wss://*.livekit.cloud",
 
         "font-src 'self' data: https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com",
 
