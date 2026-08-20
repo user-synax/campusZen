@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, PhoneCall, Mic } from "lucide-react";
+import { ArrowLeft, Loader2, PhoneCall, Mic, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { micErrorMessage } from "@/lib/callErrors";
@@ -29,6 +29,8 @@ export default function GroupCallPage() {
     const [token, setToken] = useState(null);
     const [livekitUrl, setLivekitUrl] = useState(null);
     const [micError, setMicError] = useState(null);
+    // micState: idle | granted | denied | blocked
+    const [micState, setMicState] = useState("idle");
     const [devices, setDevices] = useState([]);
     const [selectedDeviceId, setSelectedDeviceId] = useState("");
 
@@ -44,6 +46,30 @@ export default function GroupCallPage() {
         } catch {
             /* ignore */
         }
+    }, []);
+
+    // Reflect the browser's mic permission so we can guide the user
+    useEffect(() => {
+        if (!navigator.permissions?.query) return;
+        let perm;
+        const update = (p) => {
+            if (p.state === "granted") setMicState("granted");
+            else if (p.state === "denied") {
+                setMicState("denied");
+                setMicError(
+                    "Microphone access is blocked. Allow it via the mic/lock icon in your browser's address bar, then tap Retry.",
+                );
+            } else setMicState("idle");
+        };
+        navigator.permissions
+            .query({ name: "microphone" })
+            .then((p) => {
+                perm = p;
+                update(p);
+                p.addEventListener("change", () => update(p));
+            })
+            .catch(() => {});
+        return () => perm?.removeEventListener?.("change", () => update(perm));
     }, []);
 
     useEffect(() => {
@@ -69,15 +95,30 @@ export default function GroupCallPage() {
         loadDevices();
     }, [groupId, loadDevices, setCall]);
 
-    const preflight = useCallback(async () => {
+    // Ask for microphone permission. Must run inside a user gesture so the
+    // browser actually shows the prompt.
+    const requestMic = useCallback(async () => {
+        if (typeof window !== "undefined" && !window.isSecureContext) {
+            setMicError(
+                "Microphone needs a secure (HTTPS) connection. Open the app on localhost or over HTTPS.",
+            );
+            setMicState("blocked");
+            return false;
+        }
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             stream.getTracks().forEach((t) => t.stop());
             setMicError(null);
+            setMicState("granted");
             await loadDevices();
             return true;
         } catch (e) {
             setMicError(micErrorMessage(e));
+            setMicState(
+                e?.name === "NotAllowedError" || e?.name === "SecurityError"
+                    ? "denied"
+                    : "blocked",
+            );
             return false;
         }
     }, [loadDevices]);
@@ -86,7 +127,9 @@ export default function GroupCallPage() {
         setJoining(true);
         setMicError(null);
         try {
-            const ok = await preflight();
+            // Always (re)request permission here — this is the user gesture that
+            // makes the browser prompt appear. If already granted it returns instantly.
+            const ok = await requestMic();
             if (!ok) {
                 setJoining(false);
                 return;
@@ -112,7 +155,7 @@ export default function GroupCallPage() {
             toast.error("Could not join voice chat");
             setJoining(false);
         }
-    }, [groupId, preflight]);
+    }, [groupId, requestMic]);
 
     const leave = useCallback(() => {
         router.push(`/chats/${groupId}`);
@@ -150,9 +193,7 @@ export default function GroupCallPage() {
                         {group?.name || "Group voice chat"}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                        {liveCount > 0
-                            ? `${liveCount} in call`
-                            : "Voice chat"}
+                        {liveCount > 0 ? `${liveCount} in call` : "Voice chat"}
                     </p>
                 </div>
             </div>
@@ -162,17 +203,25 @@ export default function GroupCallPage() {
                     <PhoneCall className="w-10 h-10 text-primary" />
                 </div>
 
-                {micError ? (
+                {/* Mic permission status */}
+                {micState === "granted" ? (
+                    <p className="text-sm text-green-500">Microphone ready</p>
+                ) : micState === "denied" ? (
                     <div className="max-w-sm text-center text-sm text-red-500">
                         {micError}
                     </div>
+                ) : micState === "blocked" ? (
+                    <div className="max-w-sm flex items-start gap-2 text-center text-sm text-red-500">
+                        <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" />
+                        <span>{micError}</span>
+                    </div>
                 ) : (
                     <p className="text-sm text-muted-foreground text-center">
-                        You&apos;ll join with your microphone on. Pick an input
-                        device below.
+                        Tap Join and allow microphone access when your browser asks.
                     </p>
                 )}
 
+                {/* Device picker */}
                 <div className="w-full max-w-xs">
                     <label className="text-[11px] text-muted-foreground px-1">
                         Microphone
@@ -193,18 +242,31 @@ export default function GroupCallPage() {
                     </select>
                 </div>
 
-                <Button
-                    onClick={join}
-                    disabled={joining}
-                    className="rounded-full px-6 gap-2 active:scale-[0.98]"
-                >
-                    {joining ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                        <Mic className="w-4 h-4" />
+                <div className="flex flex-col items-center gap-2">
+                    <Button
+                        onClick={join}
+                        disabled={joining}
+                        className="rounded-full px-6 gap-2 active:scale-[0.98]"
+                    >
+                        {joining ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <Mic className="w-4 h-4" />
+                        )}
+                        {joining ? "Connecting…" : "Join voice chat"}
+                    </Button>
+
+                    {micState === "denied" && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={requestMic}
+                            className="text-xs active:scale-[0.98]"
+                        >
+                            Retry microphone access
+                        </Button>
                     )}
-                    {joining ? "Connecting…" : "Join voice chat"}
-                </Button>
+                </div>
             </div>
         </div>
     );
