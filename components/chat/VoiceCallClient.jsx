@@ -1,19 +1,20 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
     LiveKitRoom,
     RoomAudioRenderer,
     useParticipants,
     useLocalParticipant,
     useConnectionState,
+    useRoomContext,
 } from "@livekit/components-react";
-import { ConnectionState } from "livekit-client";
+import { ConnectionState, RoomEvent } from "livekit-client";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { micErrorMessage } from "@/lib/callErrors";
 import { toast } from "sonner";
-import { Mic, MicOff, PhoneOff, Loader2, Settings2 } from "lucide-react";
+import { Mic, MicOff, PhoneOff, Loader2, Settings2, MicOffIcon } from "lucide-react";
 
 function parseMeta(meta) {
     try {
@@ -21,6 +22,18 @@ function parseMeta(meta) {
     } catch {
         return {};
     }
+}
+
+function MediaErrorWatcher() {
+    const room = useRoomContext();
+    useEffect(() => {
+        const handler = (e) => {
+            toast.error(micErrorMessage(e) || "Microphone error");
+        };
+        room.on(RoomEvent.MediaDevicesError, handler);
+        return () => room.off(RoomEvent.MediaDevicesError, handler);
+    }, [room]);
+    return null;
 }
 
 function ParticipantRow() {
@@ -52,6 +65,7 @@ function ParticipantRow() {
                         </div>
                         <span className="text-[11px] text-muted-foreground truncate w-full text-center">
                             {name}
+                            {p.isLocal ? " (you)" : ""}
                         </span>
                     </div>
                 );
@@ -62,17 +76,35 @@ function ParticipantRow() {
 
 function Controls({ selectedDeviceId, onLeave }) {
     const { localParticipant } = useLocalParticipant();
+    const connState = useConnectionState();
     const [muted, setMuted] = useState(false);
     const [devices, setDevices] = useState([]);
     const [currentDevice, setCurrentDevice] = useState(selectedDeviceId);
     const [picking, setPicking] = useState(false);
 
+    const refreshDevices = useCallback(async () => {
+        try {
+            const all = await navigator.mediaDevices.enumerateDevices();
+            setDevices(all.filter((d) => d.kind === "audioinput"));
+        } catch {
+            /* ignore */
+        }
+    }, []);
+
+    // Populate the device list as soon as we can (labels appear after permission).
     useEffect(() => {
-        if (!localParticipant) return;
+        refreshDevices();
+    }, [refreshDevices]);
+
+    // Enable the microphone only once the room is actually connected.
+    useEffect(() => {
+        if (connState !== ConnectionState.Connected || !localParticipant) return;
         let cancelled = false;
         (async () => {
             try {
-                if (!cancelled) await localParticipant.setMicrophoneEnabled(true);
+                if (!localParticipant.isMicrophoneEnabled) {
+                    await localParticipant.setMicrophoneEnabled(true);
+                }
                 if (currentDevice && !cancelled) {
                     await localParticipant.setMicrophoneDevice(currentDevice);
                 }
@@ -83,16 +115,7 @@ function Controls({ selectedDeviceId, onLeave }) {
         return () => {
             cancelled = true;
         };
-    }, [localParticipant, currentDevice]);
-
-    const refreshDevices = async () => {
-        try {
-            const all = await navigator.mediaDevices.enumerateDevices();
-            setDevices(all.filter((d) => d.kind === "audioinput"));
-        } catch {
-            /* ignore */
-        }
-    };
+    }, [connState, localParticipant, currentDevice]);
 
     const toggleMute = async () => {
         if (!localParticipant) return;
@@ -122,7 +145,7 @@ function Controls({ selectedDeviceId, onLeave }) {
                 title={muted ? "Unmute" : "Mute"}
             >
                 {muted ? (
-                    <MicOff className="w-5 h-5 text-red-500" />
+                    <MicOffIcon className="w-5 h-5 text-red-500" />
                 ) : (
                     <Mic className="w-5 h-5" />
                 )}
@@ -236,6 +259,7 @@ export default function VoiceCallClient({ token, serverUrl, groupId, selectedDev
             audio={true}
             className="flex flex-col h-full"
         >
+            <MediaErrorWatcher />
             <RoomAudioRenderer />
             <div className="flex-1 overflow-y-auto">
                 <ParticipantRow />

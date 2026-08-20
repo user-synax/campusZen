@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, PhoneCall, Mic, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Loader2, PhoneCall, Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { micErrorMessage } from "@/lib/callErrors";
@@ -31,6 +31,7 @@ export default function GroupCallPage() {
     const [micError, setMicError] = useState(null);
     // micState: idle | granted | denied | blocked
     const [micState, setMicState] = useState("idle");
+    const [permState, setPermState] = useState("unknown");
     const [devices, setDevices] = useState([]);
     const [selectedDeviceId, setSelectedDeviceId] = useState("");
 
@@ -53,6 +54,7 @@ export default function GroupCallPage() {
         if (!navigator.permissions?.query) return;
         let perm;
         const update = (p) => {
+            setPermState(p.state);
             if (p.state === "granted") setMicState("granted");
             else if (p.state === "denied") {
                 setMicState("denied");
@@ -113,6 +115,14 @@ export default function GroupCallPage() {
             await loadDevices();
             return true;
         } catch (e) {
+            if (typeof window !== "undefined") {
+                console.error("[mic] getUserMedia failed", {
+                    name: e?.name,
+                    message: e?.message,
+                    origin: window.location.origin,
+                    secureContext: window.isSecureContext,
+                });
+            }
             setMicError(micErrorMessage(e));
             setMicState(
                 e?.name === "NotAllowedError" || e?.name === "SecurityError"
@@ -203,17 +213,46 @@ export default function GroupCallPage() {
                     <PhoneCall className="w-10 h-10 text-primary" />
                 </div>
 
-                {/* Mic permission status */}
+                {/* Mic permission banner */}
                 {micState === "granted" ? (
                     <p className="text-sm text-green-500">Microphone ready</p>
-                ) : micState === "denied" ? (
-                    <div className="max-w-sm text-center text-sm text-red-500">
-                        {micError}
-                    </div>
-                ) : micState === "blocked" ? (
-                    <div className="max-w-sm flex items-start gap-2 text-center text-sm text-red-500">
-                        <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" />
-                        <span>{micError}</span>
+                ) : micState === "denied" || micState === "blocked" ? (
+                    <div className="w-full max-w-sm rounded-xl border border-red-500/30 bg-red-500/5 p-4 flex flex-col items-center gap-2 text-center">
+                        <div className="flex items-center gap-2 text-red-500">
+                            <MicOff className="w-5 h-5" />
+                            <span className="font-semibold text-sm">
+                                Microphone access needed
+                            </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{micError}</p>
+                        {permState === "denied" ? (
+                            <p className="text-[11px] text-muted-foreground">
+                                Your browser has this site <b>blocked</b>, so the
+                                button below can&apos;t re-prompt. Open the lock
+                                icon → Site settings → Microphone → <b>Allow</b>,
+                                then <b>reload</b> the tab.
+                            </p>
+                        ) : (
+                            <p className="text-[11px] text-muted-foreground">
+                                Tap <b>Allow microphone</b> and choose Allow when
+                                your browser asks.
+                            </p>
+                        )}
+                        <p className="text-[11px] text-muted-foreground">
+                            Site:{" "}
+                            <span className="font-mono">
+                                {typeof window !== "undefined"
+                                    ? window.location.origin
+                                    : "unknown"}
+                            </span>
+                        </p>
+                        <Button
+                            onClick={requestMic}
+                            className="mt-1 gap-2 active:scale-[0.98]"
+                        >
+                            <Mic className="w-4 h-4" />
+                            Allow microphone
+                        </Button>
                     </div>
                 ) : (
                     <p className="text-sm text-muted-foreground text-center">
@@ -242,31 +281,20 @@ export default function GroupCallPage() {
                     </select>
                 </div>
 
-                <div className="flex flex-col items-center gap-2">
-                    <Button
-                        onClick={join}
-                        disabled={joining}
-                        className="rounded-full px-6 gap-2 active:scale-[0.98]"
-                    >
-                        {joining ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                            <Mic className="w-4 h-4" />
-                        )}
-                        {joining ? "Connecting…" : "Join voice chat"}
-                    </Button>
-
-                    {micState === "denied" && (
+                    <div className="flex flex-col items-center gap-2">
                         <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={requestMic}
-                            className="text-xs active:scale-[0.98]"
+                            onClick={join}
+                            disabled={joining}
+                            className="rounded-full px-6 gap-2 active:scale-[0.98]"
                         >
-                            Retry microphone access
+                            {joining ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <Mic className="w-4 h-4" />
+                            )}
+                            {joining ? "Connecting…" : "Join voice chat"}
                         </Button>
-                    )}
-                </div>
+                    </div>
             </div>
         </div>
     );

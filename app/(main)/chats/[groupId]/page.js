@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, use } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { ArrowLeft, Info, ChevronUp, X, PhoneCall, loader } from "lucide-react";
+import { ArrowLeft, Info, ChevronUp, X, PhoneCall, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import useUser from "@/hooks/useUser";
@@ -257,7 +257,7 @@ export default function ChatRoomPage({ params: paramsPromise }) {
     if (room.loading) {
         return (
             <div className="flex flex-col items-center justify-center h-[calc(100vh-64px)] gap-4">
-                <loader className="w-8 h-8 animate-spin text-primary" />
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 <p className="text-sm text-muted-foreground">Loading chat...</p>
             </div>
         );
