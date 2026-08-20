@@ -3,8 +3,13 @@
 import { formatRelativeTime } from "@/utils/formatters";
 import Image from "next/image";
 import FormattedTime from "@/components/shared/FormattedTime";
+import { Phone } from "lucide-react";
+import { useCallStore } from "@/lib/store/callStore";
 
 export default function GroupChatItem({ group, currentUserId, onClick }) {
+    const callInfo = useCallStore((s) => s.calls?.[group._id]);
+    const liveCount = callInfo?.active ? callInfo.participantCount : 0;
+
     return (
         <div
             onClick={onClick}
@@ -68,6 +73,19 @@ export default function GroupChatItem({ group, currentUserId, onClick }) {
                                 {group.unreadCount > 99
                                     ? "99"
                                     : group.unreadCount}
+                            </span>
+                        </div>
+                    )}
+
+                    {/* Live voice chat badge */}
+                    {liveCount > 0 && (
+                        <div
+                            className="shrink-0 ml-2 h-5 px-1.5 rounded-full bg-green-500 
+                            flex items-center justify-center gap-0.5"
+                        >
+                            <Phone className="w-2.5 h-2.5 text-white" />
+                            <span className="text-[10px] font-bold text-white">
+                                {liveCount > 99 ? "99" : liveCount}
                             </span>
                         </div>
                     )}

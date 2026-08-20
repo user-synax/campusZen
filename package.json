@@ -13,6 +13,7 @@
         "@animateicons/react": "^0.3.4",
         "@faker-js/faker": "^10.4.0",
         "@giphy/js-fetch-api": "^5.8.0",
+        "@livekit/components-react": "^2.9.24",
         "@monaco-editor/react": "^4.7.0",
         "@next/bundle-analyzer": "^16.2.1",
         "@prettier/plugin-pug": "^3.4.2",
@@ -61,6 +62,8 @@
         "jsdom": "^29.0.1",
         "json-to-ts": "^2.1.0",
         "jsonwebtoken": "^9.0.3",
+        "livekit-client": "^2.22.0",
+        "livekit-server-sdk": "^2.18.0",
         "lodash": "^4.18.1",
         "lucide-react": "^0.577.0",
         "mongoose": "^9.3.1",
@@ -92,7 +95,8 @@
         "y-monaco": "^0.1.6",
         "y-protocols": "^1.0.7",
         "yjs": "^13.6.30",
-        "zod": "^3.25.76"
+        "zod": "^3.25.76",
+        "zustand": "^5.0.15"
     },
     "devDependencies": {
         "@babel/core": "^7.29.0",

@@ -15,7 +15,6 @@ import {
     Download,
     Loader2,
     Zap,
-    Flame,
     Trophy,
     Medal,
     Sparkles,
@@ -567,18 +566,6 @@ export default function ProfileCardExportModal({
                                 </span>
                                 <span className="text-[8px] uppercase font-bold text-white/50 tracking-wider mt-0.5">
                                     Total XP
-                                </span>
-                            </div>
-
-                            <div
-                                className={`p-2 ${activeTheme.chipRadius || "rounded-xl"} flex flex-col items-center justify-center border text-center ${activeTheme.statsBg}`}
-                            >
-                                <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500 mb-1" />
-                                <span className="text-sm font-black leading-none">
-                                    {profileUser.currentStreak || 0}
-                                </span>
-                                <span className="text-[8px] uppercase font-bold text-white/50 tracking-wider mt-0.5">
-                                    Streak
                                 </span>
                             </div>
 

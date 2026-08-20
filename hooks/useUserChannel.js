@@ -45,6 +45,8 @@ export function useUserChannel(userId, handlers = {}) {
         bindEvent("group-joined", "onGroupJoined");
         bindEvent("group-left", "onGroupLeft");
         bindEvent("new-group-message", "onNewGroupMessage");
+        bindEvent("vc-started", "onVcStarted");
+        bindEvent("vc-update", "onVcUpdate");
 
         // Subscribe to DM channel (all DMs land on this one channel)
         const dmChannelName = `private-dm-${userId}`;

@@ -112,6 +112,54 @@ export async function POST(request) {
             // Auth passes — user can subscribe to their own user channel
         }
 
+        // ━━━ Presencе channel member gates ━━━
+        // presence-group-${groupId} (general online status) — requires membership
+        if (
+            channelName.startsWith("presence-group-") &&
+            !channelName.startsWith("presence-group-call-")
+        ) {
+            const presenceGroupId = channelName.replace("presence-group-", "");
+
+            if (validateObjectId(presenceGroupId)) {
+                await connectDB();
+
+                const group = await GroupChat.findOne({
+                    _id: presenceGroupId,
+                    "members.userId": currentUser._id,
+                    isActive: true,
+                }).lean();
+
+                if (!group) {
+                    return NextResponse.json(
+                        { error: "Not a member of this group or group inactive" },
+                        { status: 403 },
+                    );
+                }
+            }
+        }
+
+        // presence-group-call-${groupId} (voice chat participants) — requires membership
+        if (channelName.startsWith("presence-group-call-")) {
+            const callGroupId = channelName.replace("presence-group-call-", "");
+
+            if (validateObjectId(callGroupId)) {
+                await connectDB();
+
+                const group = await GroupChat.findOne({
+                    _id: callGroupId,
+                    "members.userId": currentUser._id,
+                    isActive: true,
+                }).lean();
+
+                if (!group) {
+                    return NextResponse.json(
+                        { error: "Not a member of this group or group inactive" },
+                        { status: 403 },
+                    );
+                }
+            }
+        }
+
         // Generate Pusher auth response
         const pusher = getPusherServer();
 

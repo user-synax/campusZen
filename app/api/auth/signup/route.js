@@ -138,13 +138,8 @@ export async function POST(request) {
         // Create mongo user
         let avatar = "";
         const seed = Math.random().toString(36).substring(7);
-        if (gender === "male") {
-            avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&gender=male`;
-        } else if (gender === "female") {
-            avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&gender=female`;
-        } else {
-            avatar = `https://api.dicebear.com/7.x/identicon/svg?seed=${seed}`;
-        }
+        avatar = `https://api.dicebear.com/10.x/pixelbot/svg?seed=${seed}`;
+
 
         // College email auto-detection
         const collegeDetected = isCollegeEmail(normalizedEmail);
@@ -153,16 +148,16 @@ export async function POST(request) {
         // Build verification fields based on email domain
         const verificationFields = collegeDetected
             ? {
-                  isVerified: true,
-                  verificationStatus: "verified",
-                  verificationType: "college_email",
-                  collegeEmail: normalizedEmail,
-                  verificationApprovedAt: new Date(),
-              }
+                isVerified: true,
+                verificationStatus: "verified",
+                verificationType: "college_email",
+                collegeEmail: normalizedEmail,
+                verificationApprovedAt: new Date(),
+            }
             : {
-                  isVerified: false,
-                  verificationStatus: "none",
-              };
+                isVerified: false,
+                verificationStatus: "none",
+            };
 
         const user = await User.create({
             name: sanitizeText(name),

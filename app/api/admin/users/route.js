@@ -41,7 +41,7 @@ export async function GET(request) {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .select('name username email college isVerified isAdmin isBanned createdAt avatar lastActiveDate')
+        .select('name username email college isVerified isAdmin isBanned createdAt avatar')
         .lean(),
       User.countDocuments(query),
       User.countDocuments({ isBanned: true, isDeleted: { $ne: true } })

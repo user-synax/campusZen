@@ -19,7 +19,9 @@ import CustomCursor from "@/components/shared/FloatingCat";
 import CursorSelector from "@/components/shared/CursorSelector";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useTabTitle } from "@/hooks/useTabTitle";
+import { toast } from "sonner";
 import clientCache from "@/lib/client-cache";
+import { useCallStore } from "@/lib/store/callStore";
 
 // Component to initialize tab title
 function TabTitleInitializer() {
@@ -55,6 +57,33 @@ export default function MainLayout({ children }) {
             invalidateGroupCache();
             window.dispatchEvent(new CustomEvent("chat-inbox-invalidate", { detail: { tab: "groups" } }));
         }, [invalidateGroupCache]),
+        onVcStarted: useCallback(({ groupId, startedBy }) => {
+            const name = startedBy?.name || "Someone";
+            toast(`${name} started a voice chat`, {
+                action: {
+                    label: "Join",
+                    onClick: () => {
+                        if (pathname === `/chats/${groupId}`) {
+                            window.dispatchEvent(new CustomEvent("vc-join", { detail: { groupId } }));
+                        } else {
+                            sessionStorage.setItem("pendingVcJoin", groupId);
+                            router.push(`/chats/${groupId}`);
+                        }
+                    },
+                },
+            });
+        }, [pathname, router]),
+        onVcUpdate: useCallback(({ groupId, active, participantCount, participants }) => {
+            if (!active) {
+                useCallStore.getState().clearCall(groupId);
+            } else {
+                useCallStore.getState().setCall(groupId, {
+                    active,
+                    participantCount,
+                    participants,
+                });
+            }
+        }, []),
         onNewDMMessage: useCallback(() => {
             invalidateDMCache();
             window.dispatchEvent(new CustomEvent("chat-inbox-invalidate", { detail: { tab: "dms" } }));

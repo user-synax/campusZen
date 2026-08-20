@@ -238,14 +238,6 @@ const userSchema = new mongoose.Schema(
             { type: mongoose.Schema.Types.ObjectId, ref: "User", default: [] },
         ],
 
-        // Badges
-        badges: [
-            {
-                badgeId: { type: mongoose.Schema.Types.ObjectId, ref: "Badge" },
-                awardedAt: { type: Date, default: Date.now },
-            },
-        ],
-
         // Chat privacy settings
         chatPrivacy: {
             type: String,
@@ -272,11 +264,6 @@ const userSchema = new mongoose.Schema(
                 default: [],
             },
         ],
-
-        // Streak
-        currentStreak: { type: Number, default: 0 },
-        longestStreak: { type: Number, default: 0 },
-        lastActiveDate: { type: Date, default: null },
 
         // Profile customization
         interests: {

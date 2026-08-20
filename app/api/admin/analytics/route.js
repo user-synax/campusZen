@@ -40,7 +40,6 @@ async function getUserAnalytics(range) {
         newInPrev,
         banned,
         verified,
-        dau,
         byCollegeRaw,
         timeSeriesRaw,
     ] = await Promise.all([
@@ -59,9 +58,6 @@ async function getUserAnalytics(range) {
             : Promise.resolve(0),
         User.countDocuments({ isBanned: true }),
         User.countDocuments({ isVerified: true }),
-        User.countDocuments({
-            lastActiveDate: { $gte: new Date(now - 24 * 60 * 60 * 1000) },
-        }),
         User.aggregate([
             { $match: { isDeleted: false } },
             { $group: { _id: "$college", count: { $sum: 1 } } },
@@ -100,7 +96,6 @@ async function getUserAnalytics(range) {
         growth: computeGrowth(newInRange, newInPrev),
         banned,
         verified,
-        dau,
         byCollege: byCollegeRaw,
         timeSeries: startDate
             ? buildTimeSeries(timeSeriesRaw, startDate, now)

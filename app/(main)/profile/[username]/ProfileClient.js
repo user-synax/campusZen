@@ -17,7 +17,6 @@ import EmptyState from "@/components/shared/EmptyState";
 import {
     FileText,
     Zap,
-    Flame,
     Trophy,
     MessageSquare,
     Lock,
@@ -738,15 +737,6 @@ export default function ProfileClient({ username: initialUsername }) {
                             <div className="w-px h-8 bg-border/60" />
                             <div className="flex flex-col items-center">
                                 <span className="text-base font-black">
-                                    {profileUser.currentStreak || 0}
-                                </span>
-                                <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
-                                    Day Streak
-                                </span>
-                            </div>
-                            <div className="w-px h-8 bg-border/60" />
-                            <div className="flex flex-col items-center">
-                                <span className="text-base font-black">
                                     Lvl {profileUser.level || 1}
                                 </span>
                                 <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
@@ -765,18 +755,6 @@ export default function ProfileClient({ username: initialUsername }) {
                                 </span>
                                 <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
                                     Total XP
-                                </span>
-                            </Card>
-
-                            <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 rounded-2xl flex flex-col items-center justify-center text-center card-chunky card-chunky-interactive">
-                                <div className="w-9 h-9 rounded-full bg-orange-500/10 flex items-center justify-center mb-1.5">
-                                    <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
-                                </div>
-                                <span className="text-lg sm:text-xl font-black">
-                                    {profileUser.currentStreak || 0}
-                                </span>
-                                <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
-                                    Day Streak
                                 </span>
                             </Card>
 

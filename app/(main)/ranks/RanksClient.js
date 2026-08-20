@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Zap, Lock } from "lucide-react";
+import { Trophy, Zap } from "lucide-react";
 import UserAvatar from "@/components/user/UserAvatar";
 import { RANK_MAPPING } from "@/lib/ranks";
 
@@ -38,7 +38,7 @@ export default function RanksClient() {
         );
     }
 
-    const { progress, badges, user } = data || {};
+    const { progress, user } = data || {};
 
     return (
         <div className="min-h-screen bg-background p-4 sm:p-6 max-w-4xl mx-auto">
@@ -110,61 +110,6 @@ export default function RanksClient() {
                     </div>
                 </CardContent>
             </Card>
-
-            {/* Badges Section */}
-            <section className="mb-8">
-                <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                    Earned Badges
-                </h3>
-
-                {badges && badges.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        {badges.map((badge) => (
-                            <Card
-                                key={badge.id || badge._id}
-                                className={`overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-lg ${badge.earned ? "border-primary/30" : "opacity-70"}`}
-                            >
-                                <CardContent className="p-4 flex flex-col items-center text-center">
-                                    <div
-                                        className={`text-4xl mb-2 rounded-full flex items-center justify-center ${badge.earned ? "p-2 bg-accent/20" : "p-2 bg-muted"}`}
-                                        style={{
-                                            color: badge.earned
-                                                ? badge.color
-                                                : undefined,
-                                        }}
-                                    >
-                                        {badge.earned ? (
-                                            badge.icon
-                                        ) : (
-                                            <Lock className="w-8 h-8" />
-                                        )}
-                                    </div>
-                                    <p
-                                        className={`font-bold text-sm ${!badge.earned && "text-muted-foreground"}`}
-                                    >
-                                        {badge.name}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                        {badge.description}
-                                    </p>
-                                    {badge.earned && badge.awardedAt && (
-                                        <p className="text-xs text-muted-foreground mt-2">
-                                            Earned{" "}
-                                            {new Date(
-                                                badge.awardedAt,
-                                            ).toLocaleDateString()}
-                                        </p>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                ) : (
-                    <p className="text-muted-foreground">
-                        No badges earned yet. Keep going!
-                    </p>
-                )}
-            </section>
 
             {/* Rank Roadmap */}
             <section>

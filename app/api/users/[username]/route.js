@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
 import Post from "@/models/Post";
-import Badge from "@/models/Badge";
 import { getCurrentUser } from "@/lib/auth";
 import { isFounder } from "@/lib/founder";
 import { sanitizeUser, sanitizeText } from "@/lib/sanitize";

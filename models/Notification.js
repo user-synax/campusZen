@@ -36,8 +36,6 @@ const notificationSchema = new mongoose.Schema({
         'event_cancelled',  // Event was cancelled by organizer
         'resource_approved',// Your uploaded resource was approved
         'resource_rejected',// Your uploaded resource was rejected
-        'achievement',      // You unlocked an achievement
-        'badge_earned',     // You earned a badge (gamification)
         'level_up',         // You reached a new level
         'vp_earned',        // You earned Viper Coins (VP economy)
          'shop_purchase',    // You bought a shop item

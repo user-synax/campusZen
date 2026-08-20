@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useCallback, useMemo, use } from "react";
+import { useState, useEffect, useCallback, useMemo, use } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { ArrowLeft, Info, Loader2, ChevronUp, X } from "lucide-react";
+import { ArrowLeft, Info, ChevronUp, X, PhoneCall, loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import useUser from "@/hooks/useUser";
 import { useGroupChat } from "@/hooks/useGroupChat";
+import { getPusherClient } from "@/lib/pusher-client";
 import useChatRoom from "@/hooks/useChatRoom";
 import MessageBubble from "@/components/chat/MessageBubble";
 import MessageInput from "@/components/chat/MessageInput";
@@ -145,6 +146,61 @@ export default function ChatRoomPage({ params: paramsPromise }) {
         onMemberAdded,
     });
 
+    // ━━━ Voice chat (VC) state ━━━
+    const [callActive, setCallActive] = useState(false);
+
+    // On mount: check if a call is already active for this group
+    useEffect(() => {
+        let cancelled = false;
+        fetch(`/api/groups/${groupId}/calls`)
+            .then((res) => res.json())
+            .then((data) => {
+                if (!cancelled && data?.active) setCallActive(true);
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, [groupId]);
+
+    // Listen for "vc-started" on the group channel (others starting a call).
+    // NOTE: useGroupChat owns the private-group subscription lifecycle, so we
+    // only bind/unbind our event here and never unsubscribe the channel.
+    useEffect(() => {
+        if (!groupId) return;
+        const pusher = getPusherClient();
+        if (!pusher) return;
+        const ch = pusher.subscribe(`private-group-${groupId}`);
+        ch.bind("vc-started", () => setCallActive(true));
+        return () => {
+            ch.unbind("vc-started");
+        };
+    }, [groupId]);
+
+    // Open the dedicated call page when the header button is clicked
+    const openCallPage = useCallback(() => {
+        router.push(`/chats/${groupId}/call`);
+    }, [groupId, router]);
+
+    const handleVcClick = useCallback(() => {
+        openCallPage();
+    }, [openCallPage]);
+
+    // Join via global toast "Join" action (vc-join event) or pending navigation
+    useEffect(() => {
+        const onJoin = (e) => {
+            if (e.detail?.groupId === groupId) openCallPage();
+        };
+        window.addEventListener("vc-join", onJoin);
+        const pending =
+            typeof window !== "undefined" ? sessionStorage.getItem("pendingVcJoin") : null;
+        if (pending === groupId) {
+            sessionStorage.removeItem("pendingVcJoin");
+            openCallPage();
+        }
+        return () => window.removeEventListener("vc-join", onJoin);
+    }, [groupId, openCallPage]);
+
     // ━━━ Group-specific actions ━━━
     const handleReact = useCallback(
         async (messageId, emoji) => {
@@ -201,7 +257,7 @@ export default function ChatRoomPage({ params: paramsPromise }) {
     if (room.loading) {
         return (
             <div className="flex flex-col items-center justify-center h-[calc(100vh-64px)] gap-4">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <loader className="w-8 h-8 animate-spin text-primary" />
                 <p className="text-sm text-muted-foreground">Loading chat...</p>
             </div>
         );
@@ -280,6 +336,18 @@ export default function ChatRoomPage({ params: paramsPromise }) {
                                 );
                             }}
                         />
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleVcClick}
+                            className="rounded-full relative active:scale-[0.98]"
+                            title={callActive ? "Join voice chat" : "Start voice chat"}
+                        >
+                            <PhoneCall className="w-4 h-4" />
+                            {callActive && (
+                                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full" />
+                            )}
+                        </Button>
                         <Button
                             variant="ghost"
                             size="icon"

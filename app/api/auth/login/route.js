@@ -8,7 +8,6 @@ import {
     getCurrentUserLegacy,
     migrateLegacyUser,
 } from "@/lib/auth";
-import { updateStreak } from "@/lib/gamification";
 import { awardDailyLoginVP } from "@/lib/coins";
 import { applyRateLimit, rateLimit } from "@/lib/rate-limit";
 import { sanitizeUser } from "@/lib/sanitize";
@@ -184,11 +183,6 @@ export async function POST(request) {
         const userAgent = request.headers.get("user-agent") || "";
         const { device, browser } = parseUserAgent(userAgent);
         const ipAddress = getClientIp(request);
-
-        // Update streak and handle login history in background
-        updateStreak(finalMongoUser._id).catch((err) =>
-            console.error("Streak update error:", err),
-        );
 
         // Award daily-login VP (idempotent per calendar day, background)
         awardDailyLoginVP(finalMongoUser._id).catch((err) =>
