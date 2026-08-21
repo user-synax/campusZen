@@ -37,7 +37,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { CrownIcon } from "lucide-react";
 import Image from "next/image";
-import { getLevelProgress } from "@/lib/ranks";
+import { getLevelProgress, getRankForLevel } from "@/lib/ranks";
 import { cn } from "@/lib/utils";
 import CosmeticBadge from "@/components/profile/CosmeticBadge";
 
@@ -541,7 +541,6 @@ export default function ProfileClient({ username: initialUsername }) {
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap py-3">
-                        <RankBadge level={profileUser.level || 1} size="xl" />
                         <span
                             className={`text-xl sm:text-2xl font-black tracking-tight ${
                                 profileUser.isPro &&
@@ -727,6 +726,21 @@ export default function ProfileClient({ username: initialUsername }) {
                         // same data, no card chrome — purely cosmetic reorder.
                         <div className="flex items-center justify-around mt-5 py-3 rounded-2xl bg-accent/20 card-chunky">
                             <div className="flex flex-col items-center">
+                                <RankBadge
+                                    level={profileUser.level || 1}
+                                    size="md"
+                                />
+                                <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide mt-1 text-center leading-tight">
+                                    {(() => {
+                                        const rank = getRankForLevel(
+                                            profileUser.level || 1,
+                                        );
+                                        return rank.name;
+                                    })()}
+                                </span>
+                            </div>
+                            <div className="w-px h-8 bg-border/60" />
+                            <div className="flex flex-col items-center">
                                 <span className="text-base font-black">
                                     {profileUser.totalXP || profileUser.xp || 0}
                                 </span>
@@ -746,6 +760,21 @@ export default function ProfileClient({ username: initialUsername }) {
                         </div>
                     ) : (
                         <div className="grid grid-cols-3 gap-2.5 sm:gap-3 mt-6">
+                            <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 rounded-2xl flex flex-col items-center justify-center text-center card-chunky card-chunky-interactive">
+                                <RankBadge
+                                    level={profileUser.level || 1}
+                                    size="lg"
+                                />
+                                <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide mt-1.5 text-center leading-tight">
+                                    {(() => {
+                                        const rank = getRankForLevel(
+                                            profileUser.level || 1,
+                                        );
+                                        return rank.name;
+                                    })()}
+                                </span>
+                            </Card>
+
                             <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 rounded-2xl flex flex-col items-center justify-center text-center card-chunky card-chunky-interactive">
                                 <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center mb-1.5">
                                     <Zap className="w-4 h-4 text-primary fill-primary" />
