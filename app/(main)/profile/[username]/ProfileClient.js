@@ -262,7 +262,7 @@ export default function ProfileClient({ username: initialUsername }) {
     if (loading) {
         return (
             <div className="flex flex-col min-h-screen">
-                <div className="h-40 sm:h-56 bg-gradient-to-br from-secondary via-secondary/70 to-secondary animate-pulse" />
+                <div className="h-40 sm:h-56 bg-linear-to-br from-secondary via-secondary/70 to-secondary animate-pulse" />
                 <div className="max-w-3xl w-full mx-auto px-4 sm:px-6 pb-4 -mt-14 sm:-mt-16 space-y-4">
                     <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-secondary animate-pulse border-4 border-background shadow-xl" />
                     <div className="h-6 w-48 bg-secondary animate-pulse rounded-full" />
@@ -352,64 +352,17 @@ export default function ProfileClient({ username: initialUsername }) {
                         />
                     )}
                     {/* Subtle bottom fade for a premium blend into the content */}
-                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/80 to-transparent pointer-events-none" />
+                    <div className="absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-background/80 to-transparent pointer-events-none" />
                 </div>
 
                 <div className="px-4 sm:px-6 pb-4 relative">
                     {/* Sparkling Animation for Pro Users */}
-                    {profileUser.isPro &&
-                        !(
-                            profileUser.role === "admin" ||
-                            profileUser.email ===
-                                process.env.NEXT_PUBLIC_ADMIN_EMAIL
-                        ) && (
-                            <>
-                                <div
-                                    className="absolute top-8 left-6 sm:top-10 sm:left-10 w-1 sm:w-1.5 h-1 sm:h-1.5 bg-yellow-300 rounded-full animate-ping opacity-75"
-                                    style={{ animationDuration: "2s" }}
-                                />
-                                <div
-                                    className="absolute top-16 right-12 sm:top-20 sm:right-16 w-1 h-1 bg-amber-400 rounded-full animate-ping opacity-60"
-                                    style={{
-                                        animationDuration: "2.5s",
-                                        animationDelay: "0.5s",
-                                    }}
-                                />
-                                <div
-                                    className="absolute bottom-28 left-16 sm:bottom-32 sm:left-20 w-1 sm:w-1.5 h-1 sm:h-1.5 bg-orange-300 rounded-full animate-ping opacity-65"
-                                    style={{
-                                        animationDuration: "1.8s",
-                                        animationDelay: "1s",
-                                    }}
-                                />
-                                <div
-                                    className="absolute top-32 right-20 sm:top-40 sm:right-24 w-1 h-1 bg-yellow-400 rounded-full animate-ping opacity-70"
-                                    style={{
-                                        animationDuration: "2.2s",
-                                        animationDelay: "1.5s",
-                                    }}
-                                />
-                                <div
-                                    className="absolute bottom-16 right-8 sm:bottom-20 sm:right-10 w-1 sm:w-1.5 h-1 sm:h-1.5 bg-amber-300 rounded-full animate-ping opacity-55"
-                                    style={{
-                                        animationDuration: "2.8s",
-                                        animationDelay: "0.8s",
-                                    }}
-                                />
-                            </>
-                        )}
+                    
 
                     <div className="flex justify-between items-end -mt-14 sm:-mt-16 mb-3 relative z-10 ">
                         {/* Profile Avatar with Premium Glowing Frame */}
                         <div className="relative">
-                            {profileUser.isPro &&
-                                !(
-                                    profileUser.role === "admin" ||
-                                    profileUser.email ===
-                                        process.env.NEXT_PUBLIC_ADMIN_EMAIL
-                                ) && (
-                                    <div className="absolute -inset-2 rounded-full animate-pulse bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 blur-md opacity-50" />
-                                )}
+
                             {(() => {
                                 const frameAsset =
                                     avatarFrame?.visual?.frameAssetUrl;
@@ -549,7 +502,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                     profileUser.email ===
                                         process.env.NEXT_PUBLIC_ADMIN_EMAIL
                                 )
-                                    ? "text-transparent bg-clip-text bg-linear-to-r from-yellow-300 via-amber-400 to-yellow-500 animate-pulse drop-shadow-[0_0_8px_rgba(250,204,21,0.4)]"
+                                    ? "text-transparent bg-clip-text bg-linear-to-r from-yellow-300 via-amber-400 to-yellow-500 drop-shadow-[0_0_8px_rgba(250,204,21,0.4)]"
                                     : "text-foreground"
                             }`}
                         >
@@ -581,7 +534,7 @@ export default function ProfileClient({ username: initialUsername }) {
                     </p>
 
                     {profileUser.bio && (
-                        <div className="mt-3 text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+                        <div className="mt-3 text-[15px] leading-relaxed whitespace-pre-wrap wrap-break-word">
                             {renderContentWithMentions(profileUser.bio).map(
                                 (segment, i) => {
                                     if (segment.type === "hashtag") {
@@ -807,28 +760,6 @@ export default function ProfileClient({ username: initialUsername }) {
                         </div>
                     )}
 
-                    {/* Exclusive Theme Widget for Premium */}
-                    {profileUser.isPro && (
-                        <div className="mt-6">
-                            <Card className="p-4 bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl card-chunky">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center text-white text-lg shadow-sm">
-                                        🎨
-                                    </div>
-                                    <div className="flex-1">
-                                        <h4 className="font-semibold text-sm">
-                                            Theme Master
-                                        </h4>
-                                        <p className="text-xs text-muted-foreground">
-                                            Customizing their CampusZen
-                                            experience
-                                        </p>
-                                    </div>
-                                </div>
-                            </Card>
-                        </div>
-                    )}
-
                     <div className="flex gap-6 mt-6 pb-3 border-b border-border/50">
                         <button
                             onClick={() => {
@@ -1002,7 +933,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                 {[1, 2, 3, 4, 5, 6].map((i) => (
                                     <div
                                         key={i}
-                                        className="aspect-[9/16] bg-accent/30 rounded-2xl animate-pulse"
+                                        className="aspect-9/16 bg-accent/30 rounded-2xl animate-pulse"
                                     />
                                 ))}
                             </div>
@@ -1022,7 +953,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                     {clips.map((clip) => (
                                         <div
                                             key={clip._id}
-                                            className="aspect-[9/16] relative rounded-2xl overflow-hidden cursor-pointer group shadow-sm hover:shadow-lg transition-shadow duration-300 bg-accent/20"
+                                            className="aspect-9/16 relative rounded-2xl overflow-hidden cursor-pointer group shadow-sm hover:shadow-lg transition-shadow duration-300 bg-accent/20"
                                             onClick={() => {
                                                 // TODO: Navigate to specific clip view
                                                 // For now, navigate to clips feed
@@ -1030,7 +961,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                             }}
                                         >
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                                            <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+                                            <div className="absolute inset-x-0 bottom-0 h-14 bg-linear-to-t from-black/60 to-transparent pointer-events-none" />
                                             <div className="absolute bottom-2 left-2.5 flex items-center gap-1 text-white text-xs font-semibold">
                                                 <Heart className="w-4 h-4 fill-white" />
                                                 {clip.likesCount}
