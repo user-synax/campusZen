@@ -74,45 +74,6 @@ export function HeroSection({
             {/* Subtle grid texture */}
             <div className="absolute inset-0 bg-grid-pattern pointer-events-none" />
 
-            {/* Two small flat, hard-edged accent shapes — sticker-like, not lit from within.
-                No blur, no opacity pulsing: crisp fill + crisp border + crisp offset shadow,
-                same language as the rest of the chunky system. */}
-            <motion.div
-                aria-hidden
-                className="hidden sm:block absolute top-28 left-[12%] w-11 h-11 rounded-2xl border-2 border-primary/30 bg-primary/15 pointer-events-none"
-                style={{ rotate: -10, boxShadow: "var(--shadow-hard)" }}
-                initial={{ opacity: 0 }}
-                animate={
-                    shouldReduceMotion
-                        ? { opacity: 1 }
-                        : { opacity: 1, y: [0, -8, 0] }
-                }
-                transition={{
-                    opacity: { duration: 0.6, delay: 0.3 },
-                    y: { duration: 6, repeat: Infinity, ease: "easeInOut" },
-                }}
-            />
-            <motion.div
-                aria-hidden
-                className="hidden sm:block absolute bottom-40 right-[14%] w-8 h-8 rounded-full border-2 border-border bg-secondary pointer-events-none"
-                style={{ boxShadow: "var(--shadow-hard-sm)" }}
-                initial={{ opacity: 0 }}
-                animate={
-                    shouldReduceMotion
-                        ? { opacity: 1 }
-                        : { opacity: 1, y: [0, 10, 0] }
-                }
-                transition={{
-                    opacity: { duration: 0.6, delay: 0.5 },
-                    y: {
-                        duration: 7,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: 0.4,
-                    },
-                }}
-            />
-
             <motion.div
                 variants={container}
                 initial="hidden"
