@@ -9,12 +9,16 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { LogOut, User, Home, Book, Users2, Trophy } from "lucide-react";
+import { LogOut, User, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Logo from "@/components/shared/Logo";
 
-// Set this back to [] if these routes aren't live yet — the navbar
-// gracefully collapses to just logo + auth when there are no links.
+const NAV_LINKS = [
+    { label: "Features", href: "/features" },
+    { label: "Pricing", href: "/pricing" },
+    { label: "About", href: "/about" },
+    { label: "Developers", href: "/developers" },
+];
 
 export default function Navbar() {
     const pathname = usePathname();
@@ -25,6 +29,7 @@ export default function Navbar() {
     const [loading, setLoading] = useState(true);
     const [mounted, setMounted] = useState(false);
     const [hoveredHref, setHoveredHref] = useState(null);
+    const [mobileOpen, setMobileOpen] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -73,7 +78,7 @@ export default function Navbar() {
         : { type: "spring", stiffness: 500, damping: 32 };
 
     return (
-        <div className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 py-4 pointer-events-none">
+        <div className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 py-4 pointer-events-none relative">
             <motion.header
                 initial={{ y: -24, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -115,10 +120,45 @@ export default function Navbar() {
                     />
                 </motion.div>
 
-                {/* Desktop Navigation — animated pill follows hover, falls back to active route */}
+                {/* Desktop Navigation */}
+                <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
+                    {NAV_LINKS.map((link) => {
+                        const active =
+                            pathname === link.href ||
+                            pathname.startsWith(link.href + "/");
+                        return (
+                            <Link
+                                key={link.href}
+                                href={link.href}
+                                className={cn(
+                                    "px-3.5 h-9 flex items-center rounded-full text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                    active
+                                        ? "bg-accent text-foreground"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-accent/60",
+                                )}
+                            >
+                                {link.label}
+                            </Link>
+                        );
+                    })}
+                </nav>
 
                 {/* Right Side Actions */}
                 <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Mobile menu toggle */}
+                    <button
+                        type="button"
+                        aria-label="Toggle menu"
+                        onClick={() => setMobileOpen((o) => !o)}
+                        className="md:hidden flex items-center justify-center h-9 w-9 rounded-full hover:bg-accent transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    >
+                        {mobileOpen ? (
+                            <X className="w-5 h-5" />
+                        ) : (
+                            <Menu className="w-5 h-5" />
+                        )}
+                    </button>
+
                     {mounted && !loading && user ? (
                         <Popover>
                             <PopoverTrigger asChild>
@@ -206,6 +246,47 @@ export default function Navbar() {
                     )}
                 </div>
             </motion.header>
+
+            {/* Mobile dropdown panel */}
+            {mobileOpen && (
+                <div className="md:hidden pointer-events-auto absolute top-[4.5rem] left-4 right-4 rounded-3xl border-2 border-border bg-popover/95 backdrop-blur-xl p-2 shadow-[var(--shadow-hard)]">
+                    {NAV_LINKS.map((link) => {
+                        const active =
+                            pathname === link.href ||
+                            pathname.startsWith(link.href + "/");
+                        return (
+                            <Link
+                                key={link.href}
+                                href={link.href}
+                                onClick={() => setMobileOpen(false)}
+                                className={cn(
+                                    "flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-medium transition-colors",
+                                    active
+                                        ? "bg-accent text-foreground"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-accent/60",
+                                )}
+                            >
+                                {link.label}
+                            </Link>
+                        );
+                    })}
+                    <div className="my-1 h-px bg-border" />
+                    <Link
+                        href="/login"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center px-4 py-3 rounded-2xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/60"
+                    >
+                        Log in
+                    </Link>
+                    <Link
+                        href="/signup"
+                        onClick={() => setMobileOpen(false)}
+                        className="btn-chunky mt-1 flex items-center justify-center h-10 rounded-2xl text-sm font-bold bg-primary text-primary-foreground"
+                    >
+                        Create account
+                    </Link>
+                </div>
+            )}
         </div>
     );
 }
