@@ -1,149 +1,112 @@
 "use client";
-import { RefreshCw } from "lucide-react";
-import { useState, useCallback } from "react";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-import { useLayoutMode } from "@/context/LayoutModeContext";
-function FeedRefreshButton() {
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const { layoutMode } = useLayoutMode();
-  const handleClick = useCallback(async () => {
-    if (isRefreshing) return;
-    if (navigator.vibrate) {
-      navigator.vibrate(10);
-    }
-    setIsRefreshing(true);
-    try {
-      window.dispatchEvent(new CustomEvent("cx-refresh-feed"));
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      toast.success("Feed refreshed");
-    } catch (err) {
-      console.error("Refresh error:", err);
-      toast.error("Failed to refresh feed");
-    }
-    setTimeout(() => {
-      setIsRefreshing(false);
-    }, 800);
-  }, [isRefreshing]);
-  const refreshing = isRefreshing;
-  return /* @__PURE__ */ React.createElement(
-    "div",
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft, GraduationCap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import PostComposer from "@/components/post/PostComposer";
+import PostCard from "@/components/post/PostCard";
+import PostSkeleton from "@/components/post/PostSkeleton";
+import EmptyState from "@/components/shared/EmptyState";
+import { usePosts } from "@/hooks/usePosts";
+import useUser from "@/hooks/useUser";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import InfiniteScrollSentinel from "@/components/shared/InfiniteScrollSentinel";
+import { formatCollegeName } from "@/utils/formatters";
+function CollegeCommunityPage() {
+  const params = useParams();
+  const router = useRouter();
+  const { user: currentUser } = useUser();
+  const collegeSlug = params.college;
+  const displayName = formatCollegeName(collegeSlug);
+  const {
+    posts,
+    loading: postsLoading,
+    error: postsError,
+    hasMore,
+    loadMore,
+    addPost,
+    removePost,
+    updatePostLike
+  } = usePosts({ community: displayName });
+  const { sentinelRef } = useInfiniteScroll({
+    fetchMore: loadMore,
+    hasMore,
+    loading: postsLoading
+  });
+  const handleDeletePost = useCallback((postId) => {
+    removePost(postId);
+  }, [removePost]);
+  const handleLikePost = useCallback(async (postId) => {
+    return await updatePostLike(postId);
+  }, [updatePostLike]);
+  const [stats, setStats] = useState({ postCount: 0, memberCount: 0 });
+  const [statsLoading, setStatsLoading] = useState(true);
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch(`/api/communities?name=${encodeURIComponent(displayName)}`);
+        const data = await res.json();
+        if (res.ok) {
+          setStats(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch community stats:", error);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+    if (displayName) fetchStats();
+  }, [displayName]);
+  const isAuthenticated = !!currentUser;
+  return /* @__PURE__ */ React.createElement("div", { className: "flex flex-col min-h-screen" }, /* @__PURE__ */ React.createElement("div", { className: "sticky top-0 bg-background/80 backdrop-blur-md border-b border-border p-4 z-10" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-4" }, /* @__PURE__ */ React.createElement(
+    Button,
     {
-      className: cn(
-        layoutMode === "dock" ? "fixed bottom-6 right-4 z-50 max-md:bottom-20 max-md:left-1/2 max-md:-translate-x-1/2 max-md:right-auto" : "fixed bottom-20 sm:bottom-8 left-1/2 -translate-x-1/2 z-50",
-        "transition-all duration-300 ease-out"
-      )
+      variant: "ghost",
+      size: "icon",
+      onClick: () => router.back(),
+      className: "rounded-full hover:bg-accent"
     },
-    /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        onClick: handleClick,
-        disabled: refreshing,
-        className: cn(
-          // Base styles - smaller on desktop
-          "group relative flex items-center justify-center",
-          "w-11 h-11 sm:w-10 sm:h-10",
-          "rounded-full",
-          "transition-all duration-300 ease-spring",
-          "active:scale-95",
-          refreshing ? "cursor-not-allowed" : "cursor-pointer hover:scale-105",
-          // Subtle glass - match site theme
-          "bg-linear-to-br from-white/15 via-white/8 to-transparent",
-          "dark:from-white/12 dark:via-white/6 dark:to-transparent",
-          "backdrop-blur-xl",
-          "backdrop-saturate-125",
-          // Subtle border matching site accent
-          "ring-1 ring-border/50",
-          "border border-border/60",
-          "shadow-[inset_0_1px_1px_rgba(255,255,255,0.25)]",
-          // Outer shadow matching site depth
-          "shadow-[0_4px_20px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)]",
-          // Hover effects - site primary color glow
-          "hover:shadow-[0_8px_28px_rgba(0,0,0,0.5),0_0_0_1px_rgba(99,102,241,0.2)]",
-          "hover:border-primary/30",
-          // Subtle shine - reduced gloss
-          "before:absolute before:inset-0 before:rounded-full",
-          "before:bg-linear-to-b before:from-white/40 before:via-white/15 before:to-transparent",
-          "before:shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]",
-          "before:pointer-events-none",
-          // Inner subtle glow
-          "after:absolute after:inset-[2px] after:rounded-full",
-          "after:bg-linear-to-br after:from-white/10 after:via-transparent after:to-transparent",
-          "after:shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]",
-          "after:pointer-events-none"
-        ),
-        "aria-label": "Refresh feed"
-      },
-      /* @__PURE__ */ React.createElement(
-        "span",
-        {
-          className: "absolute inset-[2px] rounded-full bg-linear-to-br from-white/12 via-transparent to-primary/5",
-          "aria-hidden": "true"
-        }
-      ),
-      /* @__PURE__ */ React.createElement(
-        "span",
-        {
-          className: "absolute bottom-[1px] left-2 right-2 h-[40%] rounded-b-full bg-gradient-to-t from-black/20 to-transparent",
-          "aria-hidden": "true"
-        }
-      ),
-      /* @__PURE__ */ React.createElement(
-        "span",
-        {
-          className: "absolute top-[1px] left-1/3 right-1/3 h-[4px] rounded-full bg-white/30",
-          style: { filter: "blur(1px)" },
-          "aria-hidden": "true"
-        }
-      ),
-      /* @__PURE__ */ React.createElement(
-        "span",
-        {
-          className: "absolute top-1/3 -left-[0.5px] w-[2px] h-1/3 rounded-full bg-gradient-to-b from-transparent via-white/20 to-transparent",
-          "aria-hidden": "true"
-        }
-      ),
-      /* @__PURE__ */ React.createElement(
-        "span",
-        {
-          className: "absolute top-1/3 -right-[0.5px] w-[2px] h-1/3 rounded-full bg-gradient-to-b from-transparent via-white/20 to-transparent",
-          "aria-hidden": "true"
-        }
-      ),
-      /* @__PURE__ */ React.createElement("span", { className: "relative z-10 flex items-center justify-center" }, /* @__PURE__ */ React.createElement(
-        RefreshCw,
-        {
-          className: cn(
-            "w-[18px] h-[18px] sm:w-4 sm:h-4",
-            "text-foreground/90",
-            "transition-transform duration-500",
-            refreshing && "animate-spin",
-            !refreshing && "group-hover:rotate-180"
-          )
-        }
-      )),
-      refreshing && /* @__PURE__ */ React.createElement(
-        "span",
-        {
-          className: "absolute inset-0 rounded-full bg-primary/15 animate-ping",
-          "aria-hidden": "true"
-        }
-      ),
-      /* @__PURE__ */ React.createElement(
-        "span",
-        {
-          className: cn(
-            "absolute -inset-1 rounded-full pointer-events-none",
-            "bg-primary/10",
-            "blur-md opacity-0 group-hover:opacity-100",
-            "transition-opacity duration-300"
-          ),
-          "aria-hidden": "true"
-        }
-      )
-    )
-  );
+    /* @__PURE__ */ React.createElement(ArrowLeft, { className: "w-5 h-5" })
+  ), /* @__PURE__ */ React.createElement("div", { className: "min-w-0" }, /* @__PURE__ */ React.createElement("h1", { className: "font-bold text-lg truncate" }, "\u{1F393} ", displayName), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted-foreground" }, statsLoading ? "..." : `${stats.postCount} posts \xB7 ${stats.memberCount} members`)))), isAuthenticated && /* @__PURE__ */ React.createElement(
+    PostComposer,
+    {
+      defaultCommunity: displayName,
+      onPostCreated: addPost
+    }
+  ), /* @__PURE__ */ React.createElement("div", { className: "flex-1" }, !isAuthenticated ? /* @__PURE__ */ React.createElement(
+    EmptyState,
+    {
+      icon: GraduationCap,
+      title: `${displayName} community`,
+      description: "Log in to view discussions and join the conversation with your college mates."
+    }
+  ) : postsLoading && posts.length === 0 ? [1, 2, 3].map((i) => /* @__PURE__ */ React.createElement(PostSkeleton, { key: i })) : posts.length === 0 ? /* @__PURE__ */ React.createElement(
+    EmptyState,
+    {
+      icon: GraduationCap,
+      title: `Welcome to ${displayName}`,
+      description: "Be the first to share something with your college community!"
+    }
+  ) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "divide-y divide-border" }, posts.map((post) => /* @__PURE__ */ React.createElement(
+    PostCard,
+    {
+      key: post._id,
+      post,
+      currentUserId: currentUser?._id,
+      currentUser,
+      onDelete: handleDeletePost,
+      onLike: handleLikePost
+    }
+  ))), /* @__PURE__ */ React.createElement("div", { ref: sentinelRef }, /* @__PURE__ */ React.createElement(
+    InfiniteScrollSentinel,
+    {
+      loading: postsLoading,
+      hasMore,
+      error: postsError,
+      onRetry: loadMore
+    }
+  )))));
 }
 export {
-  FeedRefreshButton as default
+  CollegeCommunityPage as default
 };

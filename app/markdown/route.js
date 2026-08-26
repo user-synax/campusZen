@@ -9,7 +9,7 @@ export async function GET() {
 CampusZen is a student-only social platform built for Indian college communities. It focuses on safe campus discovery, collaborative tools, and real-time social features tailored to students.
 
 ## Key Information
-- **Project Name:** CampusZen (campusX)
+- **Project Name:** CampusZen (campusZen)
 - **Tagline:** Student-first social platform for Indian colleges
 - **Mission:** Safe, verified campus communities for networking, resource sharing, and study collaboration
 

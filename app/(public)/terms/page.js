@@ -40,7 +40,7 @@ export default function TermsPage() {
         <h2 className="text-3xl md:text-4xl font-black text-white mb-8 tracking-tight">1. Eligibility</h2>
         <div className="space-y-6">
           <p>
-            CampusX is exclusively for students currently enrolled in Indian colleges and universities.
+            CampusZen is exclusively for students currently enrolled in Indian colleges and universities.
           </p>
           <ul className="grid gap-4 list-none pl-0">
             {[
@@ -61,7 +61,7 @@ export default function TermsPage() {
         <h2 className="text-3xl md:text-4xl font-black text-white mb-8 tracking-tight">2. Acceptable Use Policy</h2>
         <div className="space-y-6">
           <p>
-            CampusX is a community space. To keep it safe, you agree NOT to:
+            CampusZen is a community space. To keep it safe, you agree NOT to:
           </p>
           <ul className="grid gap-4 list-none pl-0">
             {[
@@ -86,13 +86,13 @@ export default function TermsPage() {
           <div className="p-8 rounded-3xl bg-white/[0.03] border border-white/5 space-y-4">
             <h3 className="text-xl font-bold text-white">Your Content</h3>
             <p>
-              You maintain ownership of the text, photos, and other content you post on CampusX. However, by posting, you grant CampusX a worldwide, non-exclusive, royalty-free license to host, store, use, display, and distribute that content for the purpose of operating and improving the platform.
+              You maintain ownership of the text, photos, and other content you post on CampusZen. However, by posting, you grant CampusZen a worldwide, non-exclusive, royalty-free license to host, store, use, display, and distribute that content for the purpose of operating and improving the platform.
             </p>
           </div>
           <div className="p-8 rounded-3xl bg-white/[0.03] border border-white/5 space-y-4">
             <h3 className="text-xl font-bold text-white">Our Content</h3>
             <p>
-              The CampusX name, logo, site design, and code are owned by the developer and protected by intellectual property laws.
+              The CampusZen name, logo, site design, and code are owned by the developer and protected by intellectual property laws.
             </p>
           </div>
         </div>

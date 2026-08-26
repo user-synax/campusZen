@@ -95,7 +95,7 @@ export default function PushSettings() {
           Push Notifications 
         </h3> 
         <p className="text-xs text-muted-foreground"> 
-          Receive notifications even when CampusX is closed 
+          Receive notifications even when CampusZen is closed 
         </p> 
       </div>
 

@@ -81,14 +81,14 @@ async function sendApprovalEmail(email, name) {
               on your profile.
             </p>
             <a href="${process.env.NEXT_PUBLIC_APP_URL}/feed" style="display:inline-block;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;padding:12px 28px;border-radius:12px;text-decoration:none;font-weight:700;font-size:14px;">
-              Open CampusX
+              Open CampusZen
             </a>
           </td>
         </tr>
         <tr>
           <td style="padding:16px 32px 24px;border-top:1px solid #1e1e1e;text-align:center;">
             <p style="margin:0;font-size:12px;color:#525252;">
-              &copy; ${new Date().getFullYear()} CampusX &middot; Built for students, by students.
+              &copy; ${new Date().getFullYear()} CampusZen &middot; Built for students, by students.
             </p>
           </td>
         </tr>
@@ -99,9 +99,9 @@ async function sendApprovalEmail(email, name) {
 </html>`
 
   await transporter.sendMail({
-    from: `"CampusX" <${process.env.GMAIL_USER}>`,
+    from: `"CampusZen" <${process.env.GMAIL_USER}>`,
     to: email,
-    subject: '✅ You\'re now a Verified Student on CampusX!',
+    subject: '✅ You\'re now a Verified Student on CampusZen!',
     html,
   })
 }

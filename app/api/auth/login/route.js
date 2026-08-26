@@ -15,6 +15,7 @@ import { sendSuspiciousLoginEmail } from "@/lib/email-templates";
 import { loginSchema, validateRequest } from "@/utils/schemas";
 import { createAppwriteServerClient } from "@/lib/appwrite/server";
 import { Account } from "appwrite";
+import { errorResponse } from "@/lib/apiResponse";
 
 function parseUserAgent(userAgent = "") {
     const device = /Mobile|Android|iPhone|iPad/i.test(userAgent)
@@ -225,9 +226,10 @@ export async function POST(request) {
         return response;
     } catch (error) {
         console.error(error);
-        return NextResponse.json(
-            { message: "Internal Server Error" },
-            { status: 500 },
-        );
+        return errorResponse(500, {
+            code: "internal_error",
+            message: "Login failed due to a server error.",
+            hint: "Please try again later.",
+        });
     }
 }

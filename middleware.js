@@ -8,7 +8,6 @@ const protectedRoutes = [
     "/communities",
     "/resources",
     "/settings",
-    "/community",
     "/bookmarks",
     "/wallet",
     "/shop",

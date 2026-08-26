@@ -68,6 +68,8 @@ export default function CollegeCommunityPage() {
     if (displayName) fetchStats()
   }, [displayName])
 
+  const isAuthenticated = !!currentUser;
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Community header */}
@@ -90,15 +92,23 @@ export default function CollegeCommunityPage() {
         </div>
       </div>
 
-      {/* Composer pre-filled with this community */}
-      <PostComposer 
-        defaultCommunity={displayName} 
-        onPostCreated={addPost} 
-      />
+      {/* Composer pre-filled with this community (authenticated users only) */}
+      {isAuthenticated && (
+        <PostComposer 
+          defaultCommunity={displayName} 
+          onPostCreated={addPost} 
+        />
+      )}
 
       {/* Posts Section */}
       <div className="flex-1">
-        {postsLoading && posts.length === 0 ? (
+        {!isAuthenticated ? (
+          <EmptyState 
+            icon={GraduationCap} 
+            title={`${displayName} community`} 
+            description="Log in to view discussions and join the conversation with your college mates." 
+          />
+        ) : postsLoading && posts.length === 0 ? (
           [1, 2, 3].map(i => <PostSkeleton key={i} />)
         ) : posts.length === 0 ? (
           <EmptyState 

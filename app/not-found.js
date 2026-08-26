@@ -45,6 +45,38 @@ export default function NotFound() {
                         <Link href="/">Go Home</Link>
                     </Button>
                 </div>
+
+                <nav
+                    aria-label="Machine-readable resources"
+                    className="mt-10 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground/70"
+                >
+                    <Link href="/sitemap.xml" className="underline-offset-4 hover:underline">
+                        XML sitemap
+                    </Link>
+                    <Link href="/llms.txt" className="underline-offset-4 hover:underline">
+                        llms.txt
+                    </Link>
+                    <Link href="/openapi.json" className="underline-offset-4 hover:underline">
+                        OpenAPI spec
+                    </Link>
+                    <Link href="/markdown" className="underline-offset-4 hover:underline">
+                        Docs
+                    </Link>
+                </nav>
+
+                {/* Plain-text recovery block for agents/bots */}
+                <pre className="sr-only">
+{`404 Not Found — CampusZen
+
+This page does not exist. Machine-readable maps:
+- XML sitemap: https://campuszen.tech/sitemap.xml
+- llms.txt: https://campuszen.tech/llms.txt
+- OpenAPI spec: https://campuszen.tech/openapi.json
+- Docs: https://campuszen.tech/markdown
+
+Public pages: / , /login , /signup , /terms , /privacy , /markdown
+Authenticated product: /feed , /community/<college> , /resources`}
+                </pre>
             </main>
 
             <style

@@ -16,5 +16,6 @@ export default function robots() {
       },
     ],
     sitemap: 'https://campuszen.tech/sitemap.xml',
+    host: 'https://campuszen.tech',
   }
 }

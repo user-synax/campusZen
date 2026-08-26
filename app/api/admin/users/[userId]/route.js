@@ -182,7 +182,7 @@ export async function POST(request, { params }) {
                 await createNotification({
                     recipient: userId,
                     type: "system",
-                    meta: { message: "You've been verified on CampusX ✅" },
+                    meta: { message: "You've been verified on CampusZen ✅" },
                 });
 
                 await logAdminAction({
@@ -227,7 +227,7 @@ export async function POST(request, { params }) {
                     recipient: userId,
                     type: "system",
                     meta: {
-                        message: "You've been given admin access on CampusX",
+                        message: "You've been given admin access on CampusZen",
                     },
                 });
 
@@ -348,7 +348,7 @@ export async function POST(request, { params }) {
                     isDeleted: true,
                     deletedAt: new Date(),
                     isBanned: true, // prevent login
-                    email: `deleted_${userId}@deleted.campusx`,
+                    email: `deleted_${userId}@deleted.campusZen`,
                     name: "Deleted User",
                     avatar: "",
                     bio: "",

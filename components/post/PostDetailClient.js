@@ -129,7 +129,7 @@ export default function PostDetailClient({ postId }) {
         if (navigator.share) {
             navigator
                 .share({
-                    title: `Check out this post on CampusX`,
+                    title: `Check out this post on CampusZen`,
                     url,
                 })
                 .catch(() => {});

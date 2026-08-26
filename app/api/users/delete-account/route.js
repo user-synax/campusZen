@@ -50,7 +50,7 @@ export async function POST(request) {
     // 2. Soft delete user and anonymize
     const userId = currentUser._id;
     const timestamp = Date.now();
-    const anonymizedEmail = `deleted_${userId}_${timestamp}@deleted.campusx.live`;
+    const anonymizedEmail = `deleted_${userId}_${timestamp}@deleted.campuszen.live`;
     const anonymizedName = 'Deleted User';
 
     await User.findByIdAndUpdate(userId, {

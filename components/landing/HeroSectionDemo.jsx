@@ -53,7 +53,7 @@ export function HeroSectionDemo() {
             ]}
             image={{
                 src: "/hero-image.png",
-                alt: "CampusX hero image",
+                alt: "CampusZen hero image",
             }}
         />
     );

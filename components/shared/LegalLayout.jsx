@@ -154,7 +154,7 @@ export default function LegalLayout({ title, lastUpdated, sections, children }) 
               <div className="flex items-center gap-4">
                 <div className="h-[2px] w-12 bg-primary"></div>
                 <p className="text-xs font-bold uppercase tracking-[0.3em] text-primary/60">
-                  CampusX Official Policy
+                  CampusZen Official Policy
                 </p>
               </div>
             </header>

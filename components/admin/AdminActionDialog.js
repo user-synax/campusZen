@@ -18,7 +18,7 @@ import { toast } from "sonner"
 const ACTION_CONFIGS = {
   ban: {
     title: 'Ban User',
-    description: 'User will be immediately logged out and cannot access CampusX.',
+    description: 'User will be immediately logged out and cannot access CampusZen.',
     icon: '🚫',
     color: 'destructive',
     requiresReason: true,
@@ -26,7 +26,7 @@ const ACTION_CONFIGS = {
   },
   unban: {
     title: 'Unban User',
-    description: 'User will regain access to CampusX.',
+    description: 'User will regain access to CampusZen.',
     icon: '✅',
     color: 'default',
     requiresReason: false

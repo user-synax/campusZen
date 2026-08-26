@@ -30,11 +30,11 @@ export default function PushPermissionBanner({ onSubscribe, onDismiss, isLoading
           </p> 
           <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed"> 
             Get notified for likes, comments, and follows — 
-            even when CampusX is closed. 
+            even when CampusZen is closed. 
           </p> 
         </div> 
  
-        {/* Dismiss */} 
+        {/* Dismiss */}
         <button 
           onClick={onDismiss} 
           className="text-muted-foreground hover:text-foreground flex-shrink-0" 

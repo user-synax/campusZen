@@ -90,7 +90,7 @@ async function sendRejectionEmail(email, name, reason) {
         <tr>
           <td style="padding:16px 32px 24px;border-top:1px solid #1e1e1e;text-align:center;">
             <p style="margin:0;font-size:12px;color:#525252;">
-              &copy; ${new Date().getFullYear()} CampusX &middot; Built for students, by students.
+              &copy; ${new Date().getFullYear()} CampusZen &middot; Built for students, by students.
             </p>
           </td>
         </tr>
@@ -101,7 +101,7 @@ async function sendRejectionEmail(email, name, reason) {
 </html>`
 
   await transporter.sendMail({
-    from: `"CampusX" <${process.env.GMAIL_USER}>`,
+    from: `"CampusZen" <${process.env.GMAIL_USER}>`,
     to: email,
     subject: '📋 Verification update — additional information needed',
     html,

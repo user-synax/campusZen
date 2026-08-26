@@ -17,12 +17,12 @@ export async function POST(request) {
 
   try {
     await sendPushToUser(currentUser._id, {
-      title: 'CampusX ✅',
+      title: 'CampusZen ✅',
       body: 'Push notifications are working! You\'ll get notified even when app is closed.',
       icon: currentUser.avatar || '/icons/notification-icon.png',
       badge: '/icons/badge-icon.png',
       image: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=1000&auto=format&fit=crop', // Beautiful test image
-      tag: 'campusx-test',
+      tag: 'campusZen-test',
       data: {
         url: '/notifications',
         notificationId: null

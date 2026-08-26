@@ -85,7 +85,7 @@ export default function PrivacyPage() {
         <div className="p-10 rounded-[2.5rem] bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 space-y-6">
           <h3 className="text-2xl font-bold text-white">Our No-Selling Guarantee</h3>
           <p className="text-lg">
-            CampusX is built by a solo developer for students. <strong>We NEVER sell your personal data</strong> to third parties or advertisers. Period.
+            CampusZen is built by a solo developer for students. <strong>We NEVER sell your personal data</strong> to third parties or advertisers. Period.
           </p>
         </div>
       </section>

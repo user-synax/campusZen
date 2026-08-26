@@ -697,7 +697,7 @@ export default function SettingsPage() {
           </Button>
 
           <p className="text-center text-[10px] text-muted-foreground mt-8 uppercase tracking-widest font-bold opacity-50">
-            CampusX v0.1.0 • Built with ❤️ for Students
+            CampusZen v1.2.0 • Built with ❤️ for Students
           </p>
         </section>
 
