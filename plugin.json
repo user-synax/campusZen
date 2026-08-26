@@ -1,0 +1,37 @@
+{
+    "$schema": "https://agent-plugins.org/specification",
+    "name": "CampusZen",
+    "version": "1.0.0",
+    "description": "Agent plugins for CampusZen: an MCP server, agent skills, and an A2A card for the Indian college student social network.",
+    "homepage": "https://campuszen.tech",
+    "author": {
+        "name": "CampusZen",
+        "url": "https://campuszen.tech"
+    },
+    "repository": "https://github.com/user-synax/campusX",
+    "capabilities": {
+        "mcp": "https://campuszen.tech/.well-known/mcp",
+        "skills": "https://campuszen.tech/.well-known/agent-skills/index.json",
+        "agentCard": "https://campuszen.tech/.well-known/agent-card.json",
+        "openapi": "https://campuszen.tech/openapi.json",
+        "auth": "https://campuszen.tech/auth.md"
+    },
+    "skills": [
+        {
+            "name": "campuszen-community-explorer",
+            "description": "Discover, list, and summarize campus communities by name or college slug."
+        },
+        {
+            "name": "campuszen-events-browser",
+            "description": "List upcoming or past campus events, optionally filtered by college."
+        },
+        {
+            "name": "campuszen-leaderboard-reader",
+            "description": "Read public leaderboards of top contributors by reputation."
+        },
+        {
+            "name": "campuszen-post-publisher",
+            "description": "Create and read feed posts within the authenticated user's campus feed."
+        }
+    ]
+}

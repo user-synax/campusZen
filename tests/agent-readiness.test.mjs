@@ -114,7 +114,7 @@ test("markdown negotiation returns content per path", async () => {
 });
 
 test("robots.txt allows known AI crawlers/agents", () => {
-    const src = readFileSync(path.join(ROOT, "app/robots.js"), "utf8");
+    const src = readFileSync(path.join(ROOT, "app/robots.txt/route.js"), "utf8");
     for (const ua of [
         "ChatGPT-User",
         "ClaudeBot",

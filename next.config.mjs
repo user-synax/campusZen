@@ -68,6 +68,16 @@ const nextConfig = {
             },
         ];
     },
+    async rewrites() {
+        return [
+            // Agentic Resource Discovery + well-known agent surfaces are served
+            // by a single catch-all handler under /api/.well-known/*.
+            {
+                source: "/.well-known/:path*",
+                destination: "/api/.well-known/:path*",
+            },
+        ];
+    },
 };
 
 export default withBundleAnalyzer({

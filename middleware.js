@@ -19,22 +19,124 @@ const protectedRoutes = [
     "/connect",
 ];
 
+const BOT_UAS = [
+    "gptbot",
+    "chatgpt-user",
+    "claudebot",
+    "perplexitybot",
+    "google-extended",
+    "applebot-extended",
+    "ora-agent",
+    "deepseekbot",
+    "ai2bot",
+    "cohere",
+    "meta-externalagent",
+];
+
+const PUBLIC_MARKDOWN_PATHS = new Set([
+    "/",
+    "/markdown",
+    "/developers",
+    "/terms",
+    "/privacy",
+    "/login",
+    "/signup",
+]);
+
+function isAgentBot(request) {
+    const ua = (request.headers.get("user-agent") || "").toLowerCase();
+    return BOT_UAS.some((b) => ua.includes(b));
+}
+
+function isPublicMarkdownPath(pathname) {
+    if (PUBLIC_MARKDOWN_PATHS.has(pathname)) return true;
+    if (pathname.startsWith("/community/")) return true;
+    return false;
+}
+
+function acceptsMarkdown(request) {
+    const accept = request.headers.get("accept") || "";
+    return /text\/markdown/i.test(accept);
+}
+
+function agentView() {
+    return {
+        name: "CampusZen",
+        tagline: "The social network for Indian college students.",
+        version: "1.0.0",
+        capabilities: [
+            "communities",
+            "posts",
+            "events",
+            "leaderboard",
+            "resources",
+            "mcp",
+        ],
+        authentication: {
+            type: "session-cookie or oauth2-bearer",
+            login: "POST /api/auth/login",
+            guide: "https://campuszen.tech/auth.md",
+            wwwAuthenticate:
+                'Bearer resource_metadata="https://campuszen.tech/.well-known/oauth-protected-resource"',
+        },
+        endpoints: {
+            communities: "GET /api/communities",
+            stats: "GET /api/public/stats",
+            events: "GET /api/events",
+            leaderboard: "GET /api/leaderboard",
+            health: "GET /api/health",
+            createPost: "POST /api/posts/create",
+            openapi: "https://campuszen.tech/openapi.json",
+        },
+        machineResources: {
+            llmsTxt: "https://campuszen.tech/llms.txt",
+            mcp: "https://campuszen.tech/.well-known/mcp",
+            agentCard: "https://campuszen.tech/.well-known/agent-card.json",
+            agentSkills: "https://campuszen.tech/.well-known/agent-skills/index.json",
+            apiCatalog: "https://campuszen.tech/.well-known/api-catalog",
+        },
+    };
+}
+
 export default function middleware(request) {
     const { pathname } = request.nextUrl;
 
-    if (pathname.startsWith("/api/auth")) {
+    // Let the /.well-known/* rewrites resolve to the API handler untouched.
+    if (pathname.startsWith("/.well-known")) {
         const response = NextResponse.next();
-        addSecurityHeaders(response, false);
+        addSecurityHeaders(response, request, false);
         return response;
     }
 
-    // acceptmarkdown.com content negotiation: serve Markdown for public pages
-    // when the client explicitly requests it. Browsers never send
-    // Accept: text/markdown, so this only affects agents/crawlers.
+    if (pathname.startsWith("/api/auth")) {
+        const response = NextResponse.next();
+        addSecurityHeaders(response, request, false);
+        return response;
+    }
+
+    // ?mode=agent → structured, machine-readable view instead of marketing HTML.
+    if (pathname === "/" && request.nextUrl.searchParams.get("mode") === "agent") {
+        const response = NextResponse.json(agentView(), {
+            status: 200,
+            headers: { "Cache-Control": "public, max-age=3600" },
+        });
+        addSecurityHeaders(response, request, false);
+        return response;
+    }
+
     const isApiPath = pathname.startsWith("/api");
     const isMachineFile =
         pathname === "/openapi.json" || pathname === "/llms.txt";
-    if (!isApiPath && !isMachineFile && acceptsMarkdown(request)) {
+
+    // Serve Markdown to agents that explicitly request it, or to known AI bots
+    // that fetch HTML but benefit from a markdown representation.
+    const wantsMarkdown = acceptsMarkdown(request) || isAgentBot(request);
+    if (
+        !isApiPath &&
+        !isMachineFile &&
+        wantsMarkdown &&
+        isPublicMarkdownPath(pathname)
+    ) {
         const md = getMarkdownContent(pathname);
         const response = new NextResponse(md, {
             status: 200,
@@ -43,7 +145,7 @@ export default function middleware(request) {
                 "Cache-Control": "public, max-age=3600",
             },
         });
-        addSecurityHeaders(response, false);
+        addSecurityHeaders(response, request, false);
         return response;
     }
 
@@ -57,7 +159,7 @@ export default function middleware(request) {
     // Redirect logged-in users away from auth pages
     if (hasSession && (pathname === "/login" || pathname === "/signup")) {
         const response = NextResponse.redirect(new URL("/feed", request.url));
-        addSecurityHeaders(response);
+        addSecurityHeaders(response, request);
         return response;
     }
 
@@ -71,17 +173,17 @@ export default function middleware(request) {
         loginUrl.searchParams.set("redirect", pathname);
 
         const response = NextResponse.redirect(loginUrl);
-        addSecurityHeaders(response);
+        addSecurityHeaders(response, request);
         return response;
     }
 
     const response = NextResponse.next();
-    addSecurityHeaders(response);
+    addSecurityHeaders(response, request);
 
     return response;
 }
 
-function addSecurityHeaders(response, includeCSP = true) {
+function addSecurityHeaders(response, request, includeCSP = true) {
     // Tell CDNs/proxies that responses vary by Accept (markdown negotiation)
     // and Accept-Encoding so they never serve a cached HTML variant to an
     // agent asking for markdown (or vice versa).
@@ -90,6 +192,26 @@ function addSecurityHeaders(response, includeCSP = true) {
     // Declare the API version on every response so agents can rely on a
     // stable, documented surface (see /openapi.json and /developers).
     response.headers.set("X-API-Version", "1");
+
+    // RFC 8288 Link headers advertise key machine-readable resources.
+    const links = [
+        "</sitemap.xml>; rel=\"sitemap\"",
+        "</openapi.json>; rel=\"service-desc\"; type=\"application/json\"",
+        "</.well-known/api-catalog>; rel=\"service-desc\"; type=\"application/linkset+json\"",
+        "</.well-known/agent-card.json>; rel=\"service-desc\"; type=\"application/json\"",
+    ];
+    const pathname = request?.nextUrl?.pathname || "";
+    if (pathname === "/") {
+        links.push("</index.md>; rel=\"alternate\"; type=\"text/markdown\"");
+    }
+    response.headers.set("Link", links.join(", "));
+
+    // Informational rate-limit policy (agents self-throttle against 429 +
+    // Retry-After at runtime).
+    response.headers.set(
+        "RateLimit-Policy",
+        "limit=1000, window=3600; comment=\"per IP/account; see 429 Retry-After\"",
+    );
 
     if (includeCSP) {
         const csp =
@@ -185,8 +307,3 @@ function getProductionCSP() {
 export const config = {
     matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
 };
-
-function acceptsMarkdown(request) {
-    const accept = request.headers.get("accept") || "";
-    return /text\/markdown/i.test(accept);
-}

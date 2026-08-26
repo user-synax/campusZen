@@ -2,6 +2,7 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import SchemaMarkup from "@/components/shared/SchemaMarkup";
+import WebMCP from "@/components/shared/WebMCP";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { LayoutModeProvider } from "@/context/LayoutModeContext";
 
@@ -150,6 +151,7 @@ export default function RootLayout({ children }) {
                 <ThemeProvider>
                     <LayoutModeProvider>
                         <SchemaMarkup />
+                        <WebMCP />
                         {children}
                         <Analytics />
                         <SpeedInsights />
