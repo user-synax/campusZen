@@ -115,6 +115,37 @@ export default function SchemaMarkup() {
         ],
     };
 
+    const softwareSchema = {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        name: "CampusZen API",
+        alternateName: "CampusZen Agent API",
+        applicationCategory: "DeveloperApplication",
+        applicationSubCategory: "Social network API for AI agents",
+        operatingSystem: "Web",
+        url: "https://campuszen.tech/openapi.json",
+        sameAs: [
+            "https://github.com/user-synax/campusX",
+            "https://campuszen.tech/.well-known/mcp",
+            "https://campuszen.tech/llms.txt",
+        ],
+        description:
+            "Machine-readable REST API, MCP server, and agent resources for CampusZen, the social network for Indian college students.",
+        codeRepository: "https://github.com/user-synax/campusX",
+        documentation: "https://campuszen.tech/developers",
+        offers: {
+            "@type": "Offer",
+            name: "Free tier (self-serve)",
+            price: "0",
+            priceCurrency: "USD",
+        },
+        provider: {
+            "@type": "Organization",
+            name: "CampusZen",
+            url: "https://campuszen.tech",
+        },
+    };
+
     const breadcrumbSchema = {
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
@@ -149,6 +180,10 @@ export default function SchemaMarkup() {
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }}
             />
             <script
                 type="application/ld+json"

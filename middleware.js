@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getMarkdownContent } from "@/lib/markdown-content";
+import { getMarkdownContent, getMdTwinContent } from "@/lib/markdown-content";
 
 const protectedRoutes = [
     "/feed",
@@ -91,15 +91,38 @@ function agentView() {
         machineResources: {
             llmsTxt: "https://campuszen.tech/llms.txt",
             mcp: "https://campuszen.tech/.well-known/mcp",
+            mcpDocs: "https://campuszen.tech/.well-known/mcp-docs",
             agentCard: "https://campuszen.tech/.well-known/agent-card.json",
             agentSkills: "https://campuszen.tech/.well-known/agent-skills/index.json",
             apiCatalog: "https://campuszen.tech/.well-known/api-catalog",
+        },
+        openSource: {
+            repository: "https://github.com/user-synax/campusX",
+            agentsGuide: "https://github.com/user-synax/campusX/blob/main/AGENTS.md",
         },
     };
 }
 
 export default function middleware(request) {
     const { pathname } = request.nextUrl;
+
+    // Markdown twins: an agent may append `.md` to fetch a markdown version of
+    // a content or API page (e.g. /api/communities.md, /.well-known/api-catalog.md).
+    if (pathname.endsWith(".md")) {
+        const base = pathname.slice(0, -3);
+        const md = getMdTwinContent(base);
+        if (md) {
+            const response = new NextResponse(md, {
+                status: 200,
+                headers: {
+                    "Content-Type": "text/markdown; charset=utf-8",
+                    "Cache-Control": "public, max-age=3600",
+                },
+            });
+            addSecurityHeaders(response, request, false);
+            return response;
+        }
+    }
 
     // Let the /.well-known/* rewrites resolve to the API handler untouched.
     if (pathname.startsWith("/.well-known")) {

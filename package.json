@@ -2,6 +2,11 @@
     "name": "campuszen",
     "version": "1.2.0",
     "private": true,
+    "homepage": "https://campuszen.tech",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/user-synax/campusX"
+    },
     "scripts": {
         "dev": "next dev",
         "build": "next build",

@@ -18,11 +18,13 @@ const TOOLS = [
                 limit: { type: "integer", default: 50 },
             },
         },
+        _meta: { ui: { resourceUri: "ui://campuszen.tech/tools/list_communities" } },
     },
     {
         name: "get_public_stats",
         description: "Get platform statistics: users, posts, resources, communities.",
         inputSchema: { type: "object", properties: {} },
+        _meta: { ui: { resourceUri: "ui://campuszen.tech/tools/get_public_stats" } },
     },
     {
         name: "list_events",
@@ -35,6 +37,7 @@ const TOOLS = [
                 limit: { type: "integer", default: 10 },
             },
         },
+        _meta: { ui: { resourceUri: "ui://campuszen.tech/tools/list_events" } },
     },
     {
         name: "get_leaderboard",
@@ -46,6 +49,7 @@ const TOOLS = [
                 limit: { type: "integer", default: 20 },
             },
         },
+        _meta: { ui: { resourceUri: "ui://campuszen.tech/tools/get_leaderboard" } },
     },
     {
         name: "create_post",
@@ -59,6 +63,7 @@ const TOOLS = [
                 community: { type: "string", description: "Optional community name." },
             },
         },
+        _meta: { ui: { resourceUri: "ui://campuszen.tech/tools/create_post" } },
     },
     {
         name: "get_post",
@@ -69,6 +74,18 @@ const TOOLS = [
             required: ["postId"],
             properties: { postId: { type: "string" } },
         },
+        _meta: { ui: { resourceUri: "ui://campuszen.tech/tools/get_post" } },
+    },
+];
+
+// ui:// resources exposed for MCP Apps / A2UI rendering.
+const UI_RESOURCES = [
+    {
+        uri: "ui://campuszen.tech/tools",
+        name: "CampusZen Tool Kit",
+        description:
+            "Interactive UI surface that renders CampusZen MCP tools inside a conversation.",
+        mimeType: "application/vnd.mcp-ui+html",
     },
 ];
 
@@ -130,7 +147,11 @@ export async function POST(request) {
             return NextResponse.json(
                 rpc(id, {
                     protocolVersion: PROTOCOL,
-                    capabilities: { tools: { listChanged: false } },
+                    capabilities: {
+                        tools: { listChanged: false },
+                        resources: { listChanged: false },
+                        ui: true,
+                    },
                     serverInfo: { name: "CampusZen MCP Server", version: "1.0.0" },
                 }),
                 { status: 200, headers: baseHeaders },
@@ -147,6 +168,34 @@ export async function POST(request) {
                 status: 200,
                 headers: baseHeaders,
             });
+
+        case "resources/list":
+            return NextResponse.json(rpc(id, { resources: UI_RESOURCES }), {
+                status: 200,
+                headers: baseHeaders,
+            });
+
+        case "resources/read": {
+            const { uri } = body.params || {};
+            const res = UI_RESOURCES.find((r) => r.uri === uri);
+            if (!res)
+                return NextResponse.json(
+                    rpcError(id, -32602, `Unknown resource: ${uri}`),
+                    { status: 200, headers: baseHeaders },
+                );
+            return NextResponse.json(
+                rpc(id, {
+                    contents: [
+                        {
+                            uri: res.uri,
+                            mimeType: res.mimeType,
+                            text: `<!doctype html><html><body><h1>CampusZen Tool Kit</h1><p>Use the CampusZen MCP tools (list_communities, get_public_stats, list_events, get_leaderboard, create_post, get_post) to act on the student social network.</p></body></html>`,
+                        },
+                    ],
+                }),
+                { status: 200, headers: baseHeaders },
+            );
+        }
 
         case "tools/call": {
             const { name, arguments: args = {} } = body.params || {};

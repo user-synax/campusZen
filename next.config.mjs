@@ -76,6 +76,10 @@ const nextConfig = {
                 source: "/.well-known/:path*",
                 destination: "/api/.well-known/:path*",
             },
+            // NLWeb /ask surface reachable both at /api/ask and the bare /ask.
+            { source: "/ask", destination: "/api/ask" },
+            // Agent auth challenge endpoint reachable at the bare /agent/auth.
+            { source: "/agent/auth", destination: "/api/agent/auth" },
         ];
     },
 };
