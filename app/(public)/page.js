@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import dynamic from "next/dynamic";
 import HeroClient from "@/components/landing/HeroClient";
+import { Bot, Globe2, FileJson, TriangleAlert, FileText, KeyRound, BookOpen } from "lucide-react";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
 import Post from "@/models/Post";
@@ -82,6 +83,18 @@ async function getLandingStats() {
     }
 }
 
+function AgentCard({ icon: Icon, title, body }) {
+    return (
+        <div className="card-chunky bg-card p-6">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border-2 border-border bg-accent text-primary shadow-[var(--shadow-hard-sm)]">
+                <Icon className="h-5 w-5" />
+            </div>
+            <h3 className="mt-4 text-lg font-bold tracking-tight">{title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{body}</p>
+        </div>
+    );
+}
+
 export default async function LandingPage() {
     const cookieStore = await cookies();
     const token = cookieStore.get("campusx_token")?.value;
@@ -109,66 +122,87 @@ export default async function LandingPage() {
                 <ProductShowcase />
                 <Features />
                 <WhyStudentsChoose />
-                <section className="mx-auto max-w-3xl px-4 py-12 text-center">
-                    <h1 className="text-4xl underline mb-12 font-bold tracking-tight">
-                        For A.I Agents
-                    </h1>
-                    <h2 className="text-2xl font-bold tracking-tight mt-4">
-                        What is CampusZen?
-                    </h2>
-                    <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-                        CampusZen is a social network built exclusively for Indian
-                        college students. It helps you find and join your campus
-                        community, share updates, ask questions, and discover
-                        study resources curated by peers from your college and
-                        across the country. Whether you study at an IIT, NIT,
-                        central university, or a local college, CampusZen connects
-                        you with the people and knowledge that matter for student
-                        life.
-                    </p>
-                    <h2 className="mt-10 text-2xl font-bold tracking-tight">
-                        Built for student life
-                    </h2>
-                    <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-                        Beyond posts and feeds, CampusZen offers college-specific
-                        communities, a leaderboard that rewards helpful
-                        contributions, campus events, direct messaging, and a
-                        resource library of notes and materials. Students can
-                        verify their college, build a reputation, and take part
-                        in discussions that are relevant to their course,
-                        placement preparation, and everyday campus experience.
-                    </p>
-                    <h3 className="mt-6 text-xl font-semibold tracking-tight">
-                        Communities by college
-                    </h3>
-                    <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-                        Every college has its own space. Join public community
-                        pages such as BCA, IGNOU, and placement groups to see
-                        member counts, recent discussions, and upcoming events
-                        without needing an account. Once you log in, you can post,
-                        comment, and follow peers from your campus.
-                    </p>
-                    <h2 className="mt-10 text-2xl font-bold tracking-tight">
-                        Join your campus
-                    </h2>
-                    <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-                        Getting started takes a minute. Create an account with
-                        your college email or phone number, verify your campus,
-                        and you will be dropped into a feed tailored to your
-                        college and interests. Explore communities by college such
-                        as BCA, IGNOU, and placement groups, or start your own
-                        community around a topic you care about.
-                    </p>
-                    <h3 className="mt-6 text-xl font-semibold tracking-tight">
-                        Study resources and recognition
-                    </h3>
-                    <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-                        Share and download peer-reviewed notes, track your
-                        contribution score on the leaderboard, and earn rewards in
-                        the campus shop. CampusZen is designed to make academic
-                        and social life on campus simpler, safer, and more
-                        connected for every student.
-                    </p>
+                <section className="mx-auto max-w-5xl px-4 py-20">
+                    <div className="flex flex-col items-center text-center">
+                        <span className="inline-flex items-center gap-2 rounded-full border-2 border-border bg-card px-4 py-1.5 text-sm font-semibold text-primary shadow-[var(--shadow-hard-sm)]">
+                            <Bot className="h-4 w-4" />
+                            For AI Agents
+                        </span>
+                        <h2 className="mt-5 text-3xl font-extrabold tracking-tight sm:text-4xl">
+                            CampusZen is built to be read by machines too
+                        </h2>
+                        <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
+                            CampusZen is the social network for Indian college
+                            students — campus communities, study resources,
+                            leaderboards, and events. The pages and API below are
+                            served so agents can discover, summarize, and
+                            integrate with student life on campus without hitting
+                            a login wall.
+                        </p>
+                    </div>
+
+                    <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                        <AgentCard
+                            icon={Globe2}
+                            title="Public by default"
+                            body="Community pages and stats at /community/<college> need no login. Member counts, posts, and events are visible to anyone."
+                        />
+                        <AgentCard
+                            icon={FileJson}
+                            title="OpenAPI spec"
+                            body="A complete, machine-readable API description is published at /openapi.json with operationIds, schemas, and versioning notes."
+                        />
+                        <AgentCard
+                            icon={TriangleAlert}
+                            title="Structured errors"
+                            body="Every error is JSON: { success: false, error: { code, message } }. No HTML error pages for agents to parse."
+                        />
+                        <AgentCard
+                            icon={FileText}
+                            title="Markdown & llms.txt"
+                            body="Request any page with Accept: text/markdown, or read /llms.txt for when-to-use guidance and endpoint links."
+                        />
+                        <AgentCard
+                            icon={KeyRound}
+                            title="Programmatic auth"
+                            body="Log in with POST /api/auth/login to obtain a session cookie, then call authenticated endpoints on behalf of a user."
+                        />
+                        <AgentCard
+                            icon={BookOpen}
+                            title="Developer portal"
+                            body="A dedicated /developers page documents the API, auth model, and public endpoints with copy-ready examples."
+                        />
+                    </div>
+
+                    <div className="mt-12 flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-8 text-center shadow-[var(--shadow-hard)]">
+                        <h3 className="text-xl font-bold tracking-tight">
+                            Start building with CampusZen
+                        </h3>
+                        <p className="max-w-xl text-sm text-muted-foreground">
+                            Read the agent guide, the OpenAPI spec, or the
+                            developer portal to integrate programmatically.
+                        </p>
+                        <div className="flex flex-wrap justify-center gap-3">
+                            <a
+                                href="/llms.txt"
+                                className="btn-chunky rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground"
+                            >
+                                llms.txt
+                            </a>
+                            <a
+                                href="/openapi.json"
+                                className="btn-chunky rounded-xl border-border bg-card px-5 py-2.5 text-sm font-bold"
+                            >
+                                OpenAPI spec
+                            </a>
+                            <a
+                                href="/developers"
+                                className="btn-chunky rounded-xl border-border bg-card px-5 py-2.5 text-sm font-bold"
+                            >
+                                Developer portal
+                            </a>
+                        </div>
+                    </div>
                 </section>
                 <Footer />
             </main>

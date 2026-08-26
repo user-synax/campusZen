@@ -1,124 +1,168 @@
-import { NextResponse } from "next/server";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import dynamic from "next/dynamic";
+import HeroClient from "@/components/landing/HeroClient";
+import { Bot, Globe2, FileJson, TriangleAlert, FileText, KeyRound, BookOpen } from "lucide-react";
 import connectDB from "@/lib/db";
-import Event from "@/models/Event";
-import { getCurrentUser } from "@/lib/auth";
-import { sanitizeString } from "@/utils/validators";
-import { applyRateLimit } from "@/lib/rate-limit";
-import { sanitizeText } from "@/lib/sanitize";
-import { withErrorHandler, APIError, UnauthorizedError, BadRequestError } from "@/lib/api-response";
-const GET = withErrorHandler(async (request) => {
+import User from "@/models/User";
+import Post from "@/models/Post";
+import Resource from "@/models/Resource";
+import { verifyToken } from "@/lib/auth-edge";
+const Stats = dynamic(() => import("@/components/landing/Stats"));
+const ProductShowcase = dynamic(
+  () => import("@/components/landing/ProductShowcase")
+);
+const Features = dynamic(() => import("@/components/landing/Features"));
+const WhyStudentsChoose = dynamic(
+  () => import("@/components/landing/WhyStudentsChoose")
+);
+const TechStack = dynamic(() => import("@/components/landing/TechStack"));
+const Footer = dynamic(() => import("@/components/landing/Footer"));
+const metadata = {
+  title: "CampusZen \u2014 Social Network for Indian College Students",
+  description: "Join your campus community, share posts, access resources, and stay connected with your college mates exclusively on CampusZen.",
+  keywords: [
+    "student social network",
+    "college community",
+    "IIT",
+    "NIT",
+    "campus",
+    "indian students"
+  ],
+  openGraph: {
+    type: "website",
+    locale: "en_IN",
+    url: "https://campuszen.vercel.app",
+    siteName: "CampusZen",
+    title: "CampusZen \u2014 Social Network for Indian College Students",
+    description: "Join your campus community, share posts, access resources, and stay connected.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "CampusZen \u2014 Student Social Network"
+      }
+    ]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "CampusZen \u2014 Social Network for Indian College Students",
+    description: "Join your campus community exclusively on CampusZen.",
+    images: ["/og-image.png"]
+  }
+};
+async function getLandingStats() {
   try {
-    const { searchParams } = new URL(request.url);
-    const college = searchParams.get("college") || "";
-    const page = parseInt(searchParams.get("page")) || 1;
-    const limit = Math.min(parseInt(searchParams.get("limit")) || 10, 50);
-    const filter = searchParams.get("filter") || "upcoming";
-    const skip = (page - 1) * limit;
     await connectDB();
-    const query = { isActive: true };
-    if (college) {
-      query.college = { $regex: college, $options: "i" };
-    }
-    if (filter === "upcoming") {
-      query.eventDate = { $gte: /* @__PURE__ */ new Date() };
-    } else if (filter === "past") {
-      query.eventDate = { $lt: /* @__PURE__ */ new Date() };
-    }
-    const [events, total] = await Promise.all([
-      Event.find(query).sort({ eventDate: 1 }).skip(skip).limit(limit).populate("organizer", "name username avatar").lean(),
-      Event.countDocuments(query)
+    const [users, posts, resources] = await Promise.all([
+      User.estimatedDocumentCount(),
+      Post.estimatedDocumentCount(),
+      Resource.countDocuments({ status: "approved" })
     ]);
-    const formattedEvents = events.map((event) => ({
-      ...event,
-      rsvpCount: event.rsvps?.length || 0,
-      isFull: event.capacity > 0 && (event.rsvps?.length || 0) >= event.capacity,
-      isPast: new Date(event.eventDate) < /* @__PURE__ */ new Date()
-    }));
-    const response = NextResponse.json({
-      events: formattedEvents,
-      hasMore: skip + events.length < total,
-      total
-    });
-    response.headers.set("Cache-Control", "public, max-age=120, stale-while-revalidate=60");
-    return response;
+    return {
+      users: users || 0,
+      posts: posts || 0,
+      resources: resources || 0,
+      codeAreas: 5
+    };
   } catch (error) {
-    console.error("Fetch events error:", error);
-    return errorResponse(new APIError("Failed to load events.", 500, "INTERNAL_ERROR"));
+    console.error("[Landing Stats Fetch Error]:", error);
+    return {
+      users: 50,
+      posts: 120,
+      resources: 20,
+      codeAreas: 3
+    };
   }
-});
-const POST = withErrorHandler(async (request) => {
-  try {
-    const { blocked, response: rateLimitResponse } = applyRateLimit(
-      request,
-      "event_create",
-      5,
-      60 * 60 * 1e3
-    );
-    if (blocked) return rateLimitResponse;
-    const currentUser = await getCurrentUser(request);
-    if (!currentUser) {
-      return errorResponse(new UnauthorizedError("You must be logged in to create an event."));
+}
+function AgentCard({ icon: Icon, title, body }) {
+  return /* @__PURE__ */ React.createElement("div", { className: "card-chunky bg-card p-6" }, /* @__PURE__ */ React.createElement("div", { className: "flex h-11 w-11 items-center justify-center rounded-xl border-2 border-border bg-accent text-primary shadow-[var(--shadow-hard-sm)]" }, /* @__PURE__ */ React.createElement(Icon, { className: "h-5 w-5" })), /* @__PURE__ */ React.createElement("h3", { className: "mt-4 text-lg font-bold tracking-tight" }, title), /* @__PURE__ */ React.createElement("p", { className: "mt-2 text-sm leading-relaxed text-muted-foreground" }, body));
+}
+async function LandingPage() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("campusx_token")?.value;
+  if (token) {
+    const decoded = await verifyToken(token);
+    if (decoded) {
+      redirect("/feed");
     }
-    let body;
-    try {
-      body = await request.json();
-    } catch (e) {
-      return errorResponse(new BadRequestError("Invalid request body"));
-    }
-    const { title, description, college, location, eventDate, capacity, tags } = body;
-    if (!title || title.trim().length === 0) {
-      return errorResponse(new BadRequestError("Title is required"));
-    }
-    if (title.length > 100) {
-      return errorResponse(new BadRequestError("Title too long (max 100 chars)"));
-    }
-    if (!college || college.trim().length === 0) {
-      return errorResponse(new BadRequestError("College is required"));
-    }
-    if (!location || location.trim().length === 0) {
-      return errorResponse(new BadRequestError("Location is required"));
-    }
-    if (location.length > 200) {
-      return errorResponse(new BadRequestError("Location too long (max 200 chars)"));
-    }
-    if (!eventDate) {
-      return errorResponse(new BadRequestError("Event date is required"));
-    }
-    const date = new Date(eventDate);
-    if (isNaN(date.getTime())) {
-      return errorResponse(new BadRequestError("Invalid event date"));
-    }
-    if (date.getTime() <= Date.now() + 36e5) {
-      return errorResponse(new BadRequestError("Event must be scheduled at least 1 hour in advance"));
-    }
-    const eventCapacity = parseInt(capacity) || 0;
-    if (eventCapacity < 0) {
-      return errorResponse(new BadRequestError("Capacity cannot be negative"));
-    }
-    let eventTags = [];
-    if (tags && Array.isArray(tags)) {
-      eventTags = tags.map((t) => sanitizeString(t)).filter((t) => t.length > 0 && t.length <= 30).slice(0, 5);
-    }
-    await connectDB();
-    const event = await Event.create({
-      title: sanitizeText(title),
-      description: description ? sanitizeText(description).substring(0, 1e3) : "",
-      organizer: currentUser._id,
-      college: sanitizeText(college),
-      location: sanitizeText(location),
-      eventDate: date,
-      capacity: eventCapacity,
-      tags: eventTags,
-      rsvps: []
-    });
-    await event.populate("organizer", "name username avatar");
-    return NextResponse.json(event, { status: 201 });
-  } catch (error) {
-    console.error("Create event error:", error);
-    return errorResponse(new APIError("Failed to create event.", 500, "INTERNAL_ERROR"));
   }
-});
+  const stats = await getLandingStats();
+  return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("main", { className: "pt-16" }, /* @__PURE__ */ React.createElement(HeroClient, null), /* @__PURE__ */ React.createElement(TechStack, null), /* @__PURE__ */ React.createElement(
+    Stats,
+    {
+      users: stats.users,
+      posts: stats.posts,
+      resources: stats.resources,
+      codeAreas: stats.codeAreas
+    }
+  ), /* @__PURE__ */ React.createElement(ProductShowcase, null), /* @__PURE__ */ React.createElement(Features, null), /* @__PURE__ */ React.createElement(WhyStudentsChoose, null), /* @__PURE__ */ React.createElement("section", { className: "mx-auto max-w-5xl px-4 py-20" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-col items-center text-center" }, /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-2 rounded-full border-2 border-border bg-card px-4 py-1.5 text-sm font-semibold text-primary shadow-[var(--shadow-hard-sm)]" }, /* @__PURE__ */ React.createElement(Bot, { className: "h-4 w-4" }), "For AI Agents"), /* @__PURE__ */ React.createElement("h2", { className: "mt-5 text-3xl font-extrabold tracking-tight sm:text-4xl" }, "CampusZen is built to be read by machines too"), /* @__PURE__ */ React.createElement("p", { className: "mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground" }, "CampusZen is the social network for Indian college students \u2014 campus communities, study resources, leaderboards, and events. The pages and API below are served so agents can discover, summarize, and integrate with student life on campus without hitting a login wall.")), /* @__PURE__ */ React.createElement("div", { className: "mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" }, /* @__PURE__ */ React.createElement(
+    AgentCard,
+    {
+      icon: Globe2,
+      title: "Public by default",
+      body: "Community pages and stats at /community/<college> need no login. Member counts, posts, and events are visible to anyone."
+    }
+  ), /* @__PURE__ */ React.createElement(
+    AgentCard,
+    {
+      icon: FileJson,
+      title: "OpenAPI spec",
+      body: "A complete, machine-readable API description is published at /openapi.json with operationIds, schemas, and versioning notes."
+    }
+  ), /* @__PURE__ */ React.createElement(
+    AgentCard,
+    {
+      icon: TriangleAlert,
+      title: "Structured errors",
+      body: "Every error is JSON: { success: false, error: { code, message } }. No HTML error pages for agents to parse."
+    }
+  ), /* @__PURE__ */ React.createElement(
+    AgentCard,
+    {
+      icon: FileText,
+      title: "Markdown & llms.txt",
+      body: "Request any page with Accept: text/markdown, or read /llms.txt for when-to-use guidance and endpoint links."
+    }
+  ), /* @__PURE__ */ React.createElement(
+    AgentCard,
+    {
+      icon: KeyRound,
+      title: "Programmatic auth",
+      body: "Log in with POST /api/auth/login to obtain a session cookie, then call authenticated endpoints on behalf of a user."
+    }
+  ), /* @__PURE__ */ React.createElement(
+    AgentCard,
+    {
+      icon: BookOpen,
+      title: "Developer portal",
+      body: "A dedicated /developers page documents the API, auth model, and public endpoints with copy-ready examples."
+    }
+  )), /* @__PURE__ */ React.createElement("div", { className: "mt-12 flex flex-col items-center gap-4 rounded-2xl border-2 border-border bg-card p-8 text-center shadow-[var(--shadow-hard)]" }, /* @__PURE__ */ React.createElement("h3", { className: "text-xl font-bold tracking-tight" }, "Start building with CampusZen"), /* @__PURE__ */ React.createElement("p", { className: "max-w-xl text-sm text-muted-foreground" }, "Read the agent guide, the OpenAPI spec, or the developer portal to integrate programmatically."), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap justify-center gap-3" }, /* @__PURE__ */ React.createElement(
+    "a",
+    {
+      href: "/llms.txt",
+      className: "btn-chunky rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground"
+    },
+    "llms.txt"
+  ), /* @__PURE__ */ React.createElement(
+    "a",
+    {
+      href: "/openapi.json",
+      className: "btn-chunky rounded-xl border-border bg-card px-5 py-2.5 text-sm font-bold"
+    },
+    "OpenAPI spec"
+  ), /* @__PURE__ */ React.createElement(
+    "a",
+    {
+      href: "/developers",
+      className: "btn-chunky rounded-xl border-border bg-card px-5 py-2.5 text-sm font-bold"
+    },
+    "Developer portal"
+  )))), /* @__PURE__ */ React.createElement(Footer, null)));
+}
 export {
-  GET,
-  POST
+  LandingPage as default,
+  metadata
 };
