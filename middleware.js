@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getMarkdownContent } from "@/lib/markdown-content";
 
 const protectedRoutes = [
     "/feed",
@@ -23,6 +24,25 @@ export default function middleware(request) {
 
     if (pathname.startsWith("/api/auth")) {
         const response = NextResponse.next();
+        addSecurityHeaders(response, false);
+        return response;
+    }
+
+    // acceptmarkdown.com content negotiation: serve Markdown for public pages
+    // when the client explicitly requests it. Browsers never send
+    // Accept: text/markdown, so this only affects agents/crawlers.
+    const isApiPath = pathname.startsWith("/api");
+    const isMachineFile =
+        pathname === "/openapi.json" || pathname === "/llms.txt";
+    if (!isApiPath && !isMachineFile && acceptsMarkdown(request)) {
+        const md = getMarkdownContent(pathname);
+        const response = new NextResponse(md, {
+            status: 200,
+            headers: {
+                "Content-Type": "text/markdown; charset=utf-8",
+                "Cache-Control": "public, max-age=3600",
+            },
+        });
         addSecurityHeaders(response, false);
         return response;
     }
@@ -62,6 +82,11 @@ export default function middleware(request) {
 }
 
 function addSecurityHeaders(response, includeCSP = true) {
+    // Tell CDNs/proxies that responses vary by Accept (markdown negotiation)
+    // and Accept-Encoding so they never serve a cached HTML variant to an
+    // agent asking for markdown (or vice versa).
+    response.headers.set("Vary", "Accept, Accept-Encoding");
+
     if (includeCSP) {
         const csp =
             process.env.NODE_ENV === "production"
@@ -156,3 +181,8 @@ function getProductionCSP() {
 export const config = {
     matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
 };
+
+function acceptsMarkdown(request) {
+    const accept = request.headers.get("accept") || "";
+    return /text\/markdown/i.test(accept);
+}

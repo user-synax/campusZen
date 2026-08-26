@@ -7,12 +7,16 @@ export default function robots() {
         disallow: [
           '/feed',
           '/admin',
-          '/api',
           '/settings',
           '/chats',
           '/notifications',
           '/verify-student',
         ],
+      },
+      {
+        userAgent: '*',
+        allow: ['/api', '/openapi.json', '/llms.txt', '/developers'],
+        disallow: ['/api/admin', '/api/auth/logout', '/api/billing'],
       },
     ],
     sitemap: 'https://campuszen.tech/sitemap.xml',

@@ -1,112 +1,136 @@
-"use client";
-import { useState, useEffect, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, GraduationCap } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import PostComposer from "@/components/post/PostComposer";
-import PostCard from "@/components/post/PostCard";
-import PostSkeleton from "@/components/post/PostSkeleton";
-import EmptyState from "@/components/shared/EmptyState";
-import { usePosts } from "@/hooks/usePosts";
-import useUser from "@/hooks/useUser";
-import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
-import InfiniteScrollSentinel from "@/components/shared/InfiniteScrollSentinel";
-import { formatCollegeName } from "@/utils/formatters";
-function CollegeCommunityPage() {
-  const params = useParams();
-  const router = useRouter();
-  const { user: currentUser } = useUser();
-  const collegeSlug = params.college;
-  const displayName = formatCollegeName(collegeSlug);
-  const {
-    posts,
-    loading: postsLoading,
-    error: postsError,
-    hasMore,
-    loadMore,
-    addPost,
-    removePost,
-    updatePostLike
-  } = usePosts({ community: displayName });
-  const { sentinelRef } = useInfiniteScroll({
-    fetchMore: loadMore,
-    hasMore,
-    loading: postsLoading
-  });
-  const handleDeletePost = useCallback((postId) => {
-    removePost(postId);
-  }, [removePost]);
-  const handleLikePost = useCallback(async (postId) => {
-    return await updatePostLike(postId);
-  }, [updatePostLike]);
-  const [stats, setStats] = useState({ postCount: 0, memberCount: 0 });
-  const [statsLoading, setStatsLoading] = useState(true);
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await fetch(`/api/communities?name=${encodeURIComponent(displayName)}`);
-        const data = await res.json();
-        if (res.ok) {
-          setStats(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch community stats:", error);
-      } finally {
-        setStatsLoading(false);
+import { NextResponse } from "next/server";
+import { getMarkdownContent } from "@/lib/markdown-content";
+const protectedRoutes = [
+  "/feed",
+  "/search",
+  "/leaderboard",
+  "/notifications",
+  "/communities",
+  "/resources",
+  "/settings",
+  "/bookmarks",
+  "/wallet",
+  "/shop",
+  "/chats",
+  "/events",
+  "/billing",
+  "/clips",
+  "/connect"
+];
+function middleware(request) {
+  const { pathname } = request.nextUrl;
+  if (pathname.startsWith("/api/auth")) {
+    const response2 = NextResponse.next();
+    addSecurityHeaders(response2, false);
+    return response2;
+  }
+  const isApiPath = pathname.startsWith("/api");
+  const isMachineFile = pathname === "/openapi.json" || pathname === "/llms.txt";
+  if (!isApiPath && !isMachineFile && acceptsMarkdown(request)) {
+    const md = getMarkdownContent(pathname);
+    const response2 = new NextResponse(md, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/markdown; charset=utf-8",
+        "Cache-Control": "public, max-age=3600"
       }
-    };
-    if (displayName) fetchStats();
-  }, [displayName]);
-  const isAuthenticated = !!currentUser;
-  return /* @__PURE__ */ React.createElement("div", { className: "flex flex-col min-h-screen" }, /* @__PURE__ */ React.createElement("div", { className: "sticky top-0 bg-background/80 backdrop-blur-md border-b border-border p-4 z-10" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-4" }, /* @__PURE__ */ React.createElement(
-    Button,
-    {
-      variant: "ghost",
-      size: "icon",
-      onClick: () => router.back(),
-      className: "rounded-full hover:bg-accent"
-    },
-    /* @__PURE__ */ React.createElement(ArrowLeft, { className: "w-5 h-5" })
-  ), /* @__PURE__ */ React.createElement("div", { className: "min-w-0" }, /* @__PURE__ */ React.createElement("h1", { className: "font-bold text-lg truncate" }, "\u{1F393} ", displayName), /* @__PURE__ */ React.createElement("p", { className: "text-xs text-muted-foreground" }, statsLoading ? "..." : `${stats.postCount} posts \xB7 ${stats.memberCount} members`)))), isAuthenticated && /* @__PURE__ */ React.createElement(
-    PostComposer,
-    {
-      defaultCommunity: displayName,
-      onPostCreated: addPost
-    }
-  ), /* @__PURE__ */ React.createElement("div", { className: "flex-1" }, !isAuthenticated ? /* @__PURE__ */ React.createElement(
-    EmptyState,
-    {
-      icon: GraduationCap,
-      title: `${displayName} community`,
-      description: "Log in to view discussions and join the conversation with your college mates."
-    }
-  ) : postsLoading && posts.length === 0 ? [1, 2, 3].map((i) => /* @__PURE__ */ React.createElement(PostSkeleton, { key: i })) : posts.length === 0 ? /* @__PURE__ */ React.createElement(
-    EmptyState,
-    {
-      icon: GraduationCap,
-      title: `Welcome to ${displayName}`,
-      description: "Be the first to share something with your college community!"
-    }
-  ) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "divide-y divide-border" }, posts.map((post) => /* @__PURE__ */ React.createElement(
-    PostCard,
-    {
-      key: post._id,
-      post,
-      currentUserId: currentUser?._id,
-      currentUser,
-      onDelete: handleDeletePost,
-      onLike: handleLikePost
-    }
-  ))), /* @__PURE__ */ React.createElement("div", { ref: sentinelRef }, /* @__PURE__ */ React.createElement(
-    InfiniteScrollSentinel,
-    {
-      loading: postsLoading,
-      hasMore,
-      error: postsError,
-      onRetry: loadMore
-    }
-  )))));
+    });
+    addSecurityHeaders(response2, false);
+    return response2;
+  }
+  const legacySession = request.cookies.get("campusx_token")?.value;
+  const appwriteSessionCookieName = `a_session_${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`;
+  const appwriteSession = request.cookies.get(
+    appwriteSessionCookieName
+  )?.value;
+  const hasSession = !!legacySession || !!appwriteSession;
+  if (hasSession && (pathname === "/login" || pathname === "/signup")) {
+    const response2 = NextResponse.redirect(new URL("/feed", request.url));
+    addSecurityHeaders(response2);
+    return response2;
+  }
+  const isProtectedRoute = protectedRoutes.some(
+    (route) => pathname.startsWith(route)
+  );
+  if (isProtectedRoute && !hasSession) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("redirect", pathname);
+    const response2 = NextResponse.redirect(loginUrl);
+    addSecurityHeaders(response2);
+    return response2;
+  }
+  const response = NextResponse.next();
+  addSecurityHeaders(response);
+  return response;
+}
+function addSecurityHeaders(response, includeCSP = true) {
+  response.headers.set("Vary", "Accept, Accept-Encoding");
+  if (includeCSP) {
+    const csp = false ? getProductionCSP() : getDevelopmentCSP();
+    response.headers.set("Content-Security-Policy", csp);
+  }
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set(
+    "Permissions-Policy",
+    "camera=(), microphone=(self), geolocation=()"
+  );
+  response.headers.set(
+    "Strict-Transport-Security",
+    "max-age=31536000; includeSubDomains"
+  );
+  response.headers.set("Origin-Agent-Cluster", "?1");
+}
+function getDevelopmentCSP() {
+  return [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com http://localhost:* ws://localhost:*",
+    "style-src 'self' 'unsafe-inline' blob: https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com http://localhost:*",
+    "img-src 'self' data: blob: https://*.giphy.com https://utfs.io https://*.uploadthing.com https://*.ufs.sh https://api.dicebear.com https://*.tldraw.com https://*.cloud.appwrite.io",
+    // media-src covers <video> avatar-frame overlays (WebM/MP4). GIFs are
+    // <img> and are covered by img-src. Self-host via UploadThing/Appwrite
+    // (whitelisted here) for consistency with the rest of the app.
+    "media-src 'self' data: blob: https://*.cloud.appwrite.io https://utfs.io https://*.uploadthing.com https://*.ufs.sh https://*.livekit.cloud wss://*.livekit.cloud",
+    "connect-src 'self' https://api.anthropic.com https://api.dicebear.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://*.uploadthing.com https://*.ingest.uploadthing.com https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com https://*.pusher.com wss://*.pusher.com blob: data: http://localhost:* ws://localhost:* https://*.cloud.appwrite.io https://*.livekit.cloud wss://*.livekit.cloud",
+    "font-src 'self' data: https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com",
+    "frame-src 'self' https://www.youtube.com https://*.tldraw.com",
+    "worker-src 'self' blob: https://*.tldraw.com",
+    "child-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'"
+  ].join("; ");
+}
+function getProductionCSP() {
+  return [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com",
+    "style-src 'self' 'unsafe-inline' blob: https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com",
+    "img-src 'self' data: blob: https://*.giphy.com https://utfs.io https://*.uploadthing.com https://*.ufs.sh https://api.dicebear.com https://*.tldraw.com https://*.cloud.appwrite.io",
+    // media-src covers <video> avatar-frame overlays (WebM/MP4). GIFs are
+    // <img> and are covered by img-src. Self-host via UploadThing/Appwrite
+    // (whitelisted here) for consistency with the rest of the app.
+    "media-src 'self' data: blob: https://*.cloud.appwrite.io https://utfs.io https://*.uploadthing.com https://*.ufs.sh https://*.livekit.cloud wss://*.livekit.cloud",
+    "connect-src 'self' https://api.anthropic.com https://api.dicebear.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://*.uploadthing.com https://*.ingest.uploadthing.com https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com https://*.pusher.com wss://*.pusher.com blob: data: https://*.cloud.appwrite.io https://*.livekit.cloud wss://*.livekit.cloud",
+    "font-src 'self' data: https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com",
+    "frame-src 'self' https://www.youtube.com https://*.tldraw.com",
+    "worker-src 'self' blob: https://*.tldraw.com",
+    "child-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "report-uri /api/csp-violation-report"
+  ].join("; ");
+}
+const config = {
+  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"]
+};
+function acceptsMarkdown(request) {
+  const accept = request.headers.get("accept") || "";
+  return /text\/markdown/i.test(accept);
 }
 export {
-  CollegeCommunityPage as default
+  config,
+  middleware as default
 };
