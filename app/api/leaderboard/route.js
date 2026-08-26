@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import { getLeaderboard } from '@/lib/gamification';
 import { getCurrentUser } from '@/lib/auth';
+import { withErrorHandler, APIError, BadRequestError } from '@/lib/api-response';
 
-export async function GET(request) {
+export const GET = withErrorHandler(async (request) => {
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') || 'global'; // global, weekly, college
@@ -15,7 +16,7 @@ export async function GET(request) {
     let college = null;
     if (type === 'college') {
       if (!currentUser || !currentUser.college) {
-        return NextResponse.json({ message: 'College information not found' }, { status: 400 });
+        return errorResponse(new BadRequestError('College information not found.'));
       }
       college = currentUser.college;
     }
@@ -29,6 +30,6 @@ export async function GET(request) {
     });
   } catch (error) {
     console.error('Leaderboard API error:', error);
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    return errorResponse(new APIError('Failed to load leaderboard.', 500, 'INTERNAL_ERROR'));
   }
-}
+});

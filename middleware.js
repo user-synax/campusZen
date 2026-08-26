@@ -87,6 +87,10 @@ function addSecurityHeaders(response, includeCSP = true) {
     // agent asking for markdown (or vice versa).
     response.headers.set("Vary", "Accept, Accept-Encoding");
 
+    // Declare the API version on every response so agents can rely on a
+    // stable, documented surface (see /openapi.json and /developers).
+    response.headers.set("X-API-Version", "1");
+
     if (includeCSP) {
         const csp =
             process.env.NODE_ENV === "production"

@@ -5,9 +5,10 @@ import { getCurrentUser } from '@/lib/auth';
 import { sanitizeString } from '@/utils/validators';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { sanitizeText } from '@/lib/sanitize';
+import { withErrorHandler, APIError, UnauthorizedError, BadRequestError } from '@/lib/api-response';
 
 // GET /api/events - List events
-export async function GET(request) {
+export const GET = withErrorHandler(async (request) => {
   try {
     const { searchParams } = new URL(request.url);
     const college = searchParams.get('college') || '';
@@ -58,12 +59,12 @@ export async function GET(request) {
     return response;
   } catch (error) {
     console.error('Fetch events error:', error);
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    return errorResponse(new APIError('Failed to load events.', 500, 'INTERNAL_ERROR'));
   }
-}
+});
 
 // POST /api/events - Create event
-export async function POST(request) {
+export const POST = withErrorHandler(async (request) => {
   try {
     // Rate limit event creation - 5 per hour per IP
     const { blocked, response: rateLimitResponse } = applyRateLimit(
@@ -76,49 +77,49 @@ export async function POST(request) {
 
     const currentUser = await getCurrentUser(request);
     if (!currentUser) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      return errorResponse(new UnauthorizedError('You must be logged in to create an event.'));
     }
 
     let body;
     try {
       body = await request.json();
     } catch (e) {
-      return NextResponse.json({ message: 'Invalid request body' }, { status: 400 });
+      return errorResponse(new BadRequestError('Invalid request body'));
     }
 
     const { title, description, college, location, eventDate, capacity, tags } = body;
 
     // Validation
     if (!title || title.trim().length === 0) {
-      return NextResponse.json({ message: 'Title is required' }, { status: 400 });
+      return errorResponse(new BadRequestError('Title is required'));
     }
     if (title.length > 100) {
-      return NextResponse.json({ message: 'Title too long (max 100 chars)' }, { status: 400 });
+      return errorResponse(new BadRequestError('Title too long (max 100 chars)'));
     }
     if (!college || college.trim().length === 0) {
-      return NextResponse.json({ message: 'College is required' }, { status: 400 });
+      return errorResponse(new BadRequestError('College is required'));
     }
     if (!location || location.trim().length === 0) {
-      return NextResponse.json({ message: 'Location is required' }, { status: 400 });
+      return errorResponse(new BadRequestError('Location is required'));
     }
     if (location.length > 200) {
-      return NextResponse.json({ message: 'Location too long (max 200 chars)' }, { status: 400 });
+      return errorResponse(new BadRequestError('Location too long (max 200 chars)'));
     }
     if (!eventDate) {
-      return NextResponse.json({ message: 'Event date is required' }, { status: 400 });
+      return errorResponse(new BadRequestError('Event date is required'));
     }
 
     const date = new Date(eventDate);
     if (isNaN(date.getTime())) {
-      return NextResponse.json({ message: 'Invalid event date' }, { status: 400 });
+      return errorResponse(new BadRequestError('Invalid event date'));
     }
     if (date.getTime() <= Date.now() + 3600000) {
-      return NextResponse.json({ message: 'Event must be scheduled at least 1 hour in advance' }, { status: 400 });
+      return errorResponse(new BadRequestError('Event must be scheduled at least 1 hour in advance'));
     }
 
     const eventCapacity = parseInt(capacity) || 0;
     if (eventCapacity < 0) {
-      return NextResponse.json({ message: 'Capacity cannot be negative' }, { status: 400 });
+      return errorResponse(new BadRequestError('Capacity cannot be negative'));
     }
 
     let eventTags = [];
@@ -148,6 +149,6 @@ export async function POST(request) {
     return NextResponse.json(event, { status: 201 });
   } catch (error) {
     console.error('Create event error:', error);
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    return errorResponse(new APIError('Failed to create event.', 500, 'INTERNAL_ERROR'));
   }
-}
+});

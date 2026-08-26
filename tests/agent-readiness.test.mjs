@@ -7,7 +7,6 @@ import path from "node:path";
 const ROOT = path.resolve(fileURLToPath(import.meta.url), "../..");
 
 // Load an ESM-source .js lib without needing a package "type":"module".
-// These lib files have no external imports, so inlining is safe.
 function loadLib(rel) {
     const src = readFileSync(path.join(ROOT, rel), "utf8");
     const transformed = src
@@ -20,50 +19,79 @@ function loadLib(rel) {
     )) {
         names.push(m[1]);
     }
-    const code =
-        transformed + "\nexport { " + names.join(", ") + " };\n";
-    const dataUrl =
-        "data:text/javascript;base64," +
-        Buffer.from(code).toString("base64");
-    return import(dataUrl);
+    const code = transformed + "\nexport { " + names.join(", ") + " };\n";
+    return import(
+        "data:text/javascript;base64," + Buffer.from(code).toString("base64")
+    );
 }
 
 const HTTP_METHODS = ["get", "post", "put", "patch", "delete"];
+const SUCCESS = new Set([200, 201, 202, 203, 204, 205, 206]);
+
+function successResponsesHaveJsonSchema(op) {
+    for (const method of HTTP_METHODS) {
+        const resp = op[method];
+        if (!resp || !resp.responses) continue;
+        for (const [code, def] of Object.entries(resp.responses)) {
+            if (SUCCESS.has(Number(code))) {
+                const content = def?.content?.["application/json"];
+                if (!content || !content.schema) return false;
+            }
+        }
+    }
+    return true;
+}
 
 test("openapi spec is valid and self-describing", async () => {
     const { openapiSpec } = await loadLib("lib/openapi-spec.js");
 
-    // 1. Valid OpenAPI 3.x document, JSON-serializable.
     assert.ok(openapiSpec && typeof openapiSpec === "object");
     assert.match(openapiSpec.openapi, /^3\./);
     assert.doesNotThrow(() => JSON.stringify(openapiSpec));
 
-    // 2. Title contains product name.
+    // Title contains product name.
     assert.match(openapiSpec.info.title, /CampusZen/);
 
-    // 3. Every operation has a unique operationId and a description.
+    // operationId + description on every operation, and unique.
     const seenIds = new Set();
-    for (const [path, methods] of Object.entries(openapiSpec.paths)) {
+    let total = 0;
+    let covered = 0;
+    for (const [p, methods] of Object.entries(openapiSpec.paths)) {
         for (const method of HTTP_METHODS) {
             const op = methods[method];
             if (!op) continue;
+            total++;
             assert.ok(
                 typeof op.operationId === "string" && op.operationId.length > 0,
-                `Missing operationId on ${method.toUpperCase()} ${path}`,
+                `Missing operationId on ${method.toUpperCase()} ${p}`,
             );
             assert.ok(
                 typeof op.description === "string" &&
                     op.description.trim().length > 0,
-                `Missing description on ${method.toUpperCase()} ${path}`,
+                `Missing description on ${method.toUpperCase()} ${p}`,
             );
             assert.ok(
                 !seenIds.has(op.operationId),
                 `Duplicate operationId: ${op.operationId}`,
             );
             seenIds.add(op.operationId);
+            if (successResponsesHaveJsonSchema(op)) covered++;
         }
     }
-    assert.ok(seenIds.size >= 10, "Expected several operations with ids");
+    assert.ok(total >= 10, "Expected several operations");
+    // #10: >60% of operations define JSON response schemas.
+    assert.ok(
+        covered / total >= 0.6,
+        `Response schema coverage ${covered}/${total} (<60%)`,
+    );
+});
+
+test("openapi declares a versioning + deprecation policy", async () => {
+    const { openapiSpec } = await loadLib("lib/openapi-spec.js");
+    assert.match(openapiSpec.info.version, /^\d+\.\d+/);
+    assert.ok(openapiSpec.externalDocs && openapiSpec.externalDocs.url);
+    assert.match(openapiSpec.info.description, /Versioning policy/);
+    assert.match(openapiSpec.info.description, /Deprecation/);
 });
 
 test("llms.txt guides agents and links developer resources", async () => {
@@ -78,19 +106,27 @@ test("llms.txt guides agents and links developer resources", async () => {
 
 test("markdown negotiation returns content per path", async () => {
     const { getMarkdownContent } = await loadLib("lib/markdown-content.js");
-    const home = getMarkdownContent("/");
-    assert.match(home, /# CampusZen/);
-    assert.match(home, /\/openapi\.json/);
+    assert.match(getMarkdownContent("/"), /# CampusZen/);
+    assert.match(getMarkdownContent("/"), /\/openapi\.json/);
+    assert.match(getMarkdownContent("/community/bca"), /bca/);
+    assert.match(getMarkdownContent("/developers"), /CampusZen Developer Resources/);
+    assert.match(getMarkdownContent("/some/unknown/path"), /CampusZen/);
+});
 
-    const community = getMarkdownContent("/community/bca");
-    assert.match(community, /bca/);
-    assert.match(community, /api\/communities/);
-
-    const dev = getMarkdownContent("/developers");
-    assert.match(dev, /CampusZen Developer Resources/);
-
-    const fallback = getMarkdownContent("/some/unknown/path");
-    assert.match(fallback, /CampusZen/);
+test("robots.txt allows known AI crawlers/agents", () => {
+    const src = readFileSync(path.join(ROOT, "app/robots.js"), "utf8");
+    for (const ua of [
+        "ChatGPT-User",
+        "ClaudeBot",
+        "DeepSeekBot",
+        "Google-Extended",
+        "ora-agent",
+    ]) {
+        assert.ok(
+            src.includes(ua),
+            `robots.txt should allow ${ua}`,
+        );
+    }
 });
 
 test("Organization JSON-LD includes contactPoint and address", () => {

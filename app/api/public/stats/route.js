@@ -4,8 +4,9 @@ import User from '@/models/User';
 import Post from '@/models/Post';
 import Resource from '@/models/Resource';
 import { applyRateLimit } from '@/lib/rate-limit';
+import { withErrorHandler, APIError } from '@/lib/api-response';
 
-export async function GET(request) {
+export const GET = withErrorHandler(async (request) => {
   try {
     // Rate limit: 60 requests/minute for stats
     const { blocked, response: rateLimitResponse } = applyRateLimit(request, 'public_stats', 60, 60000);
@@ -41,4 +42,4 @@ export async function GET(request) {
     console.error('[Public Stats API Error]:', error);
     return NextResponse.json({ users: 0, posts: 0, resources: 0, communities: 0 });
   }
-}
+});

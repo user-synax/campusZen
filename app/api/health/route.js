@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { connectDB, getDBStatus } from '@/lib/db'
+import { withErrorHandler, APIError } from '@/lib/api-response'
 
-export async function GET() {
+export const GET = withErrorHandler(async () => {
   const startTime = Date.now()
 
   try {
@@ -27,11 +28,7 @@ export async function GET() {
     }, { status: 200 })
 
   } catch (error) {
-    return NextResponse.json({
-      status: 'unhealthy',
-      timestamp: new Date().toISOString(),
-      error: error.message,
-      database: getDBStatus()
-    }, { status: 503 })  // 503 Service Unavailable 
+    console.error('[Health]', error);
+    return errorResponse(new APIError('Service unhealthy.', 503, 'SERVICE_UNHEALTHY'));
   }
-} 
+});

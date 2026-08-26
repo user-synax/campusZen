@@ -1,136 +1,124 @@
 import { NextResponse } from "next/server";
-import { getMarkdownContent } from "@/lib/markdown-content";
-const protectedRoutes = [
-  "/feed",
-  "/search",
-  "/leaderboard",
-  "/notifications",
-  "/communities",
-  "/resources",
-  "/settings",
-  "/bookmarks",
-  "/wallet",
-  "/shop",
-  "/chats",
-  "/events",
-  "/billing",
-  "/clips",
-  "/connect"
-];
-function middleware(request) {
-  const { pathname } = request.nextUrl;
-  if (pathname.startsWith("/api/auth")) {
-    const response2 = NextResponse.next();
-    addSecurityHeaders(response2, false);
-    return response2;
-  }
-  const isApiPath = pathname.startsWith("/api");
-  const isMachineFile = pathname === "/openapi.json" || pathname === "/llms.txt";
-  if (!isApiPath && !isMachineFile && acceptsMarkdown(request)) {
-    const md = getMarkdownContent(pathname);
-    const response2 = new NextResponse(md, {
-      status: 200,
-      headers: {
-        "Content-Type": "text/markdown; charset=utf-8",
-        "Cache-Control": "public, max-age=3600"
-      }
+import connectDB from "@/lib/db";
+import Event from "@/models/Event";
+import { getCurrentUser } from "@/lib/auth";
+import { sanitizeString } from "@/utils/validators";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { sanitizeText } from "@/lib/sanitize";
+import { withErrorHandler, APIError, UnauthorizedError, BadRequestError } from "@/lib/api-response";
+const GET = withErrorHandler(async (request) => {
+  try {
+    const { searchParams } = new URL(request.url);
+    const college = searchParams.get("college") || "";
+    const page = parseInt(searchParams.get("page")) || 1;
+    const limit = Math.min(parseInt(searchParams.get("limit")) || 10, 50);
+    const filter = searchParams.get("filter") || "upcoming";
+    const skip = (page - 1) * limit;
+    await connectDB();
+    const query = { isActive: true };
+    if (college) {
+      query.college = { $regex: college, $options: "i" };
+    }
+    if (filter === "upcoming") {
+      query.eventDate = { $gte: /* @__PURE__ */ new Date() };
+    } else if (filter === "past") {
+      query.eventDate = { $lt: /* @__PURE__ */ new Date() };
+    }
+    const [events, total] = await Promise.all([
+      Event.find(query).sort({ eventDate: 1 }).skip(skip).limit(limit).populate("organizer", "name username avatar").lean(),
+      Event.countDocuments(query)
+    ]);
+    const formattedEvents = events.map((event) => ({
+      ...event,
+      rsvpCount: event.rsvps?.length || 0,
+      isFull: event.capacity > 0 && (event.rsvps?.length || 0) >= event.capacity,
+      isPast: new Date(event.eventDate) < /* @__PURE__ */ new Date()
+    }));
+    const response = NextResponse.json({
+      events: formattedEvents,
+      hasMore: skip + events.length < total,
+      total
     });
-    addSecurityHeaders(response2, false);
-    return response2;
+    response.headers.set("Cache-Control", "public, max-age=120, stale-while-revalidate=60");
+    return response;
+  } catch (error) {
+    console.error("Fetch events error:", error);
+    return errorResponse(new APIError("Failed to load events.", 500, "INTERNAL_ERROR"));
   }
-  const legacySession = request.cookies.get("campusx_token")?.value;
-  const appwriteSessionCookieName = `a_session_${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`;
-  const appwriteSession = request.cookies.get(
-    appwriteSessionCookieName
-  )?.value;
-  const hasSession = !!legacySession || !!appwriteSession;
-  if (hasSession && (pathname === "/login" || pathname === "/signup")) {
-    const response2 = NextResponse.redirect(new URL("/feed", request.url));
-    addSecurityHeaders(response2);
-    return response2;
+});
+const POST = withErrorHandler(async (request) => {
+  try {
+    const { blocked, response: rateLimitResponse } = applyRateLimit(
+      request,
+      "event_create",
+      5,
+      60 * 60 * 1e3
+    );
+    if (blocked) return rateLimitResponse;
+    const currentUser = await getCurrentUser(request);
+    if (!currentUser) {
+      return errorResponse(new UnauthorizedError("You must be logged in to create an event."));
+    }
+    let body;
+    try {
+      body = await request.json();
+    } catch (e) {
+      return errorResponse(new BadRequestError("Invalid request body"));
+    }
+    const { title, description, college, location, eventDate, capacity, tags } = body;
+    if (!title || title.trim().length === 0) {
+      return errorResponse(new BadRequestError("Title is required"));
+    }
+    if (title.length > 100) {
+      return errorResponse(new BadRequestError("Title too long (max 100 chars)"));
+    }
+    if (!college || college.trim().length === 0) {
+      return errorResponse(new BadRequestError("College is required"));
+    }
+    if (!location || location.trim().length === 0) {
+      return errorResponse(new BadRequestError("Location is required"));
+    }
+    if (location.length > 200) {
+      return errorResponse(new BadRequestError("Location too long (max 200 chars)"));
+    }
+    if (!eventDate) {
+      return errorResponse(new BadRequestError("Event date is required"));
+    }
+    const date = new Date(eventDate);
+    if (isNaN(date.getTime())) {
+      return errorResponse(new BadRequestError("Invalid event date"));
+    }
+    if (date.getTime() <= Date.now() + 36e5) {
+      return errorResponse(new BadRequestError("Event must be scheduled at least 1 hour in advance"));
+    }
+    const eventCapacity = parseInt(capacity) || 0;
+    if (eventCapacity < 0) {
+      return errorResponse(new BadRequestError("Capacity cannot be negative"));
+    }
+    let eventTags = [];
+    if (tags && Array.isArray(tags)) {
+      eventTags = tags.map((t) => sanitizeString(t)).filter((t) => t.length > 0 && t.length <= 30).slice(0, 5);
+    }
+    await connectDB();
+    const event = await Event.create({
+      title: sanitizeText(title),
+      description: description ? sanitizeText(description).substring(0, 1e3) : "",
+      organizer: currentUser._id,
+      college: sanitizeText(college),
+      location: sanitizeText(location),
+      eventDate: date,
+      capacity: eventCapacity,
+      tags: eventTags,
+      rsvps: []
+    });
+    await event.populate("organizer", "name username avatar");
+    return NextResponse.json(event, { status: 201 });
+  } catch (error) {
+    console.error("Create event error:", error);
+    return errorResponse(new APIError("Failed to create event.", 500, "INTERNAL_ERROR"));
   }
-  const isProtectedRoute = protectedRoutes.some(
-    (route) => pathname.startsWith(route)
-  );
-  if (isProtectedRoute && !hasSession) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname);
-    const response2 = NextResponse.redirect(loginUrl);
-    addSecurityHeaders(response2);
-    return response2;
-  }
-  const response = NextResponse.next();
-  addSecurityHeaders(response);
-  return response;
-}
-function addSecurityHeaders(response, includeCSP = true) {
-  response.headers.set("Vary", "Accept, Accept-Encoding");
-  if (includeCSP) {
-    const csp = false ? getProductionCSP() : getDevelopmentCSP();
-    response.headers.set("Content-Security-Policy", csp);
-  }
-  response.headers.set("X-Content-Type-Options", "nosniff");
-  response.headers.set("X-Frame-Options", "DENY");
-  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  response.headers.set(
-    "Permissions-Policy",
-    "camera=(), microphone=(self), geolocation=()"
-  );
-  response.headers.set(
-    "Strict-Transport-Security",
-    "max-age=31536000; includeSubDomains"
-  );
-  response.headers.set("Origin-Agent-Cluster", "?1");
-}
-function getDevelopmentCSP() {
-  return [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com http://localhost:* ws://localhost:*",
-    "style-src 'self' 'unsafe-inline' blob: https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com http://localhost:*",
-    "img-src 'self' data: blob: https://*.giphy.com https://utfs.io https://*.uploadthing.com https://*.ufs.sh https://api.dicebear.com https://*.tldraw.com https://*.cloud.appwrite.io",
-    // media-src covers <video> avatar-frame overlays (WebM/MP4). GIFs are
-    // <img> and are covered by img-src. Self-host via UploadThing/Appwrite
-    // (whitelisted here) for consistency with the rest of the app.
-    "media-src 'self' data: blob: https://*.cloud.appwrite.io https://utfs.io https://*.uploadthing.com https://*.ufs.sh https://*.livekit.cloud wss://*.livekit.cloud",
-    "connect-src 'self' https://api.anthropic.com https://api.dicebear.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://*.uploadthing.com https://*.ingest.uploadthing.com https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com https://*.pusher.com wss://*.pusher.com blob: data: http://localhost:* ws://localhost:* https://*.cloud.appwrite.io https://*.livekit.cloud wss://*.livekit.cloud",
-    "font-src 'self' data: https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com",
-    "frame-src 'self' https://www.youtube.com https://*.tldraw.com",
-    "worker-src 'self' blob: https://*.tldraw.com",
-    "child-src 'self' blob:",
-    "object-src 'none'",
-    "base-uri 'self'",
-    "form-action 'self'"
-  ].join("; ");
-}
-function getProductionCSP() {
-  return [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com",
-    "style-src 'self' 'unsafe-inline' blob: https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com",
-    "img-src 'self' data: blob: https://*.giphy.com https://utfs.io https://*.uploadthing.com https://*.ufs.sh https://api.dicebear.com https://*.tldraw.com https://*.cloud.appwrite.io",
-    // media-src covers <video> avatar-frame overlays (WebM/MP4). GIFs are
-    // <img> and are covered by img-src. Self-host via UploadThing/Appwrite
-    // (whitelisted here) for consistency with the rest of the app.
-    "media-src 'self' data: blob: https://*.cloud.appwrite.io https://utfs.io https://*.uploadthing.com https://*.ufs.sh https://*.livekit.cloud wss://*.livekit.cloud",
-    "connect-src 'self' https://api.anthropic.com https://api.dicebear.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://*.uploadthing.com https://*.ingest.uploadthing.com https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com https://*.pusher.com wss://*.pusher.com blob: data: https://*.cloud.appwrite.io https://*.livekit.cloud wss://*.livekit.cloud",
-    "font-src 'self' data: https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com",
-    "frame-src 'self' https://www.youtube.com https://*.tldraw.com",
-    "worker-src 'self' blob: https://*.tldraw.com",
-    "child-src 'self' blob:",
-    "object-src 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-    "report-uri /api/csp-violation-report"
-  ].join("; ");
-}
-const config = {
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"]
-};
-function acceptsMarkdown(request) {
-  const accept = request.headers.get("accept") || "";
-  return /text\/markdown/i.test(accept);
-}
+});
 export {
-  config,
-  middleware as default
+  GET,
+  POST
 };

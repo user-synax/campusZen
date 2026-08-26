@@ -75,6 +75,9 @@ export default function Footer() {
                   <a href="/docs">Docs</a>
                 </li>
                 <li>
+                  <a href="/developers">Developer</a>
+                </li>
+                <li>
                   <a href="/login">Sign in</a>
                 </li>
                 <li>

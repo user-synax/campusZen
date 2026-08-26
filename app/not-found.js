@@ -66,16 +66,31 @@ export default function NotFound() {
 
                 {/* Plain-text recovery block for agents/bots */}
                 <pre className="sr-only">
-{`404 Not Found — CampusZen
+{`# 404 — Page Not Found (CampusZen)
 
-This page does not exist. Machine-readable maps:
+The requested path does not exist on CampusZen.
+
+## Where to look next
+
 - XML sitemap: https://campuszen.tech/sitemap.xml
-- llms.txt: https://campuszen.tech/llms.txt
+- llms.txt (agent guide): https://campuszen.tech/llms.txt
 - OpenAPI spec: https://campuszen.tech/openapi.json
+- Developer portal: https://campuszen.tech/developers
 - Docs: https://campuszen.tech/markdown
 
-Public pages: / , /login , /signup , /terms , /privacy , /markdown
-Authenticated product: /feed , /community/<college> , /resources`}
+## Public pages
+
+- Home: https://campuszen.tech/
+- Log in: https://campuszen.tech/login
+- Sign up: https://campuszen.tech/signup
+- Terms: https://campuszen.tech/terms
+- Privacy: https://campuszen.tech/privacy
+
+## Authenticated product
+
+- Feed: https://campuszen.tech/feed
+- Communities: https://campuszen.tech/community/<college-slug>
+- Resources: https://campuszen.tech/resources`}
                 </pre>
             </main>
 

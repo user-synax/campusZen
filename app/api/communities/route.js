@@ -4,7 +4,7 @@ import { withCache, deleteCachePattern } from '@/lib/cache';
 import Community from '@/models/Community';
 import { sanitizeMongoInput } from '@/lib/sanitize';
 import { getCurrentUser } from '@/lib/auth';
-import { errorResponse } from '@/lib/apiResponse';
+import { errorResponse, APIError, BadRequestError, UnauthorizedError } from '@/lib/api-response';
 
 export async function GET(request) {
   try {
@@ -58,11 +58,7 @@ export async function GET(request) {
     return NextResponse.json(communities)
     } catch (error) {
       console.error('Communities API error:', error);
-      return errorResponse(500, {
-        code: 'internal_error',
-        message: 'Failed to load communities.',
-        hint: 'Please try again later.',
-      });
+      return errorResponse(new APIError('Failed to load communities.', 500, 'INTERNAL_ERROR'));
     }
   }
 
@@ -70,21 +66,13 @@ export async function POST(request) {
   try {
     const currentUser = await getCurrentUser(request);
     if (!currentUser) {
-      return errorResponse(401, {
-        code: 'unauthorized',
-        message: 'You must be logged in to create a community.',
-        hint: 'Authenticate via /api/auth/login first.',
-      });
+      return errorResponse(new UnauthorizedError('You must be logged in to create a community.'));
     }
 
     const { name, emoji, description } = await request.json();
 
     if (!name || name.trim().length < 2) {
-      return errorResponse(400, {
-        code: 'validation_error',
-        message: 'Community name is required and must be at least 2 characters.',
-        hint: 'Provide a "name" field in the request body.',
-      });
+      return errorResponse(new BadRequestError('Community name is required and must be at least 2 characters.'));
     }
 
     await connectDB();
@@ -93,11 +81,7 @@ export async function POST(request) {
     
     const existing = await Community.findOne({ slug });
     if (existing) {
-      return errorResponse(400, {
-        code: 'duplicate_community',
-        message: 'A community with this name already exists.',
-        hint: `Use the existing community "${existing.name}".`,
-      });
+      return errorResponse(new BadRequestError('A community with this name already exists.'));
     }
 
     const community = await Community.create({
@@ -116,10 +100,6 @@ export async function POST(request) {
     return NextResponse.json(community);
   } catch (error) {
     console.error('Create Community API error:', error);
-    return errorResponse(500, {
-      code: 'internal_error',
-      message: 'Failed to create community.',
-      hint: 'Please try again later.',
-    });
+    return errorResponse(new APIError('Failed to create community.', 500, 'INTERNAL_ERROR'));
   }
 }
