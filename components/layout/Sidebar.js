@@ -93,6 +93,22 @@ function writeLocalBool(key, value) {
     localStorage.setItem(key, String(value));
 }
 
+function setDigits(group, str) {
+    if (!str) return;
+    group.textContent = "";
+    group.dataset.value = str;
+    [...str].forEach((ch, i) => {
+        const span = document.createElement("span");
+        span.className = "t-digit";
+        if (ch === " ") span.style.width = "0.35em";
+        span.textContent = ch;
+        if (i % 2 === 1) span.setAttribute("data-stagger", "1");
+        else if (i % 3 === 0) span.setAttribute("data-stagger", "2");
+        group.appendChild(span);
+    });
+    requestAnimationFrame(() => group.classList.add("is-animating"));
+}
+
 function CollapsibleSection({
     label,
     storageKey,
@@ -160,11 +176,18 @@ export default function Sidebar() {
     const { theme, setTheme, toggleTheme } = useTheme();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const navRef = useRef(null);
+    const vpDigitsRef = useRef(null);
 
     useEffect(() => {
         const el = navRef.current?.querySelector(".t-stagger");
         if (el) requestAnimationFrame(() => el.classList.add("is-shown"));
     }, []);
+
+    useEffect(() => {
+        if (vpDigitsRef.current) {
+            setDigits(vpDigitsRef.current, (user?.vp || 0).toLocaleString());
+        }
+    }, [user?.vp]);
 
     // Compute admin/founder status once per render instead of calling repeatedly
     const isAdminUser = user ? isAdmin(user) : false;
@@ -262,12 +285,16 @@ export default function Sidebar() {
         },
     ];
 
-    const renderNavItem = (item, i = 0) => {
+    const renderNavItem = (item, i = 0, stagger = false) => {
         const isActive = pathname === item.href;
         const Icon = item.icon;
 
         return (
-            <div key={item.href} className="t-stagger-line" style={{ ["--i"]: i }}>
+            <div
+                key={item.href}
+                className={cn(stagger && "t-stagger-line")}
+                style={stagger ? { ["--i"]: i } : undefined}
+            >
                 <div className="relative">
                     {isActive && (
                         <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.75 h-4.5 bg-primary rounded-r-full z-10" />
@@ -285,7 +312,7 @@ export default function Sidebar() {
                                 item.className,
                             )}
                         >
-                            <div className="relative shrink-0 t-tt-wrap sidebar-tip">
+                            <div className="relative shrink-0">
                                 <Icon
                                     className={cn(
                                         "w-4.5 h-4.5 transition-colors",
@@ -299,12 +326,6 @@ export default function Sidebar() {
                                         </span>
                                     </span>
                                 )}
-                                <span
-                                    className="t-tt hidden md:block lg:hidden"
-                                    role="tooltip"
-                                >
-                                    {item.label}
-                                </span>
                             </div>
                             <span className="hidden lg:block text-sm">
                                 {item.label}
@@ -398,8 +419,10 @@ export default function Sidebar() {
                 </div>
 
                 <nav ref={navRef} className="flex-1 px-2 py-3 overflow-y-auto overflow-x-hidden custom-scrollbar space-y-0.5">
-                    <div className="t-stagger">
-                        {primaryNavItems.map((item, i) => renderNavItem(item, i))}
+                    <div className="t-stagger space-y-0.5">
+                        {primaryNavItems.map((item, i) =>
+                            renderNavItem(item, i, true),
+                        )}
                     </div>
 
                     <div className="hidden lg:block">
@@ -408,7 +431,7 @@ export default function Sidebar() {
                             storageKey="cx_sidebar_gamification_open"
                             defaultOpen={false}
                         >
-                            {gamificationItems.map(renderNavItem)}
+                            {gamificationItems.map((item) => renderNavItem(item))}
                         </CollapsibleSection>
                     </div>
                     <div className="lg:hidden mt-2">
@@ -416,7 +439,7 @@ export default function Sidebar() {
                             storageKey="cx_sidebar_gamification_open"
                             defaultOpen={false}
                         >
-                            {gamificationItems.map(renderNavItem)}
+                            {gamificationItems.map((item) => renderNavItem(item))}
                         </CollapsibleSectionIconOnly>
                     </div>
 
@@ -426,7 +449,7 @@ export default function Sidebar() {
                             storageKey="cx_sidebar_more_open"
                             defaultOpen={false}
                         >
-                            {moreItems.map(renderNavItem)}
+                            {moreItems.map((item) => renderNavItem(item))}
                         </CollapsibleSection>
                     </div>
 
@@ -435,12 +458,12 @@ export default function Sidebar() {
                             storageKey="cx_sidebar_more_open"
                             defaultOpen={false}
                         >
-                            {moreItems.map(renderNavItem)}
+                            {moreItems.map((item) => renderNavItem(item))}
                         </CollapsibleSectionIconOnly>
                     </div>
 
                     <div className="mt-2 pt-2 border-t border-border/40">
-                        {bottomNavItems.map(renderNavItem)}
+                        {bottomNavItems.map((item) => renderNavItem(item))}
                     </div>
 
                     {user && isAdminUser && (
@@ -456,7 +479,7 @@ export default function Sidebar() {
                                 return (
                                     <div key={item.href} className="relative">
                                         {isActive && (
-                                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.75 h-4.5bg-primary rounded-r-full z-10" />
+                                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.75 h-4.5 bg-primary rounded-r-full z-10" />
                                         )}
                                         <Link href={item.href}>
                                             <Button
@@ -469,24 +492,26 @@ export default function Sidebar() {
                                                     item.color,
                                                 )}
                                             >
-                                                <div className="relative shrink-0">
-                                                    <Icon
-                                                        className={cn(
-                                                            "w-4.5 h-4.5 transition-colors",
-                                                            item.color,
-                                                        )}
-                                                    />
-                                                    {item.badge > 0 && (
-                                                        <span className="absolute -top-1.5 -right-1.5 min-w-3.75 h-3.75 bg-red-500 text-[9px] text-white font-bold flex items-center justify-center rounded-full px-0.5 border-2 border-background">
-                                                            {item.badge > 9
-                                                                ? "9+"
-                                                                : item.badge}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <span className="hidden lg:block text-sm font-medium">
-                                                    {item.label}
-                                                </span>
+                                <div className="relative shrink-0">
+                                    <Icon
+                                        className={cn(
+                                            "w-4.5 h-4.5 transition-colors",
+                                            item.color,
+                                        )}
+                                    />
+                                    {item.badge > 0 && (
+                                        <span className="t-badge" data-open="true">
+                                            <span className="t-badge-dot min-w-3.75 h-3.75 bg-red-500 text-[9px] text-white font-bold flex items-center justify-center rounded-full px-0.5 border-2 border-background">
+                                                {item.badge > 9
+                                                    ? "9+"
+                                                    : item.badge}
+                                            </span>
+                                        </span>
+                                    )}
+                                </div>
+                                <span className="hidden lg:block text-sm font-medium">
+                                    {item.label}
+                                </span>
                                             </Button>
                                         </Link>
                                     </div>
@@ -595,7 +620,13 @@ export default function Sidebar() {
                             <div className="flex items-center gap-2 w-full px-2 py-1.5">
                                 <img src="/icon/vp-coin.png" alt="VP" className="w-5 h-5 shrink-0" />
                                 <span className="hidden lg:block text-sm font-semibold text-foreground">
-                                    {(user.vp || 0).toLocaleString()} VP
+                                    <span
+                                        className="t-digit-group"
+                                        ref={vpDigitsRef}
+                                    >
+                                        {(user.vp || 0).toLocaleString()}
+                                    </span>{" "}
+                                    VP
                                 </span>
                             </div>
                         )}

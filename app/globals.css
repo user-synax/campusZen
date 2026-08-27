@@ -1364,3 +1364,15 @@
     stroke-linecap: round;
     stroke-linejoin: round;
 }
+
+/* ============================================================================
+   Sidebar — transitions-dev micro-interactions
+   t-acc (collapsible sections), t-badge (unread counts), t-icon-swap (theme
+   toggle), t-tt (collapsed-mode labels), t-stagger (nav entrance).
+   ========================================================================= */
+
+/* Collapsible sections use the skill's grid-rows accordion; neutralise the
+   default panel padding so the tighter sidebar spacing is preserved. */
+.sidebar-acc .t-acc-panel-inner {
+    padding: 0;
+}
