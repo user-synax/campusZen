@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./transitions.css";
+@import "./transitions-extra.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -809,6 +810,264 @@
 
 @media (prefers-reduced-motion: reduce) {
     .showcase-tilt {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+}
+
+/* ============================================================================
+   Pricing page — redesign (transitions-dev)
+   t-stagger (texts reveal) + t-shimmer (hero eyebrow), t-tabs (sliding
+   monthly/annual toggle), t-tilt / t-tilt-card / t-tilt-glare (plan cards),
+   t-badge (Most popular), t-digit-group (price pop-in), t-tt (feature
+   tooltips), t-acc (FAQ accordion), t-icon-swap (CTA arrow). Entrances use
+   the skill's shared motion tokens.
+   ========================================================================= */
+
+.pricing-hero {
+    position: relative;
+    overflow: hidden;
+}
+.pricing-glow {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(28rem 28rem at 50% -12rem, hsl(var(--primary) / 0.18), transparent 70%),
+        radial-gradient(22rem 22rem at 85% 0, hsl(var(--accent) / 0.4), transparent 70%);
+}
+
+/* Sliding billing toggle (t-tabs). Override the nav retuning so the bar
+   reads as a classic segmented control on the pricing page. */
+.pricing-toggle {
+    --tabs-bar-bg: hsl(var(--muted) / 0.5);
+    --tabs-pill-bg: hsl(var(--background));
+    --tabs-text-muted: hsl(var(--muted-foreground));
+    --tabs-text-active: hsl(var(--foreground));
+}
+.pricing-toggle .t-tabs {
+    padding: 4px;
+}
+.pricing-toggle .t-tabs-pill {
+    top: 4px;
+    height: calc(100% - 8px);
+    box-shadow: var(--shadow-hard-sm);
+}
+.pricing-toggle .t-tab {
+    height: 38px;
+    padding: 0 18px;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+.pricing-billing-note {
+    height: 1.25rem;
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: hsl(var(--primary));
+}
+
+/* Plan cards */
+.pricing-grid {
+    align-items: stretch;
+}
+.pricing-tilt {
+    position: relative;
+    touch-action: auto;
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+        opacity   var(--duration-slow)  var(--ease-smooth-out),
+        transform var(--duration-slow)  var(--ease-smooth-out);
+    will-change: opacity, transform;
+}
+.pricing-tilt.is-in {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.plan-card {
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 1.75rem;
+    background: hsl(var(--card));
+}
+.plan-card:hover {
+    border-color: hsl(var(--primary) / 0.4);
+}
+.plan-card--featured {
+    border-color: hsl(var(--primary) / 0.55);
+    box-shadow: var(--shadow-hard-hover);
+}
+
+/* "Most popular" badge: restyle the skill's .t-badge-dot as a pill.
+   z-index keeps it above the tilt card, which paints over the badge's
+   lower half because it owns a transform-driven stacking context. */
+.pricing-tilt .t-badge {
+    top: -14px;
+    right: 18px;
+    z-index: 3;
+}
+.pricing-tilt .t-badge-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.4rem 0.8rem;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    box-shadow: var(--shadow-hard-sm);
+}
+
+.plan-name {
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: hsl(var(--foreground));
+}
+.plan-desc {
+    margin-top: 0.35rem;
+    font-size: 0.9rem;
+    color: hsl(var(--muted-foreground));
+}
+.plan-price {
+    margin-top: 1.25rem;
+    display: flex;
+    align-items: flex-end;
+    gap: 0.25rem;
+}
+.price-digits {
+    font-size: clamp(2.5rem, 4vw, 3rem);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: hsl(var(--foreground));
+}
+.plan-cadence {
+    margin-bottom: 0.35rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: hsl(var(--muted-foreground));
+}
+
+.plan-features {
+    margin-top: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+}
+.plan-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    font-size: 0.92rem;
+    color: hsl(var(--muted-foreground));
+}
+.plan-feature > svg {
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+    color: hsl(var(--primary));
+}
+
+/* Feature info tooltip (t-tt). The icon sits at the far right of the row
+   (margin-left:auto) and the card is overflow:hidden, so the bubble must
+   open UP and to the LEFT (right-aligned to the icon) to stay inside the
+   card instead of being clipped on the right edge. */
+.plan-feature .t-tt-wrap {
+    margin-left: auto;
+}
+.plan-feature .t-tt-trigger {
+    display: inline-flex;
+    padding: 2px;
+    border-radius: 9999px;
+    color: hsl(var(--muted-foreground));
+    transition: color var(--duration-quick) var(--ease-smooth-out);
+}
+.plan-feature .t-tt-trigger:hover,
+.plan-feature .t-tt-trigger:focus-visible {
+    color: hsl(var(--primary));
+}
+.plan-feature .t-tt {
+    bottom: calc(100% + 6px);
+    top: auto;
+    right: 0;
+    left: auto;
+    width: max(12rem, 100%);
+    text-align: left;
+    white-space: normal;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: hsl(var(--popover-foreground));
+    background: hsl(var(--popover));
+    border: 2px solid hsl(var(--border));
+    transform: translate(0, 0) scale(var(--tt-scale));
+    transform-origin: bottom right;
+    z-index: 5;
+}
+.plan-feature .t-tt-wrap:hover .t-tt,
+.plan-feature .t-tt-trigger:focus-visible + .t-tt {
+    transform: translate(0, 0) scale(1);
+}
+
+.plan-cta {
+    margin-top: 1.75rem;
+    width: 100%;
+}
+
+/* FAQ accordion (t-acc) */
+.faq-item {
+    background: hsl(var(--card));
+    overflow: hidden;
+}
+.faq-item:hover {
+    border-color: hsl(var(--primary) / 0.3);
+}
+.t-acc-head {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    text-align: left;
+    font-size: 1rem;
+    font-weight: 700;
+    color: hsl(var(--foreground));
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+}
+.t-acc-chevron {
+    color: hsl(var(--muted-foreground));
+    flex-shrink: 0;
+}
+.t-acc-panel-inner {
+    padding: 0 1.5rem 1.4rem;
+}
+.t-acc-panel-inner p {
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: hsl(var(--muted-foreground));
+}
+
+/* CTA card */
+.pricing-cta-card {
+    border-radius: 1.75rem;
+    border: 2px solid hsl(var(--border));
+    background: hsl(var(--card));
+    box-shadow: var(--shadow-hard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pricing-tilt {
         opacity: 1 !important;
         transform: none !important;
         transition: none !important;

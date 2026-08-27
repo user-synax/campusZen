@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { PopNumber } from "@/components/ui/pop-number";
 
 /**
  * Landing hero, built entirely on the transitions-dev skill.
@@ -29,62 +30,6 @@ import { cn } from "@/lib/utils";
  * JS rather than a CSS variable; 10–16 reads as a subtle, tasteful lean.
  */
 const TILT_MAX = 11;
-
-/**
- * Thousands-group an integer without `Intl`, so the server and client render
- * byte-identical markup regardless of the runtime's ICU data.
- */
-function groupDigits(value) {
-    const n = Number.isFinite(Number(value)) ? Math.round(Number(value)) : 0;
-    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
-
-/**
- * Number pop-in (`02-number-pop-in.md`). Each character animates in on its own,
- * with the last two staggered behind the leading digits.
- */
-function PopNumber({ value, suffix = "", className }) {
-    const groupRef = useRef(null);
-    const text = groupDigits(value) + suffix;
-
-    useEffect(() => {
-        const group = groupRef.current;
-        if (!group) return;
-        // The snippet's documented replay path: drop `.is-animating`, force a
-        // reflow so the keyframes restart, then re-add it. Without the reflow
-        // the animation simply doesn't play again when the value changes.
-        group.classList.remove("is-animating");
-        void group.offsetHeight;
-        group.classList.add("is-animating");
-    }, [text]);
-
-    const chars = text.split("");
-
-    return (
-        <span ref={groupRef} className={cn("t-digit-group", className)}>
-            {/* One readable string for assistive tech; the per-character spans
-                below are decoration and would otherwise be announced one glyph
-                at a time. */}
-            <span className="sr-only">{text}</span>
-            {chars.map((char, index) => (
-                <span
-                    key={`${index}-${char}`}
-                    className="t-digit"
-                    aria-hidden="true"
-                    data-stagger={
-                        index === chars.length - 2
-                            ? "1"
-                            : index === chars.length - 1
-                              ? "2"
-                              : undefined
-                    }
-                >
-                    {char}
-                </span>
-            ))}
-        </span>
-    );
-}
 
 /**
  * Avatar group hover (`11-avatar-group-hover.md`) with a tooltip
@@ -391,7 +336,7 @@ export function HeroSection({
                                             <Link
                                                 key={action.href}
                                                 href={action.href}
-                                                className="t-learn hero-cta-ghost inline-flex h-12 items-center justify-center gap-2 bg-secondary/60 px-7 text-base font-bold text-secondary-foreground backdrop-blur-sm sm:h-14 sm:text-lg"
+                                                className="t-learn cta-ghost inline-flex h-12 items-center justify-center gap-2 bg-secondary/60 px-7 text-base font-bold text-secondary-foreground backdrop-blur-sm sm:h-14 sm:text-lg"
                                             >
                                                 {action.text}
                                                 <span className="t-learn-chevron">
