@@ -7,6 +7,7 @@ import {
     getUserMediaBucketId,
 } from "@/lib/appwrite";
 import { ID, Permission, Role } from "appwrite";
+import { verifyImageBlob } from "@/lib/file-validation";
 
 export async function POST(request) {
     try {
@@ -50,6 +51,14 @@ export async function POST(request) {
         if (file.size > 5 * 1024 * 1024) {
             return NextResponse.json(
                 { message: "Image must be under 5MB" },
+                { status: 400 },
+            );
+        }
+
+        // Magic-byte validation of real content (defeats MIME spoofing).
+        if (!(await verifyImageBlob(file, allowedTypes))) {
+            return NextResponse.json(
+                { message: "File content is not a valid image" },
                 { status: 400 },
             );
         }

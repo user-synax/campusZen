@@ -7,6 +7,7 @@ import {
     getUserMediaBucketId,
 } from "@/lib/appwrite";
 import { ID, Permission, Role } from "appwrite";
+import { verifyIdCardBlob } from "@/lib/file-validation";
 import { getTransporter } from "@/lib/mailer";
 import {
     successResponse,
@@ -74,6 +75,15 @@ export async function POST(request) {
             );
         }
 
+        // ── Validate real content (magic bytes), defeating MIME spoofing ──
+        if (!(await verifyIdCardBlob(file, ALLOWED_TYPES))) {
+            return errorResponse(
+                new BadRequestError(
+                    "Invalid file content. Accepted: JPG, PNG, WebP, PDF",
+                ),
+            );
+        }
+
         // ── Upload to Appwrite ──
         const bucketId = getUserMediaBucketId();
         const storage = getAppwriteAdminStorage();
@@ -112,7 +122,6 @@ export async function POST(request) {
         return successResponse({
             message:
                 "Verification submitted successfully. We will review your ID within 24 hours.",
-            collegeIdUrl,
             verificationStatus: "pending",
         });
     } catch (error) {

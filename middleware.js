@@ -296,7 +296,11 @@ function getProductionCSP() {
     return [
         "default-src 'self'",
 
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com",
+        // Production builds do not require eval; drop 'unsafe-eval' (it is kept
+        // only in the dev CSP below, where Next's HMR relies on it). 'unsafe-inline'
+        // remains because App Router injects inline scripts; removing it safely
+        // requires a nonce/HASH-based CSP refactor.
+        "script-src 'self' 'unsafe-inline' https://www.youtube.com https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com",
 
         "style-src 'self' 'unsafe-inline' blob: https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com",
 
@@ -328,5 +332,7 @@ function getProductionCSP() {
 }
 
 export const config = {
-    matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
+    // NOTE: "/api/auth" is intentionally NOT excluded here so the dedicated
+    // branch below still runs and applies security headers to auth endpoints.
+    matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

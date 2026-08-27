@@ -316,6 +316,43 @@
 }
 
 
+/* ── 02-number-pop-in.md — Number pop-in ─────────────────────────────────── */
+
+@keyframes t-digit-pop-in {
+  0%   {
+    transform: translate(
+      calc(var(--digit-distance) * var(--digit-dir-x)),
+      calc(var(--digit-distance) * var(--digit-dir-y))
+    );
+    opacity: 0;
+    filter: blur(var(--digit-blur));
+  }
+  100% { transform: translate(0, 0); opacity: 1; filter: blur(0); }
+}
+
+.t-digit-group {
+  display: inline-flex;
+  align-items: baseline;
+}
+.t-digit {
+  display: inline-block;
+  will-change: transform, opacity, filter;
+}
+.t-digit-group.is-animating .t-digit {
+  animation: t-digit-pop-in var(--digit-dur) var(--digit-ease) both;
+}
+.t-digit-group.is-animating .t-digit[data-stagger="1"] {
+  animation-delay: var(--digit-stagger);
+}
+.t-digit-group.is-animating .t-digit[data-stagger="2"] {
+  animation-delay: calc(var(--digit-stagger) * 2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-digit-group .t-digit { animation: none !important; }
+}
+
+
 /* ── 05-menu-dropdown.md — Menu dropdown ─────────────────────────────────── */
 
 .t-dropdown {
@@ -385,6 +422,25 @@
 }
 
 
+/* ── 11-avatar-group-hover.md — Avatar group hover ───────────────────────── */
+
+/* Hover-spring transition only — bring your own avatar/chip
+   styling (size, shape, border, stacking, background). */
+.t-avatar {
+  transform-origin: center;
+  /* translateY before scale so scale doesn't amplify the lift offset. */
+  transform:
+    translateY(var(--shift, 0px))
+    scale(var(--scale-active, 1));
+  transition: transform var(--avatar-dur) var(--avatar-ease-in);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-avatar { transition: none !important; transform: none !important; }
+}
+
+
 /* ── 14-skeleton-reveal.md — Skeleton loader and reveal ──────────────────── */
 
 /* The wrap stacks two layers on the same coordinates. The
@@ -449,6 +505,51 @@
 }
 
 
+/* ── 15-shimmer-text.md — Shimmer text ───────────────────────────────────── */
+
+/* Two-layer construction:
+   1. The base text renders normally in --shimmer-base.
+   2. ::before duplicates it via content: attr(data-text),
+      paints a transparent → highlight → transparent gradient
+      onto it, and clips that gradient to the glyphs via
+      background-clip: text. Animating background-position
+      sweeps the band across the text. */
+.t-shimmer {
+  position: relative;
+  display: inline-block;
+  color: var(--shimmer-base);
+}
+.t-shimmer::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(
+    90deg,
+    transparent          0%,
+    transparent         40%,
+    var(--shimmer-highlight) 50%,
+    transparent         60%,
+    transparent        100%
+  );
+  background-size: var(--shimmer-band) 100%;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: t-shimmer var(--shimmer-dur) var(--shimmer-ease) infinite;
+}
+@keyframes t-shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: 0% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-shimmer::before { animation: none !important; }
+}
+
+
 /* ── 16-tabs-sliding.md — Tabs sliding ───────────────────────────────────── */
 
 /* The bar is just a flex container with padding for the pill
@@ -506,6 +607,52 @@
 }
 
 
+/* ── 17-tooltip.md — Tooltip open/close ──────────────────────────────────── */
+
+.t-tt-wrap {
+  position: relative;
+  display: inline-block;
+}
+.t-tt {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translate(-50%, 0) scale(var(--tt-scale));
+  transform-origin: 50% 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--tt-bg);
+  color: var(--tt-fg);
+  white-space: nowrap;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 2px 6px 0 rgba(0, 0, 0, 0.05),
+    0 4px 42px 0 rgba(0, 0, 0, 0.06);
+  opacity: 0;
+  pointer-events: none;
+  /* Default rule controls the LEAVE state. transition-delay
+     stays unset so leaving plays without delay. */
+  transition:
+    opacity   var(--tt-out-dur) var(--tt-out-ease),
+    transform var(--tt-out-dur) var(--tt-out-ease);
+}
+/* The 50ms delay belongs ONLY to the hover rule so leaving
+   the trigger snaps the delay back to 0 and the disappear
+   plays immediately. */
+.t-tt-wrap:hover .t-tt,
+.t-tt-trigger:focus-visible + .t-tt {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+  transition-duration: var(--tt-in-dur);
+  transition-timing-function: var(--tt-in-ease);
+  transition-delay: var(--tt-delay);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-tt { transition: none !important; }
+}
+
+
 /* ── 18-texts-reveal.md — Texts reveal ───────────────────────────────────── */
 
 /* Lines start translated down + blurred + invisible; .is-shown
@@ -546,6 +693,78 @@
 
 @media (prefers-reduced-motion: reduce) {
   .t-stagger-line { transition: none !important; }
+}
+
+
+/* ── 19-card-tilt.md — Card hover tilt ───────────────────────────────────── */
+
+/* The outer wrapper is the flat hit area; touch-action:none
+   lets a finger drag tilt the card instead of scrolling the
+   page, so tap-hold-drag works on mobile. */
+.t-tilt { touch-action: none; }
+/* The card tilts toward the pointer via rotateX/rotateY fed
+   from JS; on leave it eases back to flat. A separate
+   .is-tilting class swaps in a short linear follow while the
+   pointer moves so the tilt tracks the cursor 1:1. */
+.t-tilt-card {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  transform:
+    perspective(var(--tilt-perspective))
+    rotateX(var(--tilt-rx, 0deg))
+    rotateY(var(--tilt-ry, 0deg));
+  transform-style: preserve-3d;
+  transition: transform var(--tilt-return) var(--tilt-return-ease);
+  will-change: transform;
+}
+.t-tilt-card.is-tilting {
+  transition: transform var(--tilt-follow) var(--tilt-follow-ease);
+}
+/* Cursor-tracked glare: layered soft circles that add like
+   light (screen blend) at the pointer position. */
+.t-tilt-glare {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(circle 95px at var(--tilt-gx, 50%) var(--tilt-gy, 50%),
+      rgba(255,255,255,0.48), rgba(255,255,255,0.06) 52%, rgba(255,255,255,0) 84%),
+    radial-gradient(circle 200px at var(--tilt-gx, 50%) var(--tilt-gy, 50%),
+      rgba(255,255,255,0.22), rgba(255,255,255,0.04) 58%, rgba(255,255,255,0) 78%),
+    radial-gradient(circle 360px at var(--tilt-gx, 50%) var(--tilt-gy, 50%),
+      rgba(255,255,255,0.10), rgba(255,255,255,0) 88%);
+  transition: opacity var(--tilt-glare-fade) var(--tilt-glare-ease);
+}
+.t-tilt.is-hover .t-tilt-glare { opacity: var(--tilt-glare-opacity); }
+
+@media (prefers-reduced-motion: reduce) {
+  .t-tilt-card { transform: none !important; transition: none !important; }
+}
+
+
+/* ── 24-learn-more-hover.md — Learn more hover ───────────────────────────── */
+
+.t-learn-chevron {
+  display: inline-flex;
+  transform: translateX(0);
+  transition: transform var(--learn-out) var(--learn-ease);
+}
+.t-learn-arm {
+  transform-box: view-box;
+  transform-origin: 10px 8px;
+  vector-effect: non-scaling-stroke;
+  transition: transform var(--learn-out) var(--learn-ease);
+}
+.t-learn:hover .t-learn-chevron { transform: translateX(var(--learn-shift)); transition-duration: var(--learn-in); }
+.t-learn:hover .t-learn-arm { transition-duration: var(--learn-in); }
+.t-learn:hover .t-learn-arm-top { transform: rotate(var(--learn-spread)); }
+.t-learn:hover .t-learn-arm-bot { transform: rotate(calc(var(--learn-spread) * -1)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .t-learn-chevron, .t-learn-arm { transition: none !important; }
 }
 
 
@@ -707,3 +926,73 @@
   .nav-shell { animation: none !important; }
   .nav-scrim { transition: none !important; }
 }
+
+/* ── Hero colour tokens ──────────────────────────────────────────────────────
+   Declared on `:root, .dark` rather than `:root` alone, and that duplication is
+   load-bearing. A custom property is substituted at the element that *declares*
+   it, so `--tt-bg: hsl(var(--popover))` written only on :root would bake in the
+   light-theme popover and inherit that value down. The hero <section> carries
+   `class="dark"` on itself (forced dark, independent of the site theme toggle),
+   so it needs its own declaration to re-substitute against the dark palette.
+   The nav's --tabs-* tokens above don't need this: their `.dark` sits on <html>,
+   which *is* :root. */
+:root,
+.dark {
+  /* Shimmer sweeps the brand colour across the eyebrow label. */
+  --shimmer-base: hsl(var(--foreground) / 0.72);
+  --shimmer-highlight: hsl(var(--primary));
+  /* Tooltip surface follows the popover tokens instead of the snippet's #fff. */
+  --tt-bg: hsl(var(--popover));
+  --tt-fg: hsl(var(--popover-foreground));
+}
+
+/* ── Hero ────────────────────────────────────────────────────────────────────
+   Box-metric and colour overrides only; every timing pair and `will-change`
+   above is left untouched. Scoped to `.t-hero` so nothing else on the site
+   inherits the hero's geometry. */
+
+/* The card-tilt snippet sets `touch-action: none` so a finger drag tilts the
+   card. That is right for a small card in a grid, but the hero visual fills most
+   of a phone viewport — there it would trap vertical scrolling on the element
+   users are most likely to swipe. Tilt is mouse-only here (the pointermove
+   handler bails on touch/pen) and touch scrolls normally. */
+.t-hero .t-tilt {
+  touch-action: auto;
+}
+
+/* Match the project's rounded-3xl surfaces instead of the snippet's 12px. */
+.t-hero .t-tilt-card {
+  border-radius: 1.5rem;
+}
+
+/* A bigger lift than the default -4px so the comb reads on a 5-avatar row,
+   still on the shared distance scale. */
+.t-hero .t-avatar-group {
+  --avatar-lift: calc(var(--distance-small) * -1);
+}
+/* Adjacent avatars overlap via negative margin, and `.t-avatar`'s transform
+   makes each one a stacking context — so without this the hovered avatar's
+   tooltip paints *under* the avatars that follow it in source order. */
+.t-hero .t-avatar {
+  position: relative;
+}
+.t-hero .t-avatar:hover,
+.t-hero .t-avatar:focus-within {
+  z-index: 2;
+}
+
+/* Tooltip chrome on the project's border + hard-shadow vocabulary. */
+.t-hero .t-tt {
+  padding: 5px 10px;
+  border: 2px solid hsl(var(--border));
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  box-shadow: var(--shadow-hard-sm);
+}
+
+/* The stagger snippet's `display: block` is correct for these rows because each
+   one wraps its content: putting `.t-stagger-line` directly on a flex row would
+   both override the Tailwind `flex` utility (the snippet is unlayered, Tailwind's
+   utilities are in `@layer utilities`) and collide with the row's own transform. */

@@ -329,7 +329,14 @@
         left: 0;
         right: 0;
         height: 20%;
-        background: linear-gradient(to bottom, transparent, var(--background));
+        /* --background holds raw HSL components, so it needs the hsl() wrapper
+           here — `var(--background)` alone is not a colour and CSS dropped the
+           whole gradient, which is why this utility used to render nothing. */
+        background: linear-gradient(
+            to bottom,
+            transparent,
+            hsl(var(--background))
+        );
         pointer-events: none;
         z-index: 1;
     }
