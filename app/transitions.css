@@ -1409,8 +1409,10 @@
   z-index: 2;
 }
 
-/* Tooltip chrome on the project's border + hard-shadow vocabulary. */
-.t-hero .t-tt {
+/* Tooltip chrome on the project's border + hard-shadow vocabulary. Unscoped:
+   the hero and the features explorer both use `17-tooltip`, and two scoped
+   copies of the same chrome is precisely the drift `transitions review` flags. */
+.t-tt {
   padding: 5px 10px;
   border: 2px solid hsl(var(--border));
   border-radius: 9999px;
@@ -1459,3 +1461,324 @@
    one wraps its content: putting `.t-stagger-line` directly on a flex row would
    both override the Tailwind `flex` utility (the snippet is unlayered, Tailwind's
    utilities are in `@layer utilities`) and collide with the row's own transform. */
+
+
+/* ── Features page ───────────────────────────────────────────────────────────
+   Scoped to `.t-features` on the page's <main>. Same discipline as the hero:
+   variable overrides and additive box-metric/colour rules only. Where a rule
+   below restates a `transition`, the snippet's own property/duration/ease
+   triples are carried over byte-for-byte and the new lane is appended — two
+   rules can't both own `transition` on one element, so the later one has to
+   include everything the earlier one declared. */
+
+.t-features {
+  /* Category tabs. Declaring these here rather than on `:root` is what lets the
+     explorer's pill read as a brand tint while the navbar's stays neutral: a
+     custom property is substituted at the element that declares it, so the
+     navbar (outside this subtree) keeps the `:root` values above. */
+  --tabs-pill-bg: hsl(var(--primary) / 0.18);
+  --tabs-bar-bg: hsl(var(--card));
+  --tabs-text-muted: hsl(var(--muted-foreground));
+  --tabs-text-active: hsl(var(--foreground));
+
+  /* The toggle's track colour change is real here (muted → primary), so it
+     needs a duration; the snippet ships 0ms because its demo track was static.
+     150ms is the polish skill's surface timing. */
+  --toggle-track: var(--duration-quick);
+  /* 44px track − 20px thumb − 2×3px inset = 18px of travel. */
+  --toggle-travel: 18px;
+
+  /* Calibrated stroke length for the check path used by both check snippets
+     (`M1 5.52L3.92 9.17L9.17 1` in a 10.1668 viewBox measures ~14.39). The
+     snippet's fallback of 15 would leave a hairline of undrawn stroke. */
+  --check-len: 14.4;
+
+  --fx-tab-h: 34px;
+  --fx-tabs-pad: 4px;
+  --fx-field-pad: 20px;
+}
+
+/* Tab bar: an inset ring instead of a real border. A border would move the
+   `.t-tabs` padding edge, and the pill is positioned (and measured, via
+   `offsetLeft`) against that edge — an inset shadow gets the same look with no
+   effect on layout at all. */
+.t-features .t-tabs {
+  padding: var(--fx-tabs-pad);
+  box-shadow: inset 0 0 0 2px hsl(var(--border));
+}
+.t-features .t-tab {
+  height: var(--fx-tab-h);
+  padding: 0 14px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  outline: none;
+}
+.t-features .t-tab:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+/* These really are tabs (role="tab" + aria-selected), so the snippet's own
+   active-colour rule applies as written — no `data-active` hook needed. */
+.t-features .t-tabs-pill {
+  top: var(--fx-tabs-pad);
+  height: var(--fx-tab-h);
+  opacity: 0;
+  transition:
+    transform var(--tabs-dur)       var(--tabs-ease),
+    width     var(--tabs-dur)       var(--tabs-ease),
+    opacity   var(--duration-quick) var(--ease-smooth-out);
+}
+
+/* ── Explorer: search field ────────────────────────────────────────────────── */
+
+/* The clear-dissolve wrapper is the field itself. `overflow: hidden` (from the
+   snippet, and load-bearing — it clips the streak to the rounded box) means
+   anything meant to sit outside the field, like the match badge, has to live on
+   an ancestor instead. */
+.t-features .t-clear {
+  border-radius: 9999px;
+  box-shadow: inset 0 0 0 2px hsl(var(--border));
+  background: hsl(var(--card));
+}
+.t-features .t-clear > input {
+  width: 100%;
+  height: 3rem;
+  padding: 0 3.25rem 0 var(--fx-field-pad);
+  border: 0;
+  background: transparent;
+  color: hsl(var(--foreground));
+  font-size: 0.9375rem;
+  outline: none;
+}
+.t-features .t-clear > input:focus-visible {
+  box-shadow: inset 0 0 0 2px hsl(var(--ring));
+  border-radius: 9999px;
+}
+/* The mirror and the fake placeholder are `inset: 0` overlays, so they need the
+   input's own left padding and metrics or the glyphs won't line up during the
+   dissolve. */
+.t-features .t-clear-mirror,
+.t-features .t-clear-placeholder {
+  padding: 0 3.25rem 0 var(--fx-field-pad);
+  font-size: 0.9375rem;
+  line-height: 3rem;
+}
+.t-features .t-clear-mirror {
+  color: hsl(var(--foreground));
+}
+.t-features .t-clear-placeholder {
+  color: hsl(var(--muted-foreground));
+}
+/* Per the snippet's dark-mode note: `multiply` over a dark surface has nothing
+   to darken, so the streak simply vanishes. Flip to `screen` and raise the
+   alpha; the JS paints white gradients instead of black to match. */
+.dark .t-features .t-clear-glow {
+  mix-blend-mode: screen;
+}
+.dark .t-features {
+  --glow-opacity: 0.85;
+}
+
+/* Match badge — anchored on the field wrapper, outside the clipped `.t-clear`. */
+.t-features .t-badge {
+  top: -10px;
+  right: 6px;
+}
+.t-features .t-badge-dot {
+  min-width: 26px;
+  padding: 0 7px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-size: 0.6875rem;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: var(--shadow-hard-sm);
+}
+
+/* ── Explorer: results ─────────────────────────────────────────────────────── */
+
+/* Filtering changes the grid's height by a lot (ten cards down to two). The
+   wrapper takes a measured pixel height so `.t-resize` has two numbers to tween
+   between instead of snapping, then releases back to `auto` once it lands.
+
+   `--resize-dur` drops from the snippet's 300ms to 250ms because the resize is
+   not its own event here: it happens in the same gesture as the tab pill's
+   250ms slide, and the polish skill matches timing on usage rather than on the
+   nearest default.
+
+   `overflow` is only clipped while a tween is actually running. Permanently
+   hidden would crop the tilt cards, whose corners lift a few pixels past their
+   own box under `perspective`, all along the grid's outer edge. */
+.t-features .fx-results {
+  --resize-dur: var(--duration-fast);
+}
+.t-features .fx-results[data-resizing="true"] {
+  overflow: hidden;
+}
+
+/* Same reasoning as the hero: the tilt snippet sets `touch-action: none` so a
+   drag can tilt the card, which on a phone would eat vertical scrolling on a
+   full-width card. Tilt is mouse-only here and touch scrolls normally. */
+.t-features .t-tilt {
+  touch-action: auto;
+}
+.t-features .t-tilt-card {
+  border-radius: 1.25rem;
+}
+
+/* ── Explorer: counter + label ─────────────────────────────────────────────── */
+
+.t-features .t-digit-group {
+  font-variant-numeric: tabular-nums;
+}
+/* The reel's window has to match the type it sits behind, or the mask fades the
+   digits mid-glyph. Two sizes because the metric strip steps up at `sm`. */
+.t-features .fx-metric {
+  --reel-cell: 40px;
+}
+@media (min-width: 640px) {
+  .t-features .fx-metric {
+    --reel-cell: 48px;
+  }
+}
+
+/* ── Agent toolkit ─────────────────────────────────────────────────────────── */
+
+/* Words are wrapped individually, and `filter` on an inline box that breaks
+   across lines is unreliable — `inline-block` keeps each word's blur to itself.
+   The separating space stays outside the span so wrapping still works. */
+.t-features .t-stream-w {
+  display: inline-block;
+}
+
+/* The accordion snippet is explicit that padding belongs on the inner element:
+   the panel itself animates `grid-template-rows`, so padding there would never
+   collapse to zero and every closed row would keep a few pixels of height. */
+.t-features .t-acc-panel-inner {
+  padding: 0 0 1.25rem;
+}
+/* The explorer's detail panels carry their own divider + top padding on the list
+   inside, so they opt out of the trailing gap the toolkit and FAQ rows want. */
+.t-features .t-acc.fx-detail .t-acc-panel-inner {
+  padding: 0;
+}
+.t-features .t-acc-chevron {
+  color: hsl(var(--muted-foreground));
+}
+
+/* Copy confirmation. The success-check snippet hardcodes `stroke-dasharray: 20`
+   and tells you to replace it with your own path's measured length — this is
+   the same ~14.39 path the checkboxes use. */
+.t-features .t-success-check svg path {
+  stroke-dasharray: var(--check-len);
+  stroke-dashoffset: var(--check-len);
+}
+
+/* Toast: fixed above the bottom edge, centred, on the project's chunky
+   vocabulary. `.t-toast` owns opacity/transform/filter, so the horizontal
+   centring has to be `left`/`right`-based rather than a translate — a transform
+   here would be overwritten by the snippet's. */
+.t-features .fx-toast-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 1.5rem;
+  z-index: 60;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* ── Checklist ─────────────────────────────────────────────────────────────── */
+
+.t-features .t-check {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border: 2px solid hsl(var(--border));
+  border-radius: 8px;
+  background: hsl(var(--card));
+  color: hsl(var(--primary-foreground));
+  cursor: pointer;
+}
+.t-features .t-check[aria-checked="true"] {
+  background: hsl(var(--primary));
+  box-shadow: inset 0 0 0 2px hsl(var(--primary));
+}
+.t-features .t-check:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* ── Density toggle ────────────────────────────────────────────────────────── */
+
+.t-features .t-toggle {
+  width: 44px;
+  height: 26px;
+  padding: 3px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  border: 2px solid hsl(var(--border));
+  border-radius: 9999px;
+  background: hsl(var(--muted));
+  cursor: pointer;
+}
+.t-features .t-toggle[data-on="true"] {
+  background: hsl(var(--primary));
+}
+.t-features .t-toggle:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+.t-features .t-toggle-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: hsl(var(--card));
+  box-shadow: var(--shadow-hard-sm);
+}
+
+/* ── Jump menu ─────────────────────────────────────────────────────────────── */
+
+/* The morph snippet hardcodes the demo's open box (183×172). Override the four
+   box metrics; every timing pair — including the deliberately different open
+   and close eases — is untouched. */
+.t-features .t-morph {
+  width: 52px;
+  height: 52px;
+  border: 2px solid hsl(var(--border));
+  background: hsl(var(--card));
+  box-shadow: var(--shadow-hard);
+  --morph-r-closed: 26px;
+  --morph-r-open: 20px;
+}
+.t-features .t-morph[data-open="true"] {
+  width: 244px;
+  height: 236px;
+}
+.t-features .t-morph-plus {
+  width: 48px;
+  height: 48px;
+  color: hsl(var(--foreground));
+}
+
+/* ── Reduced motion ────────────────────────────────────────────────────────── */
+
+/* The snippets each carry their own guard; these are the additions above that
+   introduce motion of their own. */
+@media (prefers-reduced-motion: reduce) {
+  .t-features .t-tabs-pill,
+  .t-features .fx-results {
+    transition: none !important;
+  }
+}

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { PopNumber } from "@/components/ui/pop-number";
+import { LearnChevron } from "@/components/ui/learn-chevron";
 
 /**
  * Landing hero, built entirely on the transitions-dev skill.
@@ -339,27 +340,7 @@ export function HeroSection({
                                                 className="t-learn cta-ghost inline-flex h-12 items-center justify-center gap-2 bg-secondary/60 px-7 text-base font-bold text-secondary-foreground backdrop-blur-sm sm:h-14 sm:text-lg"
                                             >
                                                 {action.text}
-                                                <span className="t-learn-chevron">
-                                                    <svg
-                                                        width="16"
-                                                        height="16"
-                                                        viewBox="0 0 16 16"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        strokeWidth="2"
-                                                        strokeLinecap="round"
-                                                        aria-hidden="true"
-                                                    >
-                                                        <path
-                                                            className="t-learn-arm t-learn-arm-top"
-                                                            d="M6 4L10 8"
-                                                        />
-                                                        <path
-                                                            className="t-learn-arm t-learn-arm-bot"
-                                                            d="M10 8L6 12"
-                                                        />
-                                                    </svg>
-                                                </span>
+                                                <LearnChevron />
                                             </Link>
                                         ),
                                     )}

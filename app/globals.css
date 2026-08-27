@@ -402,6 +402,19 @@
     }
 
     .btn-chunky {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.7rem 1.25rem;
+        font-size: 0.95rem;
+        font-weight: 700;
+        line-height: 1;
+        color: hsl(var(--foreground));
+        text-decoration: none;
+        white-space: nowrap;
+        cursor: pointer;
+        background-color: hsl(var(--card));
         border: 2px solid hsl(var(--border));
         border-radius: 12px;
         box-shadow: var(--shadow-hard-sm);
@@ -410,6 +423,9 @@
             background-color 130ms ease,
             border-color 130ms ease,
             transform 90ms ease;
+    }
+    .btn-chunky svg {
+        flex-shrink: 0;
     }
 
     .btn-chunky:hover {
@@ -420,6 +436,16 @@
     .btn-chunky:active {
         box-shadow: none;
         transform: translate(2px, 2px);
+    }
+
+    .btn-primary {
+        background-color: hsl(var(--primary));
+        border-color: hsl(var(--primary));
+        color: hsl(var(--primary-foreground));
+    }
+    .btn-primary:hover {
+        background-color: hsl(var(--primary) / 0.92);
+        border-color: hsl(var(--primary) / 0.92);
     }
 
     .pill-chunky {
@@ -1072,4 +1098,269 @@
         transform: none !important;
         transition: none !important;
     }
+}
+
+/* ============================================================================
+   About page — redesign (transitions-dev)
+   t-stagger (texts reveal) + t-shimmer (hero eyebrow), t-success-check
+   (verified badge), t-tilt / t-tilt-card / t-tilt-glare (stat + value cards),
+   t-digit-group (stat pop-in), t-tabs (Built-for toggle), t-panel-slide
+   (panel reveal), t-check (panel checklists), t-avatar-group + t-tt (voices
+   row), t-acc (FAQ), t-learn (CTA). Entrances use the shared motion tokens.
+   ========================================================================= */
+
+.about-card {
+    opacity: 0;
+    transform: translateY(24px);
+    touch-action: auto;
+    transition: opacity var(--duration-slow) var(--ease-smooth-out),
+        transform var(--duration-slow) var(--ease-smooth-out);
+    will-change: opacity, transform;
+}
+.about-card.is-in {
+    opacity: 1;
+    transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+    .about-card {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+}
+
+.about-title {
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    line-height: 1.02;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    color: hsl(var(--foreground));
+}
+.about-sub {
+    max-width: 48ch;
+    margin-top: 1.25rem;
+    font-size: clamp(1rem, 1.6vw, 1.15rem);
+    line-height: 1.6;
+    color: hsl(var(--muted-foreground));
+}
+.about-h2 {
+    font-size: clamp(1.7rem, 3.5vw, 2.4rem);
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    color: hsl(var(--foreground));
+}
+.about-lead {
+    margin-top: 0.75rem;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: hsl(var(--muted-foreground));
+    max-width: 60ch;
+}
+
+/* stat cards */
+.about-stat .t-tilt-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 1.6rem 1rem;
+    text-align: center;
+    background: hsl(var(--card));
+}
+.stat-digits {
+    font-size: clamp(1.9rem, 3.2vw, 2.6rem);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: hsl(var(--foreground));
+}
+.stat-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: hsl(var(--muted-foreground));
+}
+
+/* value cards */
+.about-value .t-tilt-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1.75rem;
+    background: hsl(var(--card));
+}
+.value-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-bottom: 1rem;
+    border-radius: 0.8rem;
+    color: hsl(var(--primary));
+    background: hsl(var(--primary) / 0.1);
+    border: 2px solid hsl(var(--primary) / 0.25);
+}
+.value-title {
+    font-size: 1.12rem;
+    font-weight: 800;
+    color: hsl(var(--foreground));
+}
+.value-body {
+    margin-top: 0.55rem;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: hsl(var(--muted-foreground));
+}
+
+/* built-for tabs + panel */
+.about-tabs {
+    width: 100%;
+}
+.about-panel-wrap {
+    position: relative;
+    margin-top: 2rem;
+    min-height: 1px;
+}
+.about-panel {
+    padding: 2rem;
+    border-radius: 1.25rem;
+    border: 2px solid hsl(var(--border));
+    background: hsl(var(--card));
+    box-shadow: var(--shadow-hard);
+}
+.about-panel h3 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: hsl(var(--foreground));
+}
+.about-panel p {
+    margin-top: 0.75rem;
+    font-size: 1rem;
+    line-height: 1.65;
+    color: hsl(var(--muted-foreground));
+}
+.about-checks {
+    list-style: none;
+    margin-top: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+}
+.about-checks li {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-size: 0.98rem;
+    color: hsl(var(--foreground));
+}
+.t-check {
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.55rem;
+    border: 2px solid hsl(var(--primary) / 0.5);
+    background: hsl(var(--card));
+    cursor: pointer;
+    transition: background var(--duration-slow) var(--ease-smooth-out),
+        border-color var(--duration-slow) var(--ease-smooth-out);
+}
+.t-check svg {
+    width: 100%;
+    height: 100%;
+}
+.t-check svg path {
+    fill: none;
+    stroke: hsl(var(--primary));
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: var(--check-len, 15);
+    stroke-dashoffset: var(--check-len, 15);
+    transition: stroke-dashoffset var(--duration-slow) var(--ease-smooth-out);
+}
+.t-check[aria-checked="true"] {
+    background: hsl(var(--primary));
+    border-color: hsl(var(--primary));
+}
+.t-check[aria-checked="true"] svg path {
+    stroke: hsl(var(--primary-foreground));
+    stroke-dashoffset: 0;
+}
+
+/* avatar group */
+.about-avatars {
+    display: flex;
+    justify-content: center;
+}
+.about-avatars .t-avatar-group {
+    display: flex;
+    padding-top: 0.9rem;
+}
+.about-avatars .t-avatar {
+    margin-left: -0.6rem;
+}
+.about-avatars .t-avatar:first-child {
+    margin-left: 0;
+}
+.about-avatar .t-tt-wrap {
+    display: block;
+}
+.about-avatar-chip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.1rem;
+    height: 3.1rem;
+    border-radius: 9999px;
+    border: 2px solid hsl(var(--background));
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.92rem;
+    box-shadow: var(--shadow-hard-sm);
+}
+
+/* faq */
+.about-faq {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.about-faq .t-acc {
+    background: hsl(var(--card));
+    border: 2px solid hsl(var(--border));
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.about-faq .t-acc:hover {
+    border-color: hsl(var(--primary) / 0.3);
+}
+.about-cta {
+    padding: 2.75rem 2rem;
+    background: hsl(var(--card));
+}
+.about-cta-icon {
+    display: block;
+    margin: 0 auto 1rem;
+    color: hsl(var(--primary));
+}
+.about-cta .about-h2 {
+    margin-top: 0;
+}
+.about-cta .about-lead {
+    margin-top: 0.6rem;
+}
+
+/* success badge */
+.about-success .t-success-check svg path {
+    stroke: hsl(var(--primary));
+    stroke-width: 5;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }

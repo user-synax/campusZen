@@ -117,6 +117,7 @@ export default function RootLayout({ children }) {
                                         pathname.startsWith('/privacy') ||
                                         pathname.startsWith('/terms') ||
                                         pathname.startsWith('/docs') ||
+                                        pathname.startsWith('/features') ||
                                         pathname.startsWith('/forgot-password');
                                     
                                     var CSS_VARS = ['--background','--foreground','--card','--card-foreground','--popover','--popover-foreground','--primary','--primary-foreground','--secondary','--secondary-foreground','--muted','--muted-foreground','--accent','--accent-foreground','--destructive','--destructive-foreground','--border','--input','--ring'];
