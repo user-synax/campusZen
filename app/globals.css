@@ -627,3 +627,116 @@
 .docs-prose td {
     color: hsl(var(--muted-foreground));
 }
+
+/* ============================================================================
+   Platform Impact (Stats) — redesign + transitions-dev micro animations
+   Entrance uses the skill's shared motion tokens (--duration-*, --ease-*).
+   The interactive motion itself lives in app/transitions.css:
+   t-stagger (texts reveal), t-shimmer, t-digit-group (number pop-in),
+   and t-tilt / t-tilt-card / t-tilt-glare (card hover tilt).
+   ========================================================================= */
+
+.stats-section {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Soft brand glow behind the section so the stats read as a focal moment. */
+.stats-glow {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(60% 55% at 50% -5%, hsl(var(--primary) / 0.14), transparent 70%),
+        radial-gradient(40% 40% at 85% 110%, hsl(var(--accent) / 0.5), transparent 70%);
+}
+
+.stats-eyebrow {
+    margin-bottom: 1rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+}
+
+.stats-heading {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    color: hsl(var(--foreground));
+    text-wrap: balance;
+}
+
+/* Outer flat wrapper: owns the scroll-in entrance (translateY/opacity) and,
+   per the skill, never transforms for the tilt — the inner .t-tilt-card does.
+   touch-action:auto keeps the page scrollable on touch (drag-tilt is mouse-only). */
+.stat-tilt {
+    touch-action: auto;
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+        opacity   var(--duration-slow)  var(--ease-smooth-out),
+        transform var(--duration-slow)  var(--ease-smooth-out);
+    will-change: opacity, transform;
+}
+.stat-tilt.is-in {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.stat-card {
+    height: 100%;
+    padding: 1.75rem;
+    background: hsl(var(--card));
+}
+.stat-card:hover {
+    border-color: hsl(var(--primary) / 0.35);
+}
+
+.stat-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    text-align: center;
+}
+
+.stat-icon {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: hsl(var(--primary) / 0.1);
+    border: 2px solid hsl(var(--primary) / 0.25);
+    transition: background-color var(--duration-quick) var(--ease-smooth-out);
+}
+.stat-card:hover .stat-icon {
+    background: hsl(var(--primary) / 0.18);
+}
+
+.stat-number {
+    font-size: clamp(2.5rem, 4vw, 3.25rem);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: hsl(var(--foreground));
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .stat-tilt {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+}
