@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
     Home,
     GraduationCap,
@@ -112,7 +112,7 @@ function CollapsibleSection({
     };
 
     return (
-        <div className="mt-2">
+        <div className="mt-2 sidebar-acc t-acc" data-open={open}>
             <button
                 onClick={toggle}
                 className="hover:cursor-pointer flex items-center gap-2 w-full px-3 py-2 rounded-lg group transition-all duration-200 hover:bg-accent/60 border border-transparent hover:border-border/40"
@@ -122,14 +122,16 @@ function CollapsibleSection({
                     {label}
                 </span>
                 <div className={`p-0.5 rounded transition-all duration-200 ${open ? 'bg-primary/10' : 'bg-transparent group-hover:bg-accent'}`}>
-                    {open ? (
+                    <span className="t-acc-chevron inline-flex">
                         <ChevronDown className="w-3 h-3 text-muted-foreground/70 group-hover:text-foreground transition-colors duration-150 shrink-0" />
-                    ) : (
-                        <ChevronRight className="w-3 h-3 text-muted-foreground/70 group-hover:text-foreground transition-colors duration-150 shrink-0" />
-                    )}
+                    </span>
                 </div>
             </button>
-            {open && <div className="space-y-0.5 mt-0.5">{children}</div>}
+            <div className="t-acc-panel">
+                <div className="t-acc-panel-inner">
+                    <div className="space-y-0.5 mt-0.5">{children}</div>
+                </div>
+            </div>
         </div>
     );
 }
@@ -157,6 +159,12 @@ export default function Sidebar() {
     const [pendingResources, setPendingResources] = useState(0);
     const { theme, setTheme, toggleTheme } = useTheme();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const navRef = useRef(null);
+
+    useEffect(() => {
+        const el = navRef.current?.querySelector(".t-stagger");
+        if (el) requestAnimationFrame(() => el.classList.add("is-shown"));
+    }, []);
 
     // Compute admin/founder status once per render instead of calling repeatedly
     const isAdminUser = user ? isAdmin(user) : false;
@@ -254,12 +262,12 @@ export default function Sidebar() {
         },
     ];
 
-    const renderNavItem = (item) => {
+    const renderNavItem = (item, i = 0) => {
         const isActive = pathname === item.href;
         const Icon = item.icon;
 
         return (
-            <div key={item.href}>
+            <div key={item.href} className="t-stagger-line" style={{ ["--i"]: i }}>
                 <div className="relative">
                     {isActive && (
                         <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.75 h-4.5 bg-primary rounded-r-full z-10" />
@@ -277,7 +285,7 @@ export default function Sidebar() {
                                 item.className,
                             )}
                         >
-                            <div className="relative shrink-0">
+                            <div className="relative shrink-0 t-tt-wrap sidebar-tip">
                                 <Icon
                                     className={cn(
                                         "w-4.5 h-4.5 transition-colors",
@@ -285,10 +293,18 @@ export default function Sidebar() {
                                     )}
                                 />
                                 {item.badge > 0 && (
-                                    <span className="absolute -top-1.5 -right-1.5 min-w-3.75 h-3.75 bg-primary text-[9px] text-primary-foreground font-bold flex items-center justify-center rounded-full px-0.5 border-2 border-background">
-                                        {item.badge > 9 ? "9+" : item.badge}
+                                    <span className="t-badge" data-open="true">
+                                        <span className="t-badge-dot min-w-3.75 h-3.75 bg-primary text-[9px] text-primary-foreground font-bold flex items-center justify-center rounded-full px-0.5 border-2 border-background">
+                                            {item.badge > 9 ? "9+" : item.badge}
+                                        </span>
                                     </span>
                                 )}
+                                <span
+                                    className="t-tt hidden md:block lg:hidden"
+                                    role="tooltip"
+                                >
+                                    {item.label}
+                                </span>
                             </div>
                             <span className="hidden lg:block text-sm">
                                 {item.label}
@@ -381,8 +397,10 @@ export default function Sidebar() {
                     <Logo className="hidden lg:flex" />
                 </div>
 
-                <nav className="flex-1 px-2 py-3 overflow-y-auto overflow-x-hidden custom-scrollbar space-y-0.5">
-                    {primaryNavItems.map(renderNavItem)}
+                <nav ref={navRef} className="flex-1 px-2 py-3 overflow-y-auto overflow-x-hidden custom-scrollbar space-y-0.5">
+                    <div className="t-stagger">
+                        {primaryNavItems.map((item, i) => renderNavItem(item, i))}
+                    </div>
 
                     <div className="hidden lg:block">
                         <CollapsibleSection
@@ -553,11 +571,19 @@ export default function Sidebar() {
                                 onClick={toggleTheme}
                                 className="chip-chunky flex-1 justify-start gap-3 h-9 px-3 text-muted-foreground hover:text-foreground"
                             >
-                                {theme === "dark" ? (
-                                    <Sun className="w-4 h-4 shrink-0" />
-                                ) : (
-                                    <Moon className="w-4 h-4 shrink-0" />
-                                )}
+                                <span
+                                    className="t-icon-swap"
+                                    data-state={theme === "dark" ? "b" : "a"}
+                                >
+                                    <Sun
+                                        className="t-icon w-4 h-4 shrink-0"
+                                        data-icon="a"
+                                    />
+                                    <Moon
+                                        className="t-icon w-4 h-4 shrink-0"
+                                        data-icon="b"
+                                    />
+                                </span>
                                 <span className="hidden lg:block text-xs font-semibold">
                                     {theme === "dark"
                                         ? "Light mode"

@@ -1660,14 +1660,19 @@
 
 /* The accordion snippet is explicit that padding belongs on the inner element:
    the panel itself animates `grid-template-rows`, so padding there would never
-   collapse to zero and every closed row would keep a few pixels of height. */
+   collapse to zero and every closed row would keep a few pixels of height.
+
+   Only the bottom edge is set here, as a longhand. A `padding` shorthand in this
+   unlayered file would also zero the left and right edges and beat any `px-*`
+   utility on the same element, since Tailwind's utilities live in
+   `@layer utilities` and everything unlayered outranks them. */
 .t-features .t-acc-panel-inner {
-  padding: 0 0 1.25rem;
+  padding-bottom: 1.25rem;
 }
-/* The explorer's detail panels carry their own divider + top padding on the list
-   inside, so they opt out of the trailing gap the toolkit and FAQ rows want. */
+/* The explorer's detail panels carry their own divider and top padding on the
+   list inside, so they opt out of the trailing gap the toolkit and FAQ want. */
 .t-features .t-acc.fx-detail .t-acc-panel-inner {
-  padding: 0;
+  padding-bottom: 0;
 }
 .t-features .t-acc-chevron {
   color: hsl(var(--muted-foreground));
