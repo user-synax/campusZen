@@ -2,6 +2,6 @@
 
 import { HeroSectionDemo } from "./HeroSectionDemo";
 
-export default function Hero() {
-    return <HeroSectionDemo />;
+export default function Hero({ stats }) {
+    return <HeroSectionDemo stats={stats} />;
 }

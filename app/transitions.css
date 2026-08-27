@@ -992,6 +992,37 @@
   box-shadow: var(--shadow-hard-sm);
 }
 
+/* ── Hero secondary CTA ──────────────────────────────────────────────────────
+   The primary CTA uses `.pill-chunky` from globals as-is. The secondary needs a
+   visible border *and* a background lane, and `.pill-chunky` transitions
+   neither — so it gets its own surface rule here. Doing it in this unlayered
+   file (rather than piling on Tailwind utilities) means it wins the cascade
+   outright instead of depending on which `@layer utilities` rule Tailwind
+   happens to emit last. Same press feedback as the chunky system, on the shared
+   token clock: 150ms for surface, 80ms for the press. */
+.t-hero .hero-cta-ghost {
+  border: 2px solid hsl(var(--border));
+  border-radius: 9999px;
+  box-shadow: var(--shadow-hard-sm);
+  transition:
+    background-color var(--duration-quick) var(--ease-smooth-out),
+    border-color     var(--duration-quick) var(--ease-smooth-out),
+    box-shadow       var(--duration-quick) var(--ease-smooth-out),
+    transform        var(--duration-micro) var(--ease-smooth-out);
+}
+.t-hero .hero-cta-ghost:hover {
+  background-color: hsl(var(--secondary));
+  border-color: hsl(var(--primary) / 0.35);
+}
+.t-hero .hero-cta-ghost:active {
+  box-shadow: none;
+  transform: translate(2px, 2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-hero .hero-cta-ghost { transition: none !important; }
+}
+
 /* The stagger snippet's `display: block` is correct for these rows because each
    one wraps its content: putting `.t-stagger-line` directly on a flex row would
    both override the Tailwind `flex` utility (the snippet is unlayered, Tailwind's

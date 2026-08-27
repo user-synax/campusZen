@@ -111,7 +111,7 @@ export default async function LandingPage() {
     return (
         <>
             <main className="pt-16">
-                <HeroClient />
+                <HeroClient stats={stats} />
                 <TechStack />
                 <Stats
                     users={stats.users}
