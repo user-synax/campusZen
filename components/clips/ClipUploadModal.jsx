@@ -12,7 +12,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { X, UploadCloud, AlertCircle } from "lucide-react";
 import { createAppwriteClient, getAppwriteStorage } from "@/lib/appwrite";
-import { ID } from "appwrite";
+import { ID, Permission, Role } from "appwrite";
 import useUser from "@/hooks/useUser";
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
@@ -57,22 +57,26 @@ export default function ClipUploadModal({ open, onOpenChange }) {
 
         setIsUploading(true);
         try {
-            // Clear all Appwrite-related localStorage
-            Object.keys(localStorage).forEach((key) => {
-                if (key.startsWith("aSession_") || key.startsWith("appwrite")) {
-                    localStorage.removeItem(key);
-                }
-            });
-
-            // Create new client
+            // Upload using the authenticated Appwrite session (the browser sends
+            // the a_session cookie). Do NOT upload as a guest — anonymous writes
+            // are disallowed; the clips bucket must require authentication for
+            // create (enforced in the Appwrite console) and the server validates
+            // ownership in /api/clips/create.
             const client = createAppwriteClient();
             const storage = getAppwriteStorage(client);
 
-            // Upload as guest
+            // File-level permissions: publicly readable (for playback) but only
+            // writable by the uploader, so ownership can be verified server-side.
+            const permissions = [Permission.read(Role.any())];
+            if (user?.appwriteUserId) {
+                permissions.push(Permission.write(Role.user(user.appwriteUserId)));
+            }
+
             const uploadResult = await storage.createFile(
                 process.env.NEXT_PUBLIC_APPWRITE_CLIPS_BUCKET_ID,
                 ID.unique(),
                 selectedFile,
+                permissions,
             );
 
             // Save to MongoDB
@@ -97,7 +101,7 @@ export default function ClipUploadModal({ open, onOpenChange }) {
         } catch (error) {
             console.error("Upload failed:", error);
             alert(
-                "Upload failed! Please update your Appwrite bucket permissions to allow Guests (Create) and Any (Read).",
+                "Upload failed! Make sure you are signed in and the clips bucket requires authentication to create files.",
             );
         } finally {
             setIsUploading(false);

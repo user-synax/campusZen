@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import config from "@/lib/config";
 
 export async function GET(request) {
@@ -10,15 +11,27 @@ export async function GET(request) {
             config.google.redirectUri || `${origin}/api/auth/google/callback`;
 
         if (clientId) {
+            // CSRF protection: generate a single-use state and mirror it in an
+            // httpOnly cookie. The callback must echo it back.
+            const state = crypto.randomBytes(16).toString("hex");
+
             const googleAuthUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
             googleAuthUrl.searchParams.set("client_id", clientId);
             googleAuthUrl.searchParams.set("redirect_uri", redirectUri);
             googleAuthUrl.searchParams.set("response_type", "code");
             googleAuthUrl.searchParams.set("scope", "openid email profile");
             googleAuthUrl.searchParams.set("prompt", "select_account");
+            googleAuthUrl.searchParams.set("state", state);
 
-            console.log("[Google OAuth Init] Redirecting to Google Auth URL:", googleAuthUrl.toString());
-            return NextResponse.redirect(googleAuthUrl.toString());
+            const res = NextResponse.redirect(googleAuthUrl.toString());
+            res.cookies.set("google_oauth_state", state, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                maxAge: 10 * 60,
+                path: "/",
+            });
+            return res;
         }
 
         // If no direct GOOGLE_CLIENT_ID, redirect to login

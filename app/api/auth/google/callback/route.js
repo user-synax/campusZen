@@ -15,6 +15,14 @@ export async function GET(request) {
             return NextResponse.redirect(`${origin}/login?error=missing_code`);
         }
 
+        // CSRF / OAuth state validation.
+        const state = searchParams.get("state");
+        const stateCookie = request.cookies.get("google_oauth_state")?.value;
+        if (!state || !stateCookie || state !== stateCookie) {
+            console.error("[Google OAuth Callback GET] State mismatch");
+            return NextResponse.redirect(`${origin}/login?error=oauth_state_mismatch`);
+        }
+
         const clientId = config.google.clientId || process.env.GOOGLE_CLIENT_ID;
         const clientSecret = config.google.clientSecret || process.env.GOOGLE_CLIENT_SECRET;
         const redirectUri =
@@ -115,6 +123,14 @@ export async function GET(request) {
         const redirectTo = "/feed";
         const response = NextResponse.redirect(`${origin}${redirectTo}`);
         await setAuthCookie(response, token);
+        // Consume the OAuth state cookie.
+        response.cookies.set("google_oauth_state", "", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 0,
+            path: "/",
+        });
 
         return response;
     } catch (error) {
@@ -128,13 +144,12 @@ export async function POST(request) {
     try {
         const body = await request.json();
         let appwriteUser = body.appwriteUser;
-        const userId = body.userId;
         const secret = body.secret;
 
-        console.log(
-            "[Google Callback API] Received body params:",
-            { hasAppwriteUser: !!appwriteUser, userId, hasSecret: !!secret },
-        );
+        // SECURITY: we only ever derive identity from Appwrite's own session for
+        // the current request. A client-supplied `userId` must NEVER be trusted to
+        // mint a session (that was an account-takeover vector). Identity is taken
+        // from a real Appwrite session secret or the session cookie below.
 
         if ((!appwriteUser || !appwriteUser.$id) && secret) {
             try {
@@ -149,20 +164,6 @@ export async function POST(request) {
             } catch (err) {
                 console.warn(
                     "[Google Callback API] Failed to fetch user via session secret:",
-                    err?.message || err,
-                );
-            }
-        }
-
-        if ((!appwriteUser || !appwriteUser.$id) && userId) {
-            try {
-                const { getAppwriteUsers } = await import("@/lib/appwrite/server");
-                const users = getAppwriteUsers();
-                appwriteUser = await users.get(userId);
-                console.log("[Google Callback API] Fetched user via Admin SDK userId:", appwriteUser?.$id);
-            } catch (err) {
-                console.error(
-                    "[Google Callback API] Failed to fetch user via Admin SDK userId:",
                     err?.message || err,
                 );
             }

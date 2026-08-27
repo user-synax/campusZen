@@ -21,6 +21,10 @@ const otpSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  lockedUntil: {
+    type: Date,
+    default: null,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

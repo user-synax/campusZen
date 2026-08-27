@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import connectDB from '@/lib/db'
 import Otp from '@/models/Otp'
 import User from '@/models/User'
+import bcrypt from 'bcryptjs'
 import { generateOTP, sendOtpEmail } from '@/lib/otp-mailer'
 import { rateLimit } from '@/lib/rate-limit'
 import {
@@ -91,13 +92,15 @@ export async function POST(request) {
     await Otp.deleteMany({ email: normalizedEmail, purpose })
 
     const otp = generateOTP()
+    // Hash the OTP at rest; store only the bcrypt digest, never the plaintext.
+    const otpHash = await bcrypt.hash(otp, 10)
     await Otp.create({
       email: normalizedEmail,
-      otp,
+      otp: otpHash,
       purpose,
     })
 
-    // Send email
+    // Send email (the plaintext is delivered to the user, not persisted).
     await sendOtpEmail(normalizedEmail, otp, purpose)
 
     return successResponse({ 
