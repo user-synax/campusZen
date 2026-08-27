@@ -1,8 +1,7 @@
-"use client";
+"use client"
 
-import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
-import { cn } from "@/lib/utils";
+import { useEffect, useRef } from "react"
+import Image from "next/image"
 
 const SHOWCASE_ITEMS = [
     {
@@ -23,92 +22,155 @@ const SHOWCASE_ITEMS = [
         title: "Campus Communities",
         description: "Join interest-based communities and code areas.",
     },
-];
+]
 
 export default function ProductShowcase() {
-    const sectionRef = useRef(null);
-    const [visible, setVisible] = useState(false);
+    const sectionRef = useRef(null)
+    const staggerRef = useRef(null)
+    const wrapRefs = useRef([])
+    const cardRefs = useRef([])
+    const skelRefs = useRef([])
 
     useEffect(() => {
-        const reduceMotion = window.matchMedia(
-            "(prefers-reduced-motion: reduce)",
-        ).matches;
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)")
 
-        if (reduceMotion) {
-            setVisible(true);
-            return;
+        const reveal = () => {
+            staggerRef.current?.classList.add("is-shown")
+            wrapRefs.current.forEach((wrap, i) => {
+                if (!wrap) return
+                setTimeout(() => wrap.classList.add("is-in"), reduce.matches ? 0 : i * 110)
+            })
+            // Skeleton reveal for any image that already finished loading.
+            skelRefs.current.forEach((skel) => {
+                const img = skel?.querySelector("img")
+                if (skel && img?.complete) skel.classList.add("is-revealed")
+            })
         }
 
-        const el = sectionRef.current;
-        if (!el) return;
+        const observer = new IntersectionObserver(([entry]) => {
+            if (!entry.isIntersecting) return
+            observer.disconnect()
+            reveal()
+        }, { threshold: 0.15 })
+        if (sectionRef.current) observer.observe(sectionRef.current)
 
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setVisible(true);
-                    observer.disconnect();
+        // transitions-dev: 19-card-tilt — pointer-tracked 3D tilt + cursor glare.
+        const cleanups = []
+        wrapRefs.current.forEach((wrap, i) => {
+            const card = cardRefs.current[i]
+            if (!wrap || !card) return
+
+            const MAX = 10
+            const reset = () => {
+                wrap.classList.remove("is-hover")
+                card.classList.remove("is-tilting")
+                card.style.setProperty("--tilt-rx", "0deg")
+                card.style.setProperty("--tilt-ry", "0deg")
+            }
+            const track = (e) => {
+                if (reduce.matches) return
+                if (e.pointerType === "touch" || e.pointerType === "pen") return
+                const r = wrap.getBoundingClientRect()
+                const px = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width))
+                const py = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))
+                wrap.classList.add("is-hover")
+                card.classList.add("is-tilting")
+                card.style.setProperty("--tilt-ry", ((px - 0.5) * MAX).toFixed(2) + "deg")
+                card.style.setProperty("--tilt-rx", ((0.5 - py) * MAX).toFixed(2) + "deg")
+                card.style.setProperty("--tilt-gx", (px * 100).toFixed(1) + "%")
+                card.style.setProperty("--tilt-gy", (py * 100).toFixed(1) + "%")
+            }
+            const onDown = (e) => {
+                if (e.pointerType !== "mouse") {
+                    try { wrap.setPointerCapture(e.pointerId) } catch (_) {}
                 }
-            },
-            { threshold: 0.15 },
-        );
-        observer.observe(el);
-        return () => observer.disconnect();
-    }, []);
+            }
+
+            wrap.addEventListener("pointermove", track)
+            wrap.addEventListener("pointerdown", onDown)
+            wrap.addEventListener("pointerup", reset)
+            wrap.addEventListener("pointercancel", reset)
+            wrap.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") reset() })
+            cleanups.push(() => {
+                wrap.removeEventListener("pointermove", track)
+                wrap.removeEventListener("pointerdown", onDown)
+                wrap.removeEventListener("pointerup", reset)
+                wrap.removeEventListener("pointercancel", reset)
+                wrap.removeEventListener("pointerleave", reset)
+            })
+        })
+
+        // Safety: if an image is slow, reveal its skeleton anyway.
+        const fallback = setTimeout(() => {
+            skelRefs.current.forEach((skel) => skel?.classList.add("is-revealed"))
+        }, 1600)
+
+        return () => {
+            observer.disconnect()
+            clearTimeout(fallback)
+            cleanups.forEach((fn) => fn())
+        }
+    }, [])
 
     return (
         <section ref={sectionRef} className="py-24 px-4 bg-background">
             <div className="max-w-6xl mx-auto">
-                <div className="text-center mb-16 space-y-4">
-                    <h2 className="text-2xl font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                        See it in action
-                    </h2>
-                    <p className="text-4xl md:text-5xl font-black text-foreground tracking-tight">
-                        CampusZen in action
-                    </p>
+                <div className="mb-16 text-center">
+                    <div ref={staggerRef} className="t-stagger">
+                        <p className="t-stagger-line t-stagger-line--1 stats-eyebrow">
+                            <span className="t-shimmer" data-text="See it in action">
+                                See it in action
+                            </span>
+                        </p>
+                        <h2 className="t-stagger-line t-stagger-line--2 stats-heading">
+                            CampusZen in action
+                        </h2>
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
                     {SHOWCASE_ITEMS.map((item, i) => (
                         <div
                             key={item.title}
-                            className={cn(
-                                "card-chunky group relative p-4 bg-card overflow-hidden transition-all hover:border-primary/30 hover:bg-accent/30 hover:-translate-y-1",
-                                visible
-                                    ? "opacity-100 translate-y-0"
-                                    : "opacity-0 translate-y-6",
-                            )}
-                            style={{
-                                transitionDuration:
-                                    "700ms, 700ms, 300ms, 300ms",
-                                transitionDelay: visible
-                                    ? `${i * 100}ms`
-                                    : "0ms",
-                            }}
+                            ref={el => (wrapRefs.current[i] = el)}
+                            className="t-tilt showcase-tilt"
                         >
                             <div
-                                className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden border-2 border-border bg-muted"
-                                style={{ boxShadow: "var(--shadow-hard-sm)" }}
+                                ref={el => (cardRefs.current[i] = el)}
+                                className="t-tilt-card showcase-card card-chunky overflow-hidden"
                             >
-                                <Image
-                                    src={item.src}
-                                    alt={item.alt}
-                                    fill
-                                    sizes="(min-width: 768px) 33vw, 100vw"
-                                    className="object-cover"
-                                />
-                            </div>
-                            <div className="mt-6 space-y-2">
-                                <h3 className="text-xl font-bold text-foreground">
-                                    {item.title}
-                                </h3>
-                                <p className="text-muted-foreground text-base leading-relaxed font-medium">
-                                    {item.description}
-                                </p>
+                                <div
+                                    ref={el => (skelRefs.current[i] = el)}
+                                    className="t-skel showcase-frame"
+                                >
+                                    <div className="t-skel-skeleton is-pulsing">
+                                        <div className="showcase-skel-fill" />
+                                    </div>
+                                    <div className="t-skel-content">
+                                        <Image
+                                            src={item.src}
+                                            alt={item.alt}
+                                            fill
+                                            sizes="(min-width: 768px) 33vw, 100vw"
+                                            className="object-cover"
+                                            onLoad={() =>
+                                                skelRefs.current[i]?.classList.add("is-revealed")
+                                            }
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="showcase-meta">
+                                    <h3 className="showcase-title">{item.title}</h3>
+                                    <p className="showcase-desc">{item.description}</p>
+                                </div>
+
+                                <div className="t-tilt-glare" aria-hidden="true" />
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
         </section>
-    );
+    )
 }

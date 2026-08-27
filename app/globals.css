@@ -740,3 +740,77 @@
         transition: none !important;
     }
 }
+
+/* ============================================================================
+   See it in action (ProductShowcase) — transitions-dev micro animations
+   t-stagger (texts reveal) + t-shimmer for the heading, t-skel (skeleton
+   image reveal) for the screenshots, t-tilt / t-tilt-card / t-tilt-glare for
+   the card hover tilt. Entrance uses the skill's shared motion tokens.
+   ========================================================================= */
+
+.showcase-tilt {
+    touch-action: auto;
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+        opacity   var(--duration-slow)  var(--ease-smooth-out),
+        transform var(--duration-slow)  var(--ease-smooth-out);
+    will-change: opacity, transform;
+}
+.showcase-tilt.is-in {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.showcase-card {
+    height: 100%;
+    padding: 1rem;
+    background: hsl(var(--card));
+}
+.showcase-card:hover {
+    border-color: hsl(var(--primary) / 0.35);
+}
+
+/* Doubles as the t-skel wrapper. 16/9 matches the 1440×~776 screenshots,
+   so object-cover reveals the full UI width with no awkward crop. */
+.showcase-frame {
+    aspect-ratio: 16 / 9;
+    border-radius: 0.9rem;
+    overflow: hidden;
+    border: 2px solid hsl(var(--border));
+    background: hsl(var(--muted) / 0.35);
+}
+.showcase-frame .t-skel-content img {
+    object-fit: cover;
+}
+
+.showcase-skel-fill {
+    position: absolute;
+    inset: 0;
+    background: hsl(var(--muted) / 0.45);
+    border-radius: inherit;
+}
+
+.showcase-meta {
+    padding: 1.25rem 0.5rem 0.5rem;
+}
+.showcase-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: hsl(var(--foreground));
+}
+.showcase-desc {
+    margin-top: 0.35rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    font-weight: 500;
+    color: hsl(var(--muted-foreground));
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .showcase-tilt {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+}
