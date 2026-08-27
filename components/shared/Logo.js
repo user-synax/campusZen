@@ -29,7 +29,7 @@ export default function Logo({
       href={href}
       className={cn("flex items-center gap-3 group transition-all duration-300", className)}
     >
-      <img src="./campusZen.png" alt="CampusZen Logo" className="w-10 h-10" />
+      <img src="/campusZen.png" alt="CampusZen Logo" className="w-10 h-10" />
       {showText && (
         <span className={cn(
           "font-black tracking-tight text-foreground transition-colors duration-300 group-hover:text-primary",

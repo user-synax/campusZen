@@ -118,7 +118,10 @@ export async function GET(request) {
     const authHeader = request.headers.get("authorization");
     const expectedToken = process.env.CRON_SECRET;
 
-    if (expectedToken && authHeader !== `Bearer ${expectedToken}`) {
+    // Fail closed: if CRON_SECRET is not configured, or the supplied bearer
+    // token does not match, reject. Previously the check was skipped entirely
+    // when CRON_SECRET was unset, allowing unauthenticated imports.
+    if (!expectedToken || authHeader !== `Bearer ${expectedToken}`) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
             status: 401,
         });

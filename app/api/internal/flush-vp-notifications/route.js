@@ -12,10 +12,10 @@ import { flushVPNotifications } from "@/lib/coins";
 export async function POST(request) {
     try {
         const secret = request.headers.get("x-cron-secret");
-        if (
-            process.env.CRON_SECRET &&
-            secret !== process.env.CRON_SECRET
-        ) {
+        // Fail closed: if CRON_SECRET is not configured, or the supplied secret
+        // does not match, reject. Previously the check was skipped entirely when
+        // CRON_SECRET was unset, leaving this maintenance endpoint open.
+        if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 

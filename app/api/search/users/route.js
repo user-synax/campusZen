@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
+import { getCurrentUser } from "@/lib/auth";
+import { isAdmin } from "@/lib/admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { sanitizeMongoInput, sanitizeUser } from "@/lib/sanitize";
 
@@ -14,6 +16,10 @@ export async function GET(request) {
             60 * 1000,
         );
         if (blocked) return rateLimitResponse;
+
+        // Identify the requester so we can decide whether to expose emails.
+        const currentUser = await getCurrentUser(request);
+        const requesterIsAdmin = currentUser ? isAdmin(currentUser) : false;
 
         const { searchParams } = new URL(request.url);
         let q = sanitizeMongoInput(searchParams.get("q") || "");
@@ -98,6 +104,8 @@ export async function GET(request) {
         // Clean user objects (ensure no sensitive data is returned)
         const cleanedUsers = users.map((user) => {
             const sanitized = sanitizeUser(user);
+            const isSelf =
+                currentUser && currentUser._id.toString() === user._id.toString();
             return {
                 ...sanitized,
                 followersCount: user.followers?.length || 0,
@@ -106,7 +114,9 @@ export async function GET(request) {
                 isVerified: user.isVerified || false,
                 verificationType: user.verificationType,
                 role: user.role,
-                email: user.email,
+                // Email is PII: only expose to the user themselves or an admin.
+                email:
+                    isSelf || requesterIsAdmin ? user.email : undefined,
             };
         });
 

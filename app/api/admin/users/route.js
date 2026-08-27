@@ -4,6 +4,7 @@ import User from '@/models/User'
 import Post from '@/models/Post'
 import { getCurrentUser } from '@/lib/auth'
 import { isAdmin } from '@/lib/admin'
+import { sanitizeMongoInput } from '@/lib/sanitize'
 
 export async function GET(request) {
   try {
@@ -28,11 +29,12 @@ export async function GET(request) {
     if (filter === 'admin') query.isAdmin = true
 
     if (search) {
+      const safeSearch = sanitizeMongoInput(search)
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { username: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { college: { $regex: search, $options: 'i' } }
+        { name: { $regex: safeSearch, $options: 'i' } },
+        { username: { $regex: safeSearch, $options: 'i' } },
+        { email: { $regex: safeSearch, $options: 'i' } },
+        { college: { $regex: safeSearch, $options: 'i' } }
       ]
     }
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
 import { getCurrentUser } from "@/lib/auth";
-import { sanitizeUser } from "@/lib/sanitize";
+import { sanitizeUser, sanitizeMongoInput } from "@/lib/sanitize";
 
 export async function GET(request) {
     try {
@@ -28,7 +28,9 @@ export async function GET(request) {
 
         // Search by username, name, or college
         if (query && query.trim()) {
-            const regex = { $regex: new RegExp(query.trim(), "i") };
+            // Escape regex metacharacters to prevent ReDoS / injection.
+            const safeQuery = sanitizeMongoInput(query.trim());
+            const regex = { $regex: new RegExp(safeQuery, "i") };
             filter.$or = [
                 { username: regex },
                 { name: regex },

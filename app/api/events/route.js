@@ -3,6 +3,7 @@ import connectDB from '@/lib/db';
 import Event from '@/models/Event';
 import { getCurrentUser } from '@/lib/auth';
 import { sanitizeString } from '@/utils/validators';
+import { sanitizeMongoInput } from '@/lib/sanitize';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { sanitizeText } from '@/lib/sanitize';
 import { withErrorHandler, APIError, UnauthorizedError, BadRequestError } from '@/lib/api-response';
@@ -22,7 +23,7 @@ export const GET = withErrorHandler(async (request) => {
     const query = { isActive: true };
 
     if (college) {
-      query.college = { $regex: college, $options: 'i' };
+      query.college = { $regex: sanitizeMongoInput(college), $options: 'i' };
     }
 
     if (filter === 'upcoming') {

@@ -6,6 +6,7 @@ import User from "@/models/User";
 import { getCurrentUser } from "@/lib/auth";
 import { isAdmin } from "@/lib/admin";
 import { validateObjectId } from "@/utils/validators";
+import { sanitizeMongoInput } from "@/lib/sanitize";
 
 /**
  * GET /api/admin/dms - Get all DM conversations (admin only)
@@ -30,11 +31,12 @@ export async function GET(request) {
         // If search is provided, find users matching search first
         let userIds = [];
         if (search) {
+            const safeSearch = sanitizeMongoInput(search)
             const users = await User.find({
                 $or: [
-                    { name: { $regex: search, $options: "i" } },
-                    { username: { $regex: search, $options: "i" } },
-                    { email: { $regex: search, $options: "i" } },
+                    { name: { $regex: safeSearch, $options: "i" } },
+                    { username: { $regex: safeSearch, $options: "i" } },
+                    { email: { $regex: safeSearch, $options: "i" } },
                 ],
             }).select("_id");
             userIds = users.map((u) => u._id);

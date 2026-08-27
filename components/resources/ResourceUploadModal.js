@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { toast } from 'sonner'
 import { ID, Permission, Role, Storage } from 'appwrite'
 import { createAppwriteClient } from '@/lib/appwrite/client'
+import useUser from '@/hooks/useUser'
 import { CATEGORY_CONFIG, formatFileSize } from '@/utils/resource-helpers'
 
 /**
@@ -55,6 +56,7 @@ export default function ResourceUploadModal({ open, onOpenChange, onSuccess }) {
   const [titleError, setTitleError] = useState('')
   const [categoryError, setCategoryError] = useState('')
   const [fileError, setFileError] = useState('')
+  const { user } = useUser()
 
   // ━━━ Appwrite Storage upload handled in handleUpload ━━━
 
@@ -125,12 +127,18 @@ export default function ResourceUploadModal({ open, onOpenChange, onSuccess }) {
       const storage = new Storage(client)
       const fileId = ID.unique()
 
-      // Direct client-side upload to Appwrite Storage (current session)
+      // Direct client-side upload to Appwrite Storage (current session).
+      // Public-read for browsing, but only the uploader can write, so the
+      // server can verify ownership in /api/resources.
+      const permissions = [Permission.read(Role.any())]
+      if (user?.appwriteUserId) {
+        permissions.push(Permission.write(Role.user(user.appwriteUserId)))
+      }
       await storage.createFile(
         process.env.NEXT_PUBLIC_APPWRITE_RESOURCES_BUCKET_ID,
         fileId,
         selectedFile,
-        [Permission.read(Role.any())],
+        permissions,
         (progress) => setUploadProgress(Math.min(progress.progress ?? 0, 90))
       )
 

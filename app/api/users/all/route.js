@@ -8,19 +8,23 @@ export async function GET(request) {
     try {
         await connectDB();
         const currentUser = await getCurrentUser(request);
+        // Require an authenticated session — this endpoint must not be public.
+        if (!currentUser) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
 
         const { searchParams } = new URL(request.url);
         const page = parseInt(searchParams.get("page")) || 1;
         const limit = Math.min(parseInt(searchParams.get("limit")) || 20, 50);
         const skip = (page - 1) * limit;
 
-        const query = currentUser ? { _id: { $ne: currentUser._id } } : {};
+        const query = { _id: { $ne: currentUser._id } };
 
         const [users, total] = await Promise.all([
             User.find(query)
                 .sort({ createdAt: -1 }) // Newest first
                 .select(
-                    "name username avatar college bio followers following isPro isVerified verificationType role email",
+                    "name username avatar college bio followers following isPro isVerified verificationType",
                 )
                 .skip(skip)
                 .limit(limit)
@@ -37,8 +41,6 @@ export async function GET(request) {
                 isPro: user.isPro || false,
                 isVerified: user.isVerified || false,
                 verificationType: user.verificationType,
-                role: user.role,
-                email: user.email,
             };
         });
 

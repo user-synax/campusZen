@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import connectDB from '@/lib/db'
 import Resource from '@/models/Resource'
 import { getCurrentUser } from '@/lib/auth'
+import { sanitizeMongoInput } from '@/lib/sanitize'
 
 /**
  * GET /api/resources/browse
@@ -42,8 +43,8 @@ export async function GET(request) {
     }
     
     if (college) {
-      // Case-insensitive regex search on college field
-      query.college = { $regex: college, $options: 'i' }
+      // Case-insensitive regex search on college field (regex-escaped)
+      query.college = { $regex: sanitizeMongoInput(college), $options: 'i' }
     }
     
     if (search && search.length >= 2) {

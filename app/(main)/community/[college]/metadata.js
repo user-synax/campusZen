@@ -2,21 +2,24 @@ import connectDB from '@/lib/db'
 import Post from '@/models/Post'
 import User from '@/models/User'
 import { formatCollegeName } from '@/utils/formatters'
+import { sanitizeMongoInput } from '@/lib/sanitize'
 
 export async function generateMetadata({ params }) {
   const collegeSlug = decodeURIComponent(params.college)
   const formattedName = formatCollegeName(collegeSlug)
+  // Escape regex metacharacters to prevent ReDoS from a crafted slug.
+  const safeSlug = sanitizeMongoInput(collegeSlug)
 
   try {
     await connectDB()
 
     const [postCount, memberCount] = await Promise.all([
       Post.countDocuments({
-        community: { $regex: collegeSlug, $options: 'i' },
+        community: { $regex: safeSlug, $options: 'i' },
         isDeleted: false
       }).catch(() => 0),
       User.countDocuments({
-        college: { $regex: collegeSlug, $options: 'i' }
+        college: { $regex: safeSlug, $options: 'i' }
       }).catch(() => 0)
     ])
 

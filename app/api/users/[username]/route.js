@@ -4,6 +4,7 @@ import User from "@/models/User";
 import Post from "@/models/Post";
 import { getCurrentUser } from "@/lib/auth";
 import { isFounder } from "@/lib/founder";
+import { isAdmin } from "@/lib/admin";
 import { sanitizeUser, sanitizeText } from "@/lib/sanitize";
 
 export async function GET(request, { params }) {
@@ -75,7 +76,11 @@ export async function GET(request, { params }) {
         const responseData = {
             ...sanitizeUser(userResult),
             role: userResult.role,
-            email: userResult.email,
+            // Email is PII: only expose it to the profile owner or an admin.
+            email:
+                currentUser && (isMe || isAdmin(currentUser))
+                    ? userResult.email
+                    : undefined,
             postCount,
             followersCount: userResult.followers?.length || 0,
             followingCount: userResult.following?.length || 0,
