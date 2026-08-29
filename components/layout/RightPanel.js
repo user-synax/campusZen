@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, Hash, Calendar, Users2, ChevronDown, ChevronRight } from "lucide-react";
+import { TrendingUp, Hash, Calendar, Users2, ChevronDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import FollowButton from "@/components/user/FollowButton";
 import useUser from "@/hooks/useUser";
@@ -40,7 +40,7 @@ function AccordionSection({ icon: Icon, title, storageKey, defaultOpen = false, 
     };
 
     return (
-        <>
+        <div className="right-panel-acc t-acc" data-open={open}>
             {/* Header row — acts as toggle */}
             <button
                 onClick={toggle}
@@ -53,21 +53,19 @@ function AccordionSection({ icon: Icon, title, storageKey, defaultOpen = false, 
                 </div>
                 <div className="flex items-center gap-2">
                     {rightElement}
-                    {open ? (
+                    <span className="t-acc-chevron inline-flex">
                         <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-foreground transition-colors duration-150 shrink-0" />
-                    ) : (
-                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-foreground transition-colors duration-150 shrink-0" />
-                    )}
+                    </span>
                 </div>
             </button>
 
-            {/* Content — only rendered when open */}
-            {open && (
-                <div className="px-4 pb-4">
-                    {children}
+            {/* Content — smooth grid-rows reveal */}
+            <div className="t-acc-panel">
+                <div className="t-acc-panel-inner">
+                    <div className="px-4 pb-4">{children}</div>
                 </div>
-            )}
-        </>
+            </div>
+        </div>
     );
 }
 
@@ -78,6 +76,12 @@ export default function RightPanel() {
     const [upcomingEvents, setUpcomingEvents] = useState([]);
     const [suggestions, setSuggestions] = useState([]);
     const [loading, setLoading] = useState(true);
+    const panelRef = useRef(null);
+
+    useEffect(() => {
+        const el = panelRef.current;
+        if (el) requestAnimationFrame(() => el.classList.add("is-shown"));
+    }, []);
 
     useEffect(() => {
         const CACHE_KEY = "cx_right_panel_data";
@@ -148,7 +152,9 @@ export default function RightPanel() {
     return (
         <aside className="hidden xl:block fixed right-0 top-0 h-screen w-87.5 py-4 px-3 overflow-y-auto custom-scrollbar">
             {/* Unified panel */}
-            <div className="card-chunky bg-card overflow-hidden">
+                <div className="card-chunky bg-card overflow-hidden">
+                <div className="t-stagger" ref={panelRef}>
+                <div className="t-stagger-line">
                 {/* ── Trending Communities — always expanded ── */}
                 <section className="p-4">
                     <div className="flex items-center justify-between mb-3.5">
@@ -404,6 +410,8 @@ export default function RightPanel() {
                         )}
                     </div>
                 </AccordionSection>
+                </div>
+                </div>
             </div>
 
             {/* Footer */}

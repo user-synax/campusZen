@@ -1373,6 +1373,7 @@
 
 /* Collapsible sections use the skill's grid-rows accordion; neutralise the
    default panel padding so the tighter sidebar spacing is preserved. */
-.sidebar-acc .t-acc-panel-inner {
+.sidebar-acc .t-acc-panel-inner,
+.right-panel-acc .t-acc-panel-inner {
     padding: 0;
 }
