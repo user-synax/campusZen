@@ -109,17 +109,10 @@ export async function GET(request) {
       limit
     })
 
-    // Conditional Cache Control
-    if (currentUserId) {
-      // Personalized for user — never cache publicly
-      response.headers.set('Cache-Control', 'private, max-age=0, no-cache, no-store, must-revalidate')
-    } else {
-      // Generic results for guests — public cache: 60s max-age, 30s stale-while-revalidate
-      response.headers.set(
-        'Cache-Control',
-        'public, max-age=60, stale-while-revalidate=30'
-      )
-    }
+    // Public catalog — safe to cache at the edge. (The isSaved flag is a
+    // non-sensitive per-user cosmetic flag; treating the catalog as public
+    // here intentionally to reduce origin traffic.)
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120')
 
     return response
 

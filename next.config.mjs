@@ -66,6 +66,69 @@ const nextConfig = {
                 source: "/api/(.*)",
                 headers: [{ key: "Cache-Control", value: "no-store" }],
             },
+            // ━━━ Additive edge-cache overrides ━━━
+            // These target specific public/shared GET routes to cut Vercel Fast
+            // Origin Transfer. Each is MORE SPECIFIC than the /api/(.*) blanket
+            // rule above, so it wins only for that exact path and leaves every
+            // other route on no-store. Non-GET methods at these paths are not
+            // cached by the CDN regardless of this header. (Per-route edits for
+            // users/[username], groups/[groupId], events/[eventId] live in their
+            // route handlers to avoid colliding with static sibling routes.)
+            {
+                source: "/api/communities",
+                headers: [{ key: "Cache-Control", value: "public, s-maxage=60, stale-while-revalidate=30" }],
+            },
+            {
+                source: "/api/groups/discover",
+                headers: [{ key: "Cache-Control", value: "public, s-maxage=30, stale-while-revalidate=60" }],
+            },
+            {
+                source: "/api/giphy/search",
+                headers: [{ key: "Cache-Control", value: "public, max-age=300, stale-while-revalidate=60" }],
+            },
+            {
+                source: "/api/giphy/trending",
+                headers: [{ key: "Cache-Control", value: "public, max-age=300, stale-while-revalidate=60" }],
+            },
+            {
+                source: "/api/founder/roadmap",
+                headers: [{ key: "Cache-Control", value: "public, max-age=300, stale-while-revalidate=60" }],
+            },
+            {
+                source: "/api/notifications/vapid-key",
+                headers: [{ key: "Cache-Control", value: "public, max-age=86400, immutable" }],
+            },
+            {
+                source: "/api/posts/trending",
+                headers: [{ key: "Cache-Control", value: "public, s-maxage=600, stale-while-revalidate=120" }],
+            },
+            {
+                source: "/api/shop",
+                headers: [
+                    { key: "Cache-Control", value: "public, max-age=60, stale-while-revalidate=300" },
+                    { key: "Vary", value: "Cookie" },
+                ],
+            },
+            {
+                source: "/api/users/:username/followers",
+                headers: [{ key: "Cache-Control", value: "public, max-age=60, stale-while-revalidate=300" }],
+            },
+            {
+                source: "/api/users/:username/following",
+                headers: [{ key: "Cache-Control", value: "public, max-age=60, stale-while-revalidate=300" }],
+            },
+            {
+                source: "/api/users/:username/connections",
+                headers: [{ key: "Cache-Control", value: "public, max-age=60, stale-while-revalidate=300" }],
+            },
+            {
+                source: "/api/users/:username/follow-counts",
+                headers: [{ key: "Cache-Control", value: "public, max-age=30, stale-while-revalidate=120" }],
+            },
+            {
+                source: "/api/clips/:clipId/comments",
+                headers: [{ key: "Cache-Control", value: "public, s-maxage=30, stale-while-revalidate=60" }],
+            },
         ];
     },
     async rewrites() {

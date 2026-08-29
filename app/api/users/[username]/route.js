@@ -94,7 +94,13 @@ export async function GET(request, { params }) {
             equippedItems,
         };
 
-        return NextResponse.json(responseData);
+        const response = NextResponse.json(responseData);
+        // Public profile data with per-user fields (email/isMe/isFollowing) —
+        // cache at the edge but vary by Cookie so authenticated and anonymous
+        // responses never collide.
+        response.headers.set("Cache-Control", "public, max-age=120, stale-while-revalidate=300");
+        response.headers.set("Vary", "Cookie");
+        return response;
     } catch (error) {
         console.error("[GET /api/users/username]", error);
         return NextResponse.json(

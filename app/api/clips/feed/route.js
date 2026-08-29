@@ -106,7 +106,7 @@ export async function GET(request) {
               ).toString("base64")
             : null;
 
-        return NextResponse.json({
+        const response = NextResponse.json({
             success: true,
             clips: processedClips,
             pagination: {
@@ -115,6 +115,13 @@ export async function GET(request) {
                 limit,
             },
         });
+        // Guest (unauthenticated) feed is fully public and not personalized,
+        // so it can be edge-cached. Authenticated responses carry per-user
+        // like/save/follow flags and must stay no-store (inherited blanket).
+        if (!currentUser) {
+            response.headers.set("Cache-Control", "public, s-maxage=15, stale-while-revalidate=60");
+        }
+        return response;
     } catch (error) {
         console.error("Clips feed error:", error);
         return NextResponse.json(

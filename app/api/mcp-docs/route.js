@@ -138,7 +138,7 @@ export async function POST(request) {
 export async function GET() {
     return new NextResponse("CampusZen Documentation MCP endpoint. Use POST for JSON-RPC.", {
         status: 405,
-        headers: { Allow: "POST", "Content-Type": "text/plain" },
+        headers: { Allow: "POST", "Content-Type": "text/plain", "Cache-Control": "public, max-age=3600" },
     });
 }
 

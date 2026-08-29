@@ -31,12 +31,14 @@ export async function GET(request, { params }) {
 
     const { rsvps, ...eventData } = event;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       ...eventData,
       rsvpCount,
       isFull,
       isPast
     });
+    response.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
+    return response;
   } catch (error) {
     console.error('Fetch event detail error:', error);
     return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
