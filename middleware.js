@@ -259,6 +259,50 @@ function addSecurityHeaders(response, request, includeCSP = true) {
     response.headers.set("Origin-Agent-Cluster", "?1");
 }
 
+// Build the connect-src allowlist, dynamically including whatever host the chat
+// backend (Socket.IO) is deployed on, so the socket connection is never blocked
+// by CSP. Falls back to a hardcoded Render URL for backward compatibility.
+function connectSrc() {
+    const base = [
+        "'self'",
+        "https://api.anthropic.com",
+        "https://api.dicebear.com",
+        "https://www.googleapis.com",
+        "https://accounts.google.com",
+        "https://oauth2.googleapis.com",
+        "https://*.uploadthing.com",
+        "https://*.ingest.uploadthing.com",
+        "https://cdn.jsdelivr.net",
+        "https://cdn.tldraw.com",
+        "https://*.tldraw.com",
+        "https://*.pusher.com",
+        "wss://*.pusher.com",
+        "blob:",
+        "data:",
+        "https://*.cloud.appwrite.io",
+        "https://*.livekit.cloud",
+        "wss://*.livekit.cloud",
+    ];
+    if (process.env.NODE_ENV !== "production") {
+        base.push("http://localhost:*", "ws://localhost:*");
+    }
+    const chat = process.env.NEXT_PUBLIC_CHAT_BACKEND_URL;
+    if (chat) {
+        try {
+            const u = new URL(chat);
+            const wsProto = u.protocol === "https:" ? "wss:" : "ws:";
+            base.push(`${u.protocol}//${u.host}`, `${wsProto}//${u.host}`);
+        } catch {
+            // ignore malformed URL
+        }
+    }
+    base.push(
+        "https://campuszen-chat.onrender.com",
+        "wss://campuszen-chat.onrender.com",
+    );
+    return base.join(" ");
+}
+
 function getDevelopmentCSP() {
     return [
         "default-src 'self'",
@@ -274,7 +318,7 @@ function getDevelopmentCSP() {
         // (whitelisted here) for consistency with the rest of the app.
         "media-src 'self' data: blob: https://*.cloud.appwrite.io https://utfs.io https://*.uploadthing.com https://*.ufs.sh https://*.livekit.cloud wss://*.livekit.cloud",
 
-        "connect-src 'self' https://api.anthropic.com https://api.dicebear.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://*.uploadthing.com https://*.ingest.uploadthing.com https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com https://*.pusher.com wss://*.pusher.com https://campuszen-chat.onrender.com wss://campuszen-chat.onrender.com blob: data: http://localhost:* ws://localhost:* https://*.cloud.appwrite.io https://*.livekit.cloud wss://*.livekit.cloud",
+        "connect-src " + connectSrc(),
 
         "font-src 'self' data: https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com",
 
@@ -311,7 +355,7 @@ function getProductionCSP() {
         // (whitelisted here) for consistency with the rest of the app.
         "media-src 'self' data: blob: https://*.cloud.appwrite.io https://utfs.io https://*.uploadthing.com https://*.ufs.sh https://*.livekit.cloud wss://*.livekit.cloud",
 
-        "connect-src 'self' https://api.anthropic.com https://api.dicebear.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://*.uploadthing.com https://*.ingest.uploadthing.com https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com https://*.pusher.com wss://*.pusher.com https://campuszen-chat.onrender.com wss://campuszen-chat.onrender.com blob: data: https://*.cloud.appwrite.io https://*.livekit.cloud wss://*.livekit.cloud",
+        "connect-src " + connectSrc(),
 
         "font-src 'self' data: https://cdn.jsdelivr.net https://cdn.tldraw.com https://*.tldraw.com",
 
