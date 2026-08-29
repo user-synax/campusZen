@@ -14,6 +14,7 @@ import useUser from "@/hooks/useUser";
 import { Skeleton } from "@/components/ui/skeleton";
 import { isAdmin } from "@/lib/admin";
 import { useTabData } from "@/hooks/useTabData";
+import { ensureChatSocket } from "@/lib/chat-socket";
 
 export default function ChatsPage() {
     const [activeTab, setActiveTab] = useState("dms");
@@ -21,6 +22,63 @@ export default function ChatsPage() {
     const [createOpen, setCreateOpen] = useState(false);
     const { user: currentUser } = useUser();
     const router = useRouter();
+
+    // Live online/offline status for DM conversations in the list. Driven by
+    // the same app-wide socket connection (see ChatSocketProvider).
+    const [onlineMap, setOnlineMap] = useState({});
+    useEffect(() => {
+        if (!currentUser) return;
+        const me = currentUser._id;
+        let active = true;
+        let cleanup = () => {};
+        ensureChatSocket()
+            .then((socket) => {
+                if (!active) return;
+                const onOnline = (data) => {
+                    if (!data?.user || data.user.id === me) return;
+                    if (data.conversationId)
+                        setOnlineMap((prev) => ({
+                            ...prev,
+                            [data.conversationId]: true,
+                        }));
+                };
+                const onOffline = (data) => {
+                    if (!data?.user || data.user.id === me) return;
+                    if (data.conversationId)
+                        setOnlineMap((prev) => ({
+                            ...prev,
+                            [data.conversationId]: false,
+                        }));
+                };
+                const onSnapshot = (data) => {
+                    if (data?.conversationId) {
+                        const isOnline = (data.online || []).some(
+                            (u) => u.id !== me,
+                        );
+                        setOnlineMap((prev) => ({
+                            ...prev,
+                            [data.conversationId]: isOnline,
+                        }));
+                    }
+                };
+                socket.on("presence:online", onOnline);
+                socket.on("presence:offline", onOffline);
+                socket.on("presence:snapshot", onSnapshot);
+                const request = () => socket.emit("presence:request");
+                if (socket.connected) request();
+                else socket.once("connect", request);
+                cleanup = () => {
+                    socket.off("presence:online", onOnline);
+                    socket.off("presence:offline", onOffline);
+                    socket.off("presence:snapshot", onSnapshot);
+                };
+            })
+            .catch(() => {});
+        return () => {
+            active = false;
+            cleanup();
+        };
+    }, [currentUser?._id]);
 
     const {
         data: groups,
@@ -188,6 +246,7 @@ export default function ChatsPage() {
                                 key={conv._id}
                                 conversation={conv}
                                 currentUserId={currentUser?._id}
+                                online={onlineMap[conv._id] || false}
                                 onClick={() =>
                                     router.push(`/chats/dm/${conv._id}`)
                                 }

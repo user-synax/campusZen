@@ -41,7 +41,8 @@ import {
     BookText
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
-import { useChatUnreadCount } from "@/hooks/useChatUnreadCount";
+import { useChatUnreadCount } from "@/context/ChatUnreadContext";
+import AnimatedCount from "@/components/ui/AnimatedCount";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -321,8 +322,8 @@ export default function Sidebar() {
                                 />
                                 {item.badge > 0 && (
                                     <span className="t-badge" data-open="true">
-                                        <span className="t-badge-dot min-w-3.75 h-3.75 bg-primary text-[9px] text-primary-foreground font-bold flex items-center justify-center rounded-full px-0.5 border-2 border-background">
-                                            {item.badge > 9 ? "9+" : item.badge}
+                                        <span className="t-badge-dot min-w-3.75 h-3.75 bg-primary text-[9px] text-primary-foreground font-bold flex items-center justify-center rounded-full px-1 border-2 border-background">
+                                            <AnimatedCount value={item.badge} max={9} />
                                         </span>
                                     </span>
                                 )}

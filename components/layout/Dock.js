@@ -5,7 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Sun, Moon, MoreHorizontal, Palette, Check } from "lucide-react";
 import { useTheme, PREMIUM_THEMES } from "@/context/ThemeContext";
-import { useChatUnreadCount } from "@/hooks/useChatUnreadCount";
+import { useChatUnreadCount } from "@/context/ChatUnreadContext";
+import AnimatedCount from "@/components/ui/AnimatedCount";
 import { useNotifications } from "@/hooks/useNotifications";
 import useUser from "@/hooks/useUser";
 import { isAdmin } from "@/lib/admin";
@@ -105,11 +106,13 @@ export default function Dock() {
                                     isActive ? "text-primary" : "",
                                 )}
                             />
-                            {item.badge > 0 && (
-                                <span className="absolute -top-1.5 -right-1.5 min-w-3.75 h-3.75 bg-primary text-[9px] text-primary-foreground font-bold flex items-center justify-center rounded-full px-0.5 border-2 border-background">
-                                    {item.badge > 9 ? "9+" : item.badge}
-                                </span>
-                            )}
+                                {item.badge > 0 && (
+                                    <span className="t-badge" data-open="true">
+                                        <span className="t-badge-dot min-w-3.75 h-3.75 bg-primary text-[9px] text-primary-foreground font-bold flex items-center justify-center rounded-full px-1 border-2 border-background">
+                                            <AnimatedCount value={item.badge} max={9} />
+                                        </span>
+                                    </span>
+                                )}
                         </div>
                     </Button>
                 </Link>

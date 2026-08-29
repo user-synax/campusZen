@@ -1,0 +1,22 @@
+{
+    "name": "campuszen-chat-backend",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "description": "Standalone Express + Socket.IO backend owning DM and Group chat for CampusZen. Deployed separately on Render. Replaces Pusher for chat only.",
+    "scripts": {
+        "dev": "node --watch src/index.js",
+        "start": "node src/index.js"
+    },
+    "dependencies": {
+        "cookie-parser": "^1.4.7",
+        "cors": "^2.8.5",
+        "dotenv": "^17.3.1",
+        "express": "^5.0.1",
+        "helmet": "^7.2.0",
+        "jsonwebtoken": "^9.0.3",
+        "mongoose": "^9.3.1",
+        "socket.io": "^4.8.1",
+        "zod": "^3.25.76"
+    }
+}

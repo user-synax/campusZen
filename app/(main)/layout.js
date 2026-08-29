@@ -19,6 +19,8 @@ import CustomCursor from "@/components/shared/FloatingCat";
 import CursorSelector from "@/components/shared/CursorSelector";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useTabTitle } from "@/hooks/useTabTitle";
+import ChatSocketProvider from "@/components/chat/ChatSocketProvider";
+import { ChatUnreadProvider } from "@/context/ChatUnreadContext";
 import { toast } from "sonner";
 import clientCache from "@/lib/client-cache";
 import { useCallStore } from "@/lib/store/callStore";
@@ -104,8 +106,10 @@ export default function MainLayout({ children }) {
 
     return (
         <NotificationProvider>
-            <CatProvider>
-                <TabTitleInitializer />
+                <CatProvider>
+                    <ChatSocketProvider />
+                    <TabTitleInitializer />
+                <ChatUnreadProvider>
                 <div
                     className={`flex min-h-screen bg-background text-foreground selection:bg-primary/20 overflow-hidden ${isWhiteboard ? "fixed inset-0" : ""}`}
                 >
@@ -152,6 +156,7 @@ export default function MainLayout({ children }) {
                     {/* Toast Notifications */}
                     <Toaster position="bottom-center" />
                 </div>
+                </ChatUnreadProvider>
             </CatProvider>
         </NotificationProvider>
     );

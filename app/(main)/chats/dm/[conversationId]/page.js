@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, use } from "react";
+import { useState, useCallback, useMemo, use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, ChevronUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import useUser from "@/hooks/useUser";
 import { useDMChat } from "@/hooks/useDMChat";
 import useChatRoom from "@/hooks/useChatRoom";
+import { ensureChatSocket } from "@/lib/chat-socket";
+import clientCache from "@/lib/client-cache";
 import MessageBubble from "@/components/chat/MessageBubble";
 import MessageInput from "@/components/chat/MessageInput";
 import UserAvatar from "@/components/user/UserAvatar";
@@ -25,19 +27,35 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
     // ━━━ Shared chat room logic ━━━
     const endpoints = useMemo(() => ({
         fetchInfo: `/api/dms/${conversationId}`,
-        fetchMessages: `/api/dms/${conversationId}/messages`,
+        fetchMessages: `/api/chat/history/dm/${conversationId}/messages`,
         markRead: `/api/dms/${conversationId}/read`,
     }), [conversationId]);
 
     const parseInfo = useCallback((data) => data.conversation, []);
 
+    // Send over the Socket.IO backend (see group page for the ack->Response wrap).
     const sendMessage = useCallback(
         async (body) => {
-            return fetch(`/api/dms/${conversationId}/messages`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body),
-            });
+            try {
+                const socket = await ensureChatSocket();
+                const ack = await new Promise((resolve) => {
+                    const t = setTimeout(
+                        () => resolve({ ok: false, error: "timeout" }),
+                        10000,
+                    );
+                    socket.emit(
+                        "message:send",
+                        { kind: "dm", id: conversationId, ...body },
+                        (resp) => {
+                            clearTimeout(t);
+                            resolve(resp || { ok: false });
+                        },
+                    );
+                });
+                return { ok: !!ack?.ok, json: async () => ack || {} };
+            } catch (err) {
+                return { ok: false, json: async () => ({ message: "Network error" }) };
+            }
         },
         [conversationId],
     );
@@ -82,13 +100,38 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
         );
     }, []);
 
-    useDMChat(conversationId, currentUser?._id, {
-        onNewMessage: room.onNewMessage,
+    // Emit a read receipt over the socket when this user views the conversation.
+    const markReadSocket = useCallback(async () => {
+        try {
+            const s = await ensureChatSocket();
+            s.emit("read:mark", { kind: "dm", id: conversationId });
+        } catch {
+            // best-effort
+        }
+    }, [conversationId]);
+
+    const onNewMessage = useCallback(
+        (message) => {
+            room.onNewMessage(message);
+            markReadSocket();
+        },
+        [room.onNewMessage, markReadSocket],
+    );
+
+    const { online } = useDMChat(conversationId, currentUser?._id, {
+        onNewMessage,
         onTypingStart,
         onTypingStop,
         onMessageDeleted,
         onReaction,
     });
+
+    // Invalidate the cached DM inbox so the unread badge reflects reads made in
+    // this conversation (useChatRoom marks the conversation read on open via the
+    // markRead endpoint, but the list cache isn't auto-invalidated).
+    useEffect(() => {
+        clientCache.delete(JSON.stringify(["tab", "chats-dms"]));
+    }, [conversationId]);
 
     // ━━━ DM-specific actions ━━━
     const handleReact = useCallback(
@@ -128,10 +171,10 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
     const handleTyping = useCallback(
         async (isTyping) => {
             try {
-                await fetch(`/api/dms/${conversationId}/typing`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ isTyping }),
+                const s = await ensureChatSocket();
+                s.emit(isTyping ? "typing:start" : "typing:stop", {
+                    kind: "dm",
+                    id: conversationId,
                 });
             } catch (err) {
                 console.error("Typing error:", err);
@@ -171,7 +214,12 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
                     >
                         <ArrowLeft className="w-5 h-5" />
                     </Button>
-                    <UserAvatar user={otherUser} size="sm" />
+                    <div className="relative">
+                        <UserAvatar user={otherUser} size="sm" />
+                        {online && (
+                            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 ring-2 ring-background" />
+                        )}
+                    </div>
                     <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm truncate">
                             {otherUser?.name || otherUser?.username}

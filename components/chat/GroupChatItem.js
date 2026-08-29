@@ -5,10 +5,12 @@ import Image from "next/image";
 import FormattedTime from "@/components/shared/FormattedTime";
 import { Phone } from "lucide-react";
 import { useCallStore } from "@/lib/store/callStore";
+import AnimatedCount from "@/components/ui/AnimatedCount";
 
 export default function GroupChatItem({ group, currentUserId, onClick }) {
     const callInfo = useCallStore((s) => s.calls?.[group._id]);
     const liveCount = callInfo?.active ? callInfo.participantCount : 0;
+    const hasUnread = group.unreadCount > 0;
 
     return (
         <div
@@ -49,7 +51,13 @@ export default function GroupChatItem({ group, currentUserId, onClick }) {
                 </div>
 
                 <div className="flex items-center justify-between mt-0.5">
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p
+                        className={`text-xs truncate transition-colors ${
+                            hasUnread
+                                ? "text-foreground font-medium"
+                                : "text-muted-foreground"
+                        }`}
+                    >
                         {group.lastMessage ? (
                             group.lastMessage.type === "system" ? (
                                 <span className="italic">
@@ -64,15 +72,16 @@ export default function GroupChatItem({ group, currentUserId, onClick }) {
                     </p>
 
                     {/* Unread badge */}
-                    {group.unreadCount > 0 && (
+                    {hasUnread && (
                         <div
                             className="shrink-0 ml-2 w-5 h-5 rounded-full bg-primary 
                             flex items-center justify-center"
                         >
                             <span className="text-[10px] font-bold text-primary-foreground">
-                                {group.unreadCount > 99
-                                    ? "99"
-                                    : group.unreadCount}
+                                <AnimatedCount
+                                    value={group.unreadCount}
+                                    max={99}
+                                />
                             </span>
                         </div>
                     )}

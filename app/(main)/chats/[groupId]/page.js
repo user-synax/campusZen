@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import useUser from "@/hooks/useUser";
 import { useGroupChat } from "@/hooks/useGroupChat";
 import { getPusherClient } from "@/lib/pusher-client";
+import { ensureChatSocket } from "@/lib/chat-socket";
 import useChatRoom from "@/hooks/useChatRoom";
 import MessageBubble from "@/components/chat/MessageBubble";
 import MessageInput from "@/components/chat/MessageInput";
@@ -28,19 +29,36 @@ export default function ChatRoomPage({ params: paramsPromise }) {
     // ━━━ Shared chat room logic ━━━
     const endpoints = useMemo(() => ({
         fetchInfo: `/api/groups/${groupId}`,
-        fetchMessages: `/api/groups/${groupId}/messages`,
+        fetchMessages: `/api/chat/history/group/${groupId}/messages`,
         markRead: `/api/groups/${groupId}/read`,
     }), [groupId]);
 
     const parseInfo = useCallback((data) => data, []);
 
+    // Send over the Socket.IO backend. The server acks with { ok, message },
+    // wrapped here to match useChatRoom's expected fetch-like Response shape.
     const sendMessage = useCallback(
         async (body) => {
-            return fetch(`/api/groups/${groupId}/messages`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body),
-            });
+            try {
+                const socket = await ensureChatSocket();
+                const ack = await new Promise((resolve) => {
+                    const t = setTimeout(
+                        () => resolve({ ok: false, error: "timeout" }),
+                        10000,
+                    );
+                    socket.emit(
+                        "message:send",
+                        { kind: "group", id: groupId, ...body },
+                        (resp) => {
+                            clearTimeout(t);
+                            resolve(resp || { ok: false });
+                        },
+                    );
+                });
+                return { ok: !!ack?.ok, json: async () => ack || {} };
+            } catch (err) {
+                return { ok: false, json: async () => ({ message: "Network error" }) };
+            }
         },
         [groupId],
     );
@@ -134,8 +152,26 @@ export default function ChatRoomPage({ params: paramsPromise }) {
             .catch(() => {});
     }, [groupId]);
 
+    // Emit a read receipt over the socket when this user views the conversation.
+    const markReadSocket = useCallback(async () => {
+        try {
+            const s = await ensureChatSocket();
+            s.emit("read:mark", { kind: "group", id: groupId });
+        } catch {
+            // best-effort
+        }
+    }, [groupId]);
+
+    const onNewMessage = useCallback(
+        (message) => {
+            room.onNewMessage(message);
+            markReadSocket();
+        },
+        [room.onNewMessage, markReadSocket],
+    );
+
     const { onlineMembers } = useGroupChat(groupId, {
-        onNewMessage: room.onNewMessage,
+        onNewMessage,
         onMessageDeleted,
         onTypingStart,
         onTypingStop,
@@ -237,12 +273,16 @@ export default function ChatRoomPage({ params: paramsPromise }) {
     );
 
     const handleTyping = useCallback(
-        (isTyping) => {
-            fetch(`/api/groups/${groupId}/typing`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ isTyping }),
-            }).catch(() => {});
+        async (isTyping) => {
+            try {
+                const s = await ensureChatSocket();
+                s.emit(isTyping ? "typing:start" : "typing:stop", {
+                    kind: "group",
+                    id: groupId,
+                });
+            } catch {
+                // best-effort
+            }
         },
         [groupId],
     );

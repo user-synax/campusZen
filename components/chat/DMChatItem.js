@@ -2,9 +2,17 @@
 
 import UserAvatar from "@/components/user/UserAvatar";
 import FormattedTime from "@/components/shared/FormattedTime";
+import AnimatedCount from "@/components/ui/AnimatedCount";
 
-export default function DMChatItem({ conversation, currentUserId, onClick }) {
+export default function DMChatItem({
+    conversation,
+    currentUserId,
+    online,
+    onClick,
+}) {
     const otherUser = conversation.otherParticipant;
+    const isOnline = !!online;
+    const hasUnread = conversation.unreadCount > 0;
 
     return (
         <div
@@ -14,6 +22,12 @@ export default function DMChatItem({ conversation, currentUserId, onClick }) {
         >
             <div className="relative shrink-0">
                 <UserAvatar user={otherUser} size="md" />
+                <span
+                    className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-background ${
+                        isOnline ? "bg-green-500" : "bg-muted-foreground/40"
+                    }`}
+                    title={isOnline ? "Online" : "Offline"}
+                />
             </div>
 
             <div className="flex-1 min-w-0">
@@ -31,7 +45,13 @@ export default function DMChatItem({ conversation, currentUserId, onClick }) {
                 </div>
 
                 <div className="flex items-center justify-between mt-0.5">
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p
+                        className={`text-xs truncate transition-colors ${
+                            hasUnread
+                                ? "text-foreground font-medium"
+                                : "text-muted-foreground"
+                        }`}
+                    >
                         {conversation.lastMessage ? (
                             conversation.lastMessage.type === "system" ? (
                                 <span className="italic">
@@ -45,12 +65,13 @@ export default function DMChatItem({ conversation, currentUserId, onClick }) {
                         )}
                     </p>
 
-                    {conversation.unreadCount > 0 && (
+                    {hasUnread && (
                         <div className="shrink-0 ml-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
                             <span className="text-[10px] font-bold text-primary-foreground">
-                                {conversation.unreadCount > 99
-                                    ? "99"
-                                    : conversation.unreadCount}
+                                <AnimatedCount
+                                    value={conversation.unreadCount}
+                                    max={99}
+                                />
                             </span>
                         </div>
                     )}

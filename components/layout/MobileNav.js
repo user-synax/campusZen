@@ -58,7 +58,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import useUser from "@/hooks/useUser";
 import { useNotifications } from "@/hooks/useNotifications";
-import { useChatUnreadCount } from "@/hooks/useChatUnreadCount";
+import { useChatUnreadCount } from "@/context/ChatUnreadContext";
+import AnimatedCount from "@/components/ui/AnimatedCount";
 import { useTheme, PREMIUM_THEMES } from "@/context/ThemeContext";
 import CreatePostDialog from "@/components/post/CreatePostDialog";
 import Logo from "@/components/shared/Logo";
@@ -185,8 +186,10 @@ export default function MobileNav() {
                             >
                                 <Icon className="w-6 h-6" />
                                 {item.badge > 0 && (
-                                    <span className="absolute top-2 right-2 bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border-2 border-background">
-                                        {item.badge > 99 ? "99+" : item.badge}
+                                    <span className="t-badge" data-open="true">
+                                        <span className="t-badge-dot bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border-2 border-background">
+                                            <AnimatedCount value={item.badge} max={99} />
+                                        </span>
                                     </span>
                                 )}
                             </Button>
