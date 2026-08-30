@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import UserAvatar from "@/components/user/UserAvatar";
 import PollDisplay from "@/components/post/PollDisplay";
 import CommentItem from "@/components/post/CommentItem";
-import LikeButton from "./LikeButton";
+import { LikeButton } from "@/components/spectrumui/like-button";
 import ContentBlockRenderer from "./ContentBlockRenderer";
 import { renderContentWithMentions, extractUrls } from "@/utils/hashtags";
 import UserMention from "@/components/shared/UserMention";
@@ -436,10 +436,10 @@ export default function PostDetailClient({ postId }) {
 
                     <div className="flex items-center justify-around">
                         <LikeButton
-                            postId={postId}
-                            initialLiked={isLiked}
-                            initialCount={likesCount}
-                            onLike={handleLike}
+                            liked={isLiked}
+                            count={Math.max(0, likesCount - (isLiked ? 1 : 0))}
+                            onLikedChange={handleLike}
+                            size="md"
                         />
 
                         <Button

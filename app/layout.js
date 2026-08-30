@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import SchemaMarkup from "@/components/shared/SchemaMarkup";
 import WebMCP from "@/components/shared/WebMCP";
+import { FeedbackWidgetMount } from "@/components/motion/FeedbackWidgetMount";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { LayoutModeProvider } from "@/context/LayoutModeContext";
 
@@ -154,6 +155,7 @@ export default function RootLayout({ children }) {
                         <SchemaMarkup />
                         <WebMCP />
                         {children}
+                        <FeedbackWidgetMount />
                         <Analytics />
                         <SpeedInsights />
                     </LayoutModeProvider>

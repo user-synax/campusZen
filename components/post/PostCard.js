@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import dynamic from 'next/dynamic'
 import UserAvatar from "@/components/user/UserAvatar"
-import LikeButton from './LikeButton'
+import { LikeButton } from '@/components/spectrumui/like-button'
 import PostContent from './PostContent'
 import PostOptionsMenu from './PostOptionsMenu'
 import ShareButton from './ShareButton'
@@ -126,10 +126,10 @@ const PostCard = memo(function PostCard({ post, currentUserId, currentUser, onDe
           <div className="flex items-center justify-between mt-3 text-muted-foreground">
             <div className="flex items-center gap-4 sm:gap-6">
               <LikeButton
-                postId={post._id}
-                initialLiked={post._isLiked}
-                initialCount={post.likesCount || 0}
-                onLike={onLike}
+                liked={post._isLiked}
+                count={Math.max(0, (post.likesCount || 0) - (post._isLiked ? 1 : 0))}
+                onLikedChange={() => onLike?.(post._id)}
+                size="sm"
               />
 
               <button 
