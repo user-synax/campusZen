@@ -3,7 +3,7 @@ import connectDB from '@/lib/db'
 import User from '@/models/User'
 import { getCurrentUser } from '@/lib/auth'
 import { getAppwriteAdminStorage, getFileViewUrlString, getUserMediaBucketId, toInputFile } from '@/lib/appwrite'
-import { ID, Permission, Role } from 'appwrite'
+import { ID, Permission, Role } from 'node-appwrite'
 import { verifyImageBlob } from '@/lib/file-validation'
 
 export async function POST(request) {

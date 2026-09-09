@@ -3,7 +3,7 @@ import connectDB from '@/lib/db'
 import User from '@/models/User'
 import { getCurrentUser } from '@/lib/auth'
 import { getAppwriteAdminStorage, getFileViewUrlString, getUserMediaBucketId, toInputFile } from '@/lib/appwrite'
-import { ID, Permission, Role } from 'appwrite'
+import { ID, Permission, Role } from 'node-appwrite'
 import { verifyImageBlob } from '@/lib/file-validation'
 
 export async function POST(request) {
@@ -36,13 +36,25 @@ export async function POST(request) {
       return NextResponse.json({ message: 'File content is not a valid image' }, { status: 400 })
     }
 
-    const bucketId = getUserMediaBucketId()
-    const storage = getAppwriteAdminStorage()
+    let bucketId
+    try {
+      bucketId = getUserMediaBucketId()
+    } catch (envError) {
+      console.error('Missing bucket env:', envError.message)
+      return NextResponse.json({ message: 'Storage not configured' }, { status: 500 })
+    }
+    let storage
+    try {
+      storage = getAppwriteAdminStorage()
+    } catch (envError) {
+      console.error('Appwrite admin client error:', envError.message)
+      return NextResponse.json({ message: 'Storage not configured' }, { status: 500 })
+    }
     const fileId = ID.unique()
     const permissions = [
       Permission.read(Role.any()),
-      Permission.update(Role.user(currentUser._id)),
-      Permission.delete(Role.user(currentUser._id))
+      Permission.update(Role.user(String(currentUser._id))),
+      Permission.delete(Role.user(String(currentUser._id)))
     ]
 
     let uploadedFile
@@ -56,8 +68,10 @@ export async function POST(request) {
         permissions
       )
     } catch (uploadError) {
-      console.error('Appwrite upload error:', uploadError)
-      return NextResponse.json({ message: 'Upload failed, please try again' }, { status: 500 })
+      console.error('Appwrite upload error:', uploadError?.message || uploadError, uploadError?.stack)
+      // Surface Appwrite response details if available
+      const details = uploadError?.response?.message || uploadError?.message || 'Upload failed'
+      return NextResponse.json({ message: details }, { status: 500 })
     }
 
     const avatarUrl = getFileViewUrlString(uploadedFile.$id, bucketId)
@@ -80,8 +94,8 @@ export async function POST(request) {
       avatarUrl 
     })
   } catch (error) {
-    console.error('Avatar upload route error:', error)
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 })
+    console.error('Avatar upload route error:', error?.message || error, error?.stack)
+    return NextResponse.json({ message: error?.message || 'Internal Server Error' }, { status: 500 })
   }
 }
 

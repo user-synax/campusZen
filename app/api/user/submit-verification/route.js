@@ -7,7 +7,7 @@ import {
     getUserMediaBucketId,
     toInputFile,
 } from "@/lib/appwrite";
-import { ID, Permission, Role } from "appwrite";
+import { ID, Permission, Role } from "node-appwrite";
 import { verifyIdCardBlob } from "@/lib/file-validation";
 import { getTransporter } from "@/lib/mailer";
 import {
