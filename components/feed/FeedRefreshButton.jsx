@@ -4,11 +4,9 @@ import { RefreshCw } from "lucide-react";
 import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { useLayoutMode } from "@/context/LayoutModeContext";
 
 export default function FeedRefreshButton() {
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const { layoutMode } = useLayoutMode();
 
     const handleClick = useCallback(async () => {
         if (isRefreshing) return;
@@ -45,10 +43,8 @@ export default function FeedRefreshButton() {
     return (
         <div
             className={cn(
-                layoutMode === "dock"
-                    ? "fixed bottom-6 right-4 z-50 max-md:bottom-20 max-md:left-1/2 max-md:-translate-x-1/2 max-md:right-auto"
-                    : "fixed bottom-20 sm:bottom-8 left-1/2 -translate-x-1/2 z-50",
-                "transition-all duration-300 ease-out",
+                "fixed bottom-20 sm:bottom-8 left-1/2 -translate-x-1/2 z-50",
+                "transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)]",
             )}
         >
             <button

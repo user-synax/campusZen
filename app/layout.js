@@ -5,7 +5,6 @@ import SchemaMarkup from "@/components/shared/SchemaMarkup";
 import WebMCP from "@/components/shared/WebMCP";
 import { FeedbackWidgetMount } from "@/components/motion/FeedbackWidgetMount";
 import { ThemeProvider } from "@/context/ThemeContext";
-import { LayoutModeProvider } from "@/context/LayoutModeContext";
 
 export const metadata = {
     metadataBase: new URL("https://campuszen.tech"),
@@ -151,14 +150,12 @@ export default function RootLayout({ children }) {
             </head>
             <body suppressHydrationWarning>
                 <ThemeProvider>
-                    <LayoutModeProvider>
-                        <SchemaMarkup />
-                        <WebMCP />
-                        {children}
-                        <FeedbackWidgetMount />
-                        <Analytics />
-                        <SpeedInsights />
-                    </LayoutModeProvider>
+                    <SchemaMarkup />
+                    <WebMCP />
+                    {children}
+                    <FeedbackWidgetMount />
+                    <Analytics />
+                    <SpeedInsights />
                 </ThemeProvider>
             </body>
         </html>

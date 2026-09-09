@@ -3,11 +3,9 @@
 import { useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
-import Dock from "@/components/layout/Dock";
 import RightPanel from "@/components/layout/RightPanel";
 import MobileNav from "@/components/layout/MobileNav";
 import MobileFAB from "@/components/layout/MobileFAB";
-import { useLayoutMode } from "@/context/LayoutModeContext";
 import FeedRefreshButton from "@/components/feed/FeedRefreshButton";
 import { Toaster } from "@/components/ui/sonner";
 import VerificationBanner from "@/components/shared/VerificationBanner";
@@ -126,9 +124,6 @@ export default function MainLayout({ children }) {
     // Check if we are on whiteboard (full screen mode)
     const isWhiteboard = pathname === "/whiteboard";
 
-    // Read chosen navigation mode (sidebar | dock), persisted via localStorage
-    const { layoutMode } = useLayoutMode();
-
     return (
         <NotificationProvider>
                 <CatProvider>
@@ -139,14 +134,11 @@ export default function MainLayout({ children }) {
                     className={`flex min-h-screen bg-background text-foreground selection:bg-primary/20 overflow-hidden ${isWhiteboard ? "fixed inset-0" : ""}`}
                 >
                     {/* Fixed Left Sidebar - Hide for whiteboard */}
-                    {!isWhiteboard && layoutMode === "sidebar" && <Sidebar />}
-
-                    {/* Floating Bottom Dock (alternative nav mode) - Hide for whiteboard */}
-                    {!isWhiteboard && layoutMode === "dock" && <Dock />}
+                    {!isWhiteboard && <Sidebar />}
 
                     {/* Main Content Area — small layout */}
                     <main
-                        className={`flex-1 flex flex-col ${isWhiteboard ? "m-0 w-screen h-screen" : layoutMode === "dock" ? "md:ml-0 lg:ml-0" : "md:ml-[68px] lg:ml-[260px]"} ${isStudyRoom || isWhiteboard ? "" : "xl:mr-[340px]"} ${isChatRoom ? "pb-0 h-[100dvh] overflow-hidden" : layoutMode === "dock" ? "pb-20 md:pb-28 min-h-screen" : "pb-20 min-h-screen md:pb-0"} overflow-x-hidden`}
+                        className={`flex-1 flex flex-col ${isWhiteboard ? "m-0 w-screen h-screen" : "md:ml-[68px] lg:ml-[260px]"} ${isStudyRoom || isWhiteboard ? "" : "xl:mr-[340px]"} ${isChatRoom ? "pb-0 h-[100dvh] overflow-hidden" : "pb-20 min-h-screen md:pb-0"} overflow-x-hidden`}
                     >
                         {/* Broadcast banner — site-wide announcement */}
                         {/* Verification prompt for unverified students */}

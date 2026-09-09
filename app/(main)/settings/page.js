@@ -2,17 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { 
-  ArrowLeft, 
-  Bell, 
-  Lock, 
-  Eye, 
+import {
+  ArrowLeft,
+  Bell,
+  Lock,
+  Eye,
   EyeOff,
-  User, 
-  Shield, 
+  User,
   ShieldCheck,
-  Smartphone, 
-  LogOut, 
+  Smartphone,
+  LogOut,
   ChevronRight,
   Loader2,
   CheckCircle2,
@@ -26,20 +25,12 @@ import {
   RefreshCw,
   Monitor,
   Tablet,
-  AlertOctagon,
-  Laptop
 } from 'lucide-react'
 import { Button } from "@/components/ui/button"
-import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import useUser from "@/hooks/useUser"
-import { useLayoutMode } from "@/context/LayoutModeContext"
-import { cn } from "@/lib/utils"
 import PushSettings from '@/components/notifications/PushSettings'
-
-import ConfirmDeleteModal from '@/components/chat/ConfirmDeleteModal'
 import EditProfileDrawer from '@/components/user/EditProfileDrawer'
-
 import {
   Sheet,
   SheetContent,
@@ -49,7 +40,6 @@ import {
 } from "@/components/ui/sheet"
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -64,12 +54,10 @@ import { Progress } from "@/components/ui/progress"
 export default function SettingsPage() {
   const router = useRouter()
   const { user, loading: userLoading, refetch: refetchUser } = useUser()
-  const { layoutMode, setLayoutMode } = useLayoutMode()
-
-  const [saving, setSaving] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const [editDrawerOpen, setEditDrawerOpen] = useState(false)
 
-  // ── Feature 1: Change Password State ──
+  // ── Change Password ──
   const [changePasswordOpen, setChangePasswordOpen] = useState(false)
   const [passLoading, setPassLoading] = useState(false)
   const [showOldPass, setShowOldPass] = useState(false)
@@ -77,33 +65,30 @@ export default function SettingsPage() {
   const [showConfirmPass, setShowConfirmPass] = useState(false)
   const [passwordForm, setPasswordForm] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' })
 
-  // ── Feature 2: Change Email State ──
+  // ── Change Email ──
   const [changeEmailOpen, setChangeEmailOpen] = useState(false)
   const [emailLoading, setEmailLoading] = useState(false)
-  const [emailStep, setEmailStep] = useState(1) // 1: Email, 2: OTP
+  const [emailStep, setEmailStep] = useState(1)
   const [emailForm, setEmailForm] = useState({ newEmail: '', otp: '' })
   const [emailCountdown, setEmailCountdown] = useState(0)
 
-  // ── Feature 3: Delete Account State ──
+  // ── Delete Account ──
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
-  const [deleteStep, setDeleteStep] = useState(1) // 1: Warning, 2: OTP
+  const [deleteStep, setDeleteStep] = useState(1)
   const [deleteOtp, setDeleteOtp] = useState('')
   const [deleteCountdown, setDeleteCountdown] = useState(0)
-  
-  // Local state for toggles (Only keeping features that can be implemented now)
-  const [settings, setSettings] = useState({
-    pushNotifications: true,
-    privateProfile: false,
-    showOnlineStatus: true,
-  })
 
-  // Login history state
+  // Login history
   const [loginHistory, setLoginHistory] = useState([])
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [loggingOutAll, setLoggingOutAll] = useState(false)
 
-  // Fetch login history
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setMounted(true))
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
   useEffect(() => {
     const fetchHistory = async () => {
       try {
@@ -138,24 +123,18 @@ export default function SettingsPage() {
     }
   }
 
-  // ── Countdown Timer Logic ──
   useEffect(() => {
     let timer
-    if (emailCountdown > 0) {
-      timer = setInterval(() => setEmailCountdown(prev => prev - 1), 1000)
-    }
+    if (emailCountdown > 0) timer = setInterval(() => setEmailCountdown(prev => prev - 1), 1000)
     return () => clearInterval(timer)
   }, [emailCountdown])
 
   useEffect(() => {
     let timer
-    if (deleteCountdown > 0) {
-      timer = setInterval(() => setDeleteCountdown(prev => prev - 1), 1000)
-    }
+    if (deleteCountdown > 0) timer = setInterval(() => setDeleteCountdown(prev => prev - 1), 1000)
     return () => clearInterval(timer)
   }, [deleteCountdown])
 
-  // ── Password Strength / Validation Logic ──
   const passwordConditions = {
     length: passwordForm.newPassword.length >= 8,
     uppercase: /[A-Z]/.test(passwordForm.newPassword),
@@ -170,7 +149,6 @@ export default function SettingsPage() {
     return { label: 'Weak', color: 'bg-red-500', value: 33 }
   }
 
-  // ── Shared OTP Request Logic ──
   const requestOtp = async (email, purpose) => {
     try {
       const res = await fetch('/api/auth/send-otp', {
@@ -180,7 +158,6 @@ export default function SettingsPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error?.message || 'Failed to send OTP')
-      
       toast.success('OTP sent to your email')
       return true
     } catch (error) {
@@ -189,29 +166,19 @@ export default function SettingsPage() {
     }
   }
 
-  // ── Feature 1: Change Password Handler ──
   const handlePasswordChange = async (e) => {
     e.preventDefault()
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      return toast.error("Passwords don't match")
-    }
-    if (!Object.values(passwordConditions).every(Boolean)) {
-      return toast.error("Please meet all password requirements")
-    }
-
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) return toast.error("Passwords don't match")
+    if (!Object.values(passwordConditions).every(Boolean)) return toast.error("Please meet all password requirements")
     try {
       setPassLoading(true)
       const res = await fetch('/api/users/change-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          oldPassword: passwordForm.oldPassword, 
-          newPassword: passwordForm.newPassword 
-        })
+        body: JSON.stringify({ oldPassword: passwordForm.oldPassword, newPassword: passwordForm.newPassword })
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error?.message || 'Failed to change password')
-      
       toast.success("Password updated successfully")
       setChangePasswordOpen(false)
       setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' })
@@ -222,23 +189,16 @@ export default function SettingsPage() {
     }
   }
 
-  // ── Feature 2: Change Email Handlers ──
   const handleSendEmailOtp = async () => {
-    if (!emailForm.newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailForm.newEmail)) {
-      return toast.error("Invalid email address")
-    }
+    if (!emailForm.newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailForm.newEmail)) return toast.error("Invalid email address")
     setEmailLoading(true)
     const success = await requestOtp(emailForm.newEmail, 'email_change')
     setEmailLoading(false)
-    if (success) {
-      setEmailStep(2)
-      setEmailCountdown(60)
-    }
+    if (success) { setEmailStep(2); setEmailCountdown(60) }
   }
 
   const handleVerifyEmail = async () => {
     if (emailForm.otp.length !== 6) return toast.error("Enter a 6-digit OTP")
-    
     try {
       setEmailLoading(true)
       const res = await fetch('/api/users/change-email', {
@@ -248,7 +208,6 @@ export default function SettingsPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error?.message || 'Verification failed')
-      
       toast.success("Email updated successfully")
       setChangeEmailOpen(false)
       setEmailForm({ newEmail: '', otp: '' })
@@ -261,20 +220,15 @@ export default function SettingsPage() {
     }
   }
 
-  // ── Feature 3: Delete Account Handlers ──
   const handleSendDeleteOtp = async () => {
     setDeleteLoading(true)
     const success = await requestOtp(user?.email, 'account_delete')
     setDeleteLoading(false)
-    if (success) {
-      setDeleteStep(2)
-      setDeleteCountdown(60)
-    }
+    if (success) { setDeleteStep(2); setDeleteCountdown(60) }
   }
 
   const handleFinalDelete = async () => {
     if (deleteOtp.length !== 6) return toast.error("Enter a 6-digit OTP")
-    
     try {
       setDeleteLoading(true)
       const res = await fetch('/api/users/delete-account', {
@@ -284,9 +238,7 @@ export default function SettingsPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error?.message || 'Deletion failed')
-      
       toast.success("Account permanently deleted")
-      // Force redirect to goodbye page
       window.location.href = '/goodbye'
     } catch (error) {
       toast.error(error.message)
@@ -294,51 +246,9 @@ export default function SettingsPage() {
     }
   }
 
-  useEffect(() => {
-    if (user?.settings) {
-      // Filter out any dummy settings that might be in DB
-      const activeSettings = {
-        pushNotifications: user.settings.pushNotifications ?? true,
-        privateProfile: user.settings.privateProfile ?? false,
-        showOnlineStatus: user.settings.showOnlineStatus ?? true,
-      }
-      setSettings(activeSettings)
-    }
-  }, [user])
-
-  const handleEditSave = (updatedUser) => {
-    // refetchUser will update the global state and our local user object
+  const handleEditSave = () => {
     refetchUser()
     toast.success("Profile updated successfully")
-  }
-
-  const handleToggle = async (key) => {
-    const newVal = !settings[key]
-    setSettings(prev => ({ ...prev, [key]: newVal }))
-    
-    try {
-      setSaving(true)
-      const res = await fetch('/api/users/settings', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ settings: { ...settings, [key]: newVal } })
-      })
-      
-      if (!res.ok) {
-        // Rollback on failure
-        setSettings(prev => ({ ...prev, [key]: !newVal }))
-        toast.error("Failed to update setting")
-      } else {
-        toast.success("Settings updated", {
-          icon: <CheckCircle2 className="w-4 h-4 text-green-500" />
-        })
-      }
-    } catch (error) {
-      setSettings(prev => ({ ...prev, [key]: !newVal }))
-      toast.error("Network error")
-    } finally {
-      setSaving(false)
-    }
   }
 
   const handleLogout = async () => {
@@ -352,528 +262,437 @@ export default function SettingsPage() {
 
   if (userLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-64px)] gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Loading settings...</p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 bg-[#090909]">
+        <Loader2 className="w-6 h-6 animate-spin text-white" style={{ animationDuration: '1000ms', animationTimingFunction: 'linear' }} />
+        <p className="text-[13px] font-medium tracking-tight text-[#999]">Loading settings…</p>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] bg-background max-w-2xl mx-auto w-full">
-      
-      {/* Header */}
-      <div className="sticky top-0 bg-background/80 backdrop-blur border-b border-border z-10">
-        <div className="flex items-center gap-3 px-4 py-4">
-          <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <h1 className="text-xl font-bold">Settings</h1>
+    <div className="min-h-screen bg-[#090909] flex flex-col max-w-[640px] mx-auto w-full">
+      {/* ── Header — Framer top-nav 56px, hairline, blur ── */}
+      <div className="sticky top-0 z-10 bg-[#090909]/80 backdrop-blur-xl border-b border-[#1a1a1a]">
+        <div className="flex items-center gap-3 px-4 sm:px-6 h-14">
+          <button
+            onClick={() => router.back()}
+            aria-label="Go back"
+            className="w-9 h-9 rounded-full bg-[#141414] border border-[#262626] flex items-center justify-center text-white hover:bg-[#1c1c1c] hover:border-[#2a2a2a] active:scale-[0.97] transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] hover:cursor-pointer shrink-0"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div className="min-w-0">
+            <h1 className="text-[22px] font-bold tracking-[-0.8px] leading-none text-white">Settings</h1>
+            <p className="text-[11px] font-medium tracking-wide text-[#999] mt-0.5">Manage your account and preferences</p>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-8 custom-scrollbar">
-        
-        {/* Account Section */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 text-primary">
-            <User className="w-5 h-5" />
-            <h2 className="font-bold uppercase tracking-wider text-xs">Account</h2>
+      {/* ── Content — t-stagger entrance, 40ms per line, total <300ms ── */}
+      <div className={`flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-6 custom-scrollbar t-stagger ${mounted ? 'is-shown' : ''}`}>
+
+        {/* Account — pricing-card surface-1, 20px radius, 24px pad */}
+        <section className="t-stagger-line rounded-[20px] border border-[#262626] bg-[#141414] overflow-hidden" style={{ transitionDelay: '0ms' }}>
+          <div className="px-4 sm:px-5 py-3.5 flex items-center gap-2.5 border-b border-[#1a1a1a]">
+            <span className="w-7 h-7 rounded-full bg-white flex items-center justify-center shrink-0">
+              <User className="w-3.5 h-3.5 text-black" />
+            </span>
+            <h2 className="text-[11px] font-bold tracking-[0.12em] uppercase text-white">Account</h2>
+            <span className="ml-auto text-[11px] font-medium text-[#666] hidden sm:block">Profile and contact</span>
           </div>
-          <div className="space-y-2">
-            <button 
+          <div className="p-2 space-y-1.5">
+            <button
               onClick={() => setEditDrawerOpen(true)}
-              className="w-full flex items-center justify-between p-4 bg-card hover:bg-accent/50 rounded-2xl border border-border transition-colors group"
+              className="w-full flex items-center justify-between p-3.5 sm:p-4 rounded-[15px] bg-[#090909] border border-[#1a1a1a] hover:bg-[#1c1c1c] hover:border-[#262626] hover:translate-x-[1px] active:scale-[0.99] active:duration-[var(--duration-quick)] transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] group text-left hover:cursor-pointer"
             >
-              <div className="flex flex-col items-start">
-                <span className="font-semibold text-sm group-hover:text-primary transition-colors">Edit Profile</span>
-                <span className="text-xs text-muted-foreground">Change name, bio, and avatar</span>
+              <div className="flex items-center gap-3">
+                <span className="w-9 h-9 rounded-[10px] bg-white flex items-center justify-center shrink-0">
+                  <User className="w-4 h-4 text-black" />
+                </span>
+                <div className="text-left">
+                  <p className="text-[14px] font-semibold tracking-tight leading-none text-white group-hover:text-white">Edit Profile</p>
+                  <p className="text-[12px] leading-none text-[#999] mt-1">Name, bio, avatar and socials</p>
+                </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="w-4 h-4 text-[#666] group-hover:text-white group-hover:translate-x-0.5 transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] shrink-0" />
             </button>
-            <button 
+
+            <button
               onClick={() => setChangeEmailOpen(true)}
-              className="w-full flex items-center justify-between p-4 bg-card hover:bg-accent/50 rounded-2xl border border-border transition-colors group"
+              className="w-full flex items-center justify-between p-3.5 sm:p-4 rounded-[15px] bg-[#090909] border border-[#1a1a1a] hover:bg-[#1c1c1c] hover:border-[#262626] hover:translate-x-[1px] active:scale-[0.99] active:duration-[var(--duration-quick)] transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] group text-left hover:cursor-pointer"
             >
-              <div className="flex flex-col items-start">
-                <span className="font-semibold text-sm group-hover:text-primary transition-colors">Email Address</span>
-                <span className="text-xs text-muted-foreground">{user?.email}</span>
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="w-9 h-9 rounded-[10px] bg-[#1c1c1c] border border-[#262626] flex items-center justify-center shrink-0">
+                  <Mail className="w-4 h-4 text-white" />
+                </span>
+                <div className="text-left min-w-0">
+                  <p className="text-[14px] font-semibold tracking-tight leading-none text-white">Email address</p>
+                  <p className="text-[12px] leading-none text-[#999] mt-1 truncate max-w-[180px] sm:max-w-[240px]">{user?.email}</p>
+                </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="w-4 h-4 text-[#666] group-hover:text-white group-hover:translate-x-0.5 transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] shrink-0" />
             </button>
           </div>
         </section>
 
-        {/* Security Section (Feature 1) */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 text-primary">
-            <Lock className="w-5 h-5" />
-            <h2 className="font-bold uppercase tracking-wider text-xs">Security</h2>
+        {/* Security — Lock, Change Password + Recent Logins */}
+        <section className="t-stagger-line t-stagger-line--2 rounded-[20px] border border-[#262626] bg-[#141414] overflow-hidden" style={{ transitionDelay: 'calc(var(--stagger-stagger) * 1)' }}>
+          <div className="px-4 sm:px-5 py-3.5 flex items-center gap-2.5 border-b border-[#1a1a1a]">
+            <span className="w-7 h-7 rounded-full bg-white flex items-center justify-center shrink-0">
+              <Lock className="w-3.5 h-3.5 text-black" />
+            </span>
+            <h2 className="text-[11px] font-bold tracking-[0.12em] uppercase text-white">Security</h2>
           </div>
-          <div className="space-y-2">
-            <button 
+          <div className="p-2 space-y-3">
+            <button
               onClick={() => setChangePasswordOpen(true)}
-              className="w-full flex items-center justify-between p-4 bg-card hover:bg-accent/50 rounded-2xl border border-border transition-colors group"
+              className="w-full flex items-center justify-between p-3.5 sm:p-4 rounded-[15px] bg-[#090909] border border-[#1a1a1a] hover:bg-[#1c1c1c] hover:border-[#262626] hover:translate-x-[1px] active:scale-[0.99] active:duration-[var(--duration-quick)] transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] group text-left hover:cursor-pointer"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <KeyRound className="w-4 h-4 text-primary" />
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="font-semibold text-sm group-hover:text-primary transition-colors">Change Password</span>
-                  <span className="text-xs text-muted-foreground">Update your account password</span>
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+              <span className="flex items-center gap-3">
+                <span className="w-9 h-9 rounded-[10px] bg-white flex items-center justify-center shrink-0">
+                  <KeyRound className="w-4 h-4 text-black" />
+                </span>
+                <span className="text-left">
+                  <p className="text-[14px] font-semibold tracking-tight leading-none text-white">Change password</p>
+                  <p className="text-[12px] leading-none text-[#999] mt-1">Update and sign out other devices</p>
+                </span>
+              </span>
+              <ChevronRight className="w-4 h-4 text-[#666] group-hover:text-white group-hover:translate-x-0.5 transition-all duration-[var(--duration-fast)] shrink-0" />
             </button>
 
-            {/* Login History */}
-            <div className="p-4 bg-card rounded-2xl border border-border space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-sm">Recent Logins</span>
+            <div className="rounded-[15px] bg-[#090909] border border-[#1a1a1a] overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[#1a1a1a]">
+                <p className="text-[13px] font-semibold tracking-tight text-white">Recent logins</p>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleLogoutAll}
                   disabled={loggingOutAll}
-                  className="text-xs text-destructive hover:text-destructive"
+                  className="h-7 px-3 rounded-full bg-[#141414] border border-[#262626] text-[11px] font-semibold text-[#999] hover:text-white hover:bg-[#1c1c1c] hover:border-[#262626] transition-colors duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] hover:cursor-pointer disabled:opacity-50"
                 >
-                  {loggingOutAll ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Logout all'}
+                  {loggingOutAll ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" /> : null}
+                  Log out all
                 </Button>
               </div>
-              
-              {loadingHistory ? (
-                <div className="text-xs text-muted-foreground">Loading...</div>
-              ) : loginHistory.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No login history</p>
-              ) : (
-                <div className="space-y-2">
-                  {loginHistory.map((login, idx) => (
-                    <div key={idx} className="flex items-center gap-3 p-2 rounded-lg bg-accent/30">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        {login.device === 'Mobile' ? <Smartphone className="w-4 h-4 text-muted-foreground" /> :
-                         login.device === 'Tablet' ? <Tablet className="w-4 h-4 text-muted-foreground" /> :
-                         <Monitor className="w-4 h-4 text-muted-foreground" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium">
-                          {login.browser} on {login.device}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {new Date(login.createdAt).toLocaleDateString('en-IN', { 
-                            day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' 
-                          })}
-                        </p>
-                      </div>
-                      {login.isSuspicious && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30">
-                          Suspicious
+              <div className="p-2">
+                {loadingHistory ? (
+                  <div className="px-3 py-6 flex items-center justify-center gap-2 text-[12px] text-[#666]">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading history…
+                  </div>
+                ) : loginHistory.length === 0 ? (
+                  <p className="px-3 py-6 text-center text-[12px] font-medium text-[#666]">No recent logins</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {loginHistory.map((login, idx) => (
+                      <div key={idx} className="flex items-center gap-3 p-3 rounded-[10px] bg-[#141414] border border-[#262626]/60 hover:border-[#262626] hover:bg-[#1c1c1c] transition-colors duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)]">
+                        <span className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0">
+                          {login.device === 'Mobile' ? <Smartphone className="w-4 h-4 text-black" /> : login.device === 'Tablet' ? <Tablet className="w-4 h-4 text-black" /> : <Monitor className="w-4 h-4 text-black" />}
                         </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] font-medium tracking-tight leading-none text-white truncate">{login.browser} on {login.device}</p>
+                          <p className="text-[11px] leading-none text-[#999] mt-1">
+                            {new Date(login.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                        {login.isSuspicious && (
+                          <span className="text-[10px] font-bold tracking-wide px-2 py-1 rounded-full bg-[#ef444415] text-[#f87171] border border-[#ef444430] shrink-0">Suspicious</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Verification Status Section */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 text-primary">
-            <ShieldCheck className="w-5 h-5" />
-            <h2 className="font-bold uppercase tracking-wider text-xs">Verification</h2>
+        {/* Verification — Framer spotlight-aware, but restrained */}
+        <section className="t-stagger-line t-stagger-line--3 rounded-[20px] border border-[#262626] bg-[#141414] overflow-hidden" style={{ transitionDelay: 'calc(var(--stagger-stagger) * 2)' }}>
+          <div className="px-4 sm:px-5 py-3.5 flex items-center gap-2.5 border-b border-[#1a1a1a]">
+            <span className="w-7 h-7 rounded-full bg-white flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-3.5 h-3.5 text-black" />
+            </span>
+            <h2 className="text-[11px] font-bold tracking-[0.12em] uppercase text-white">Verification</h2>
+            {user?.isVerified && user?.verificationStatus === 'verified' && (
+              <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-bold tracking-wide px-2.5 py-1 rounded-full bg-white text-black">● Verified</span>
+            )}
           </div>
-          <div className="bg-card rounded-3xl border border-border overflow-hidden">
-            <div className="p-4">
-              {user?.isVerified && user?.verificationStatus === 'verified' ? (
-                /* ── Verified ── */
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#22c55e15' }}>
-                      <CheckCircle2 className="w-5 h-5 text-green-500" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm text-foreground">Verified Student</p>
-                      <p className="text-xs text-muted-foreground">
-                        {user?.verificationType === 'college_email' ? 'Verified via college email' : 'Verified via college ID'}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full"
-                    style={{ background: '#22c55e15', color: '#4ade80', border: '1px solid #22c55e30' }}>
-                    <CheckCircle2 className="w-3 h-3" /> Verified
+          <div className="p-3">
+            {user?.isVerified && user?.verificationStatus === 'verified' ? (
+              <div className="flex items-center justify-between p-3 rounded-[15px] bg-[#090909] border border-[#1a1a1a]">
+                <span className="flex items-center gap-3">
+                  <span className="w-9 h-9 rounded-[10px] bg-[#22c55e] flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-4 h-4 text-white" />
                   </span>
-                </div>
-
-              ) : user?.verificationStatus === 'pending' ? (
-                /* ── Pending ── */
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#facc1515' }}>
-                      <Clock className="w-5 h-5 text-yellow-500" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm text-foreground">Under Review</p>
-                      <p className="text-xs text-muted-foreground">Your college ID is being verified</p>
-                    </div>
-                  </div>
-                  <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full"
-                    style={{ background: '#facc1515', color: '#facc15', border: '1px solid #facc1530' }}>
-                    <Clock className="w-3 h-3" /> Pending
+                  <span>
+                    <p className="text-[14px] font-semibold tracking-tight leading-none text-white">Verified student</p>
+                    <p className="text-[12px] leading-none text-[#999] mt-1">{user?.verificationType === 'college_email' ? 'Via college email' : 'Via college ID'}</p>
                   </span>
-                </div>
-
-              ) : user?.verificationStatus === 'rejected' ? (
-                /* ── Rejected ── */
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#ef444415' }}>
-                        <AlertTriangle className="w-5 h-5 text-red-400" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-sm text-foreground">Verification Rejected</p>
-                        <p className="text-xs text-muted-foreground">You can resubmit with a different ID</p>
-                      </div>
-                    </div>
-                    <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full"
-                      style={{ background: '#ef444415', color: '#f87171', border: '1px solid #ef444430' }}>
-                      Rejected
+                </span>
+                <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#22c55e15] text-[#4ade80] border border-[#22c55e30]">Verified</span>
+              </div>
+            ) : user?.verificationStatus === 'pending' ? (
+              <div className="flex items-center justify-between p-3 rounded-[15px] bg-[#090909] border border-[#1a1a1a]">
+                <span className="flex items-center gap-3">
+                  <span className="w-9 h-9 rounded-[10px] bg-[#facc15] flex items-center justify-center shrink-0">
+                    <Clock className="w-4 h-4 text-black" />
+                  </span>
+                  <span>
+                    <p className="text-[14px] font-semibold tracking-tight leading-none text-white">Under review</p>
+                    <p className="text-[12px] leading-none text-[#999] mt-1">Your ID is being verified</p>
+                  </span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#facc1515] text-[#facc15] border border-[#facc1530]">Pending</span>
+              </div>
+            ) : user?.verificationStatus === 'rejected' ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-[15px] bg-[#090909] border border-[#1a1a1a]">
+                  <span className="flex items-center gap-3">
+                    <span className="w-9 h-9 rounded-[10px] bg-[#ef4444] flex items-center justify-center shrink-0">
+                      <AlertTriangle className="w-4 h-4 text-white" />
                     </span>
-                  </div>
-                  {user?.verificationRejectedReason && (
-                    <div className="ml-[52px] p-3 rounded-xl text-xs text-muted-foreground leading-relaxed"
-                      style={{ background: '#ef444408', border: '1px solid #ef444420' }}>
-                      <span className="font-semibold text-red-400">Reason: </span>{user.verificationRejectedReason}
-                    </div>
-                  )}
-                  <button
-                    onClick={() => router.push('/verify-student')}
-                    className="ml-[52px] flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all duration-200 hover:scale-[1.02]"
-                    style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: '#fff', boxShadow: '0 2px 8px #ef444440' }}>
-                    <Upload className="w-3 h-3" /> Resubmit ID
-                  </button>
+                    <span>
+                      <p className="text-[14px] font-semibold tracking-tight leading-none text-white">Verification rejected</p>
+                      <p className="text-[12px] leading-none text-[#999] mt-1">You can resubmit with a different ID</p>
+                    </span>
+                  </span>
+                  <span className="inline-flex text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#ef444415] text-[#f87171] border border-[#ef444430]">Rejected</span>
                 </div>
-
-              ) : (
-                /* ── Not verified ── */
+                {user?.verificationRejectedReason && (
+                  <div className="mx-1 p-3 rounded-[10px] bg-[#ef444408] border border-[#ef444420] text-[12px] leading-relaxed text-[#999]">
+                    <span className="font-semibold text-[#f87171]">Reason: </span>{user.verificationRejectedReason}
+                  </div>
+                )}
                 <button
                   onClick={() => router.push('/verify-student')}
-                  className="w-full flex items-center justify-between group"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-[13px] font-semibold px-4 py-2.5 rounded-full bg-white text-black hover:bg-white/90 active:scale-[0.98] active:duration-[var(--duration-quick)] transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] hover:cursor-pointer"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#22c55e10' }}>
-                      <ShieldCheck className="w-5 h-5 text-green-500/60" />
-                    </div>
-                    <div className="flex flex-col items-start">
-                      <span className="font-semibold text-sm group-hover:text-green-400 transition-colors">Get Verified</span>
-                      <span className="text-xs text-muted-foreground">Upload your college ID to get a badge</span>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                  <Upload className="w-3.5 h-3.5" /> Resubmit ID
                 </button>
-              )}
-            </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => router.push('/verify-student')}
+                className="w-full flex items-center justify-between p-3 rounded-[15px] bg-[#090909] border border-[#1a1a1a] hover:bg-[#1c1c1c] hover:border-[#262626] hover:translate-x-[1px] active:scale-[0.99] active:duration-[var(--duration-quick)] transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] group text-left hover:cursor-pointer"
+              >
+                <span className="flex items-center gap-3">
+                  <span className="w-9 h-9 rounded-[10px] bg-white flex items-center justify-center shrink-0">
+                    <ShieldCheck className="w-4 h-4 text-black" />
+                  </span>
+                  <span className="text-left">
+                    <p className="text-[14px] font-semibold tracking-tight leading-none text-white group-hover:text-white">Get verified</p>
+                    <p className="text-[12px] leading-none text-[#999] mt-1">Upload college ID to earn the badge</p>
+                  </span>
+                </span>
+                <ChevronRight className="w-4 h-4 text-[#666] group-hover:text-white group-hover:translate-x-0.5 transition-all duration-[var(--duration-fast)] shrink-0" />
+              </button>
+            )}
           </div>
         </section>
 
-        {/* Notifications Section */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 text-primary">
-            <Bell className="w-5 h-5" />
-            <h2 className="font-bold uppercase tracking-wider text-xs">Notifications</h2>
+        {/* Notifications — PushSettings */}
+        <section className="t-stagger-line t-stagger-line--4 rounded-[20px] border border-[#262626] bg-[#141414] overflow-hidden" style={{ transitionDelay: 'calc(var(--stagger-stagger) * 3)' }}>
+          <div className="px-4 sm:px-5 py-3.5 flex items-center gap-2.5 border-b border-[#1a1a1a]">
+            <span className="w-7 h-7 rounded-full bg-white flex items-center justify-center shrink-0">
+              <Bell className="w-3.5 h-3.5 text-black" />
+            </span>
+            <h2 className="text-[11px] font-bold tracking-[0.12em] uppercase text-white">Notifications</h2>
           </div>
-          <div className="bg-card rounded-3xl border border-border p-4">
+          <div className="p-4 sm:p-5 bg-[#090909]/40">
             <PushSettings />
           </div>
         </section>
 
-        {/* Privacy Section */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 text-primary">
-            <Shield className="w-5 h-5" />
-            <h2 className="font-bold uppercase tracking-wider text-xs">Privacy & Safety</h2>
+        {/* Danger zone — destructive actions, Framer: hairline + 15px cards, pill CTA language */}
+        <section className="t-stagger-line t-stagger-line--5 space-y-3" style={{ transitionDelay: 'calc(var(--stagger-stagger) * 4)' }}>
+          <div className="flex items-center gap-2 px-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ef4444]" />
+            <h2 className="text-[11px] font-bold tracking-[0.12em] uppercase text-[#f87171]">Danger zone</h2>
           </div>
-          <div className="bg-card rounded-3xl border border-border overflow-hidden">
-            <div className="flex items-center justify-between p-4 hover:bg-accent/30 transition-colors border-b border-border">
-              <div className="flex flex-col">
-                <span className="font-semibold text-sm">Private Profile</span>
-                <span className="text-xs text-muted-foreground">Only followers can see your posts</span>
-              </div>
-              <Switch 
-                checked={settings.privateProfile} 
-                onCheckedChange={() => handleToggle('privateProfile')}
-              />
-            </div>
-            <div className="flex items-center justify-between p-4 hover:bg-accent/30 transition-colors">
-              <div className="flex flex-col">
-                <span className="font-semibold text-sm">Online Status</span>
-                <span className="text-xs text-muted-foreground">Show when you&apos;re active</span>
-              </div>
-              <Switch 
-                checked={settings.showOnlineStatus} 
-                onCheckedChange={() => handleToggle('showOnlineStatus')}
-              />
-            </div>
+          <div className="rounded-[20px] border border-[#262626] bg-[#141414] p-2 space-y-2">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 p-3.5 rounded-[15px] bg-[#090909] border border-[#1a1a1a] hover:bg-[#1c1c1c] hover:border-[#262626] hover:translate-x-[1px] active:scale-[0.99] active:duration-[var(--duration-quick)] transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] group text-left hover:cursor-pointer"
+            >
+              <span className="w-9 h-9 rounded-full bg-[#141414] border border-[#262626] flex items-center justify-center shrink-0 group-hover:border-[#2a2a2a] transition-colors">
+                <LogOut className="w-4 h-4 text-white" />
+              </span>
+              <span className="flex-1 text-left">
+                <p className="text-[14px] font-semibold tracking-tight leading-none text-white">Log out</p>
+                <p className="text-[11px] font-medium tracking-wide uppercase text-[#666] mt-1">Sign out of this device</p>
+              </span>
+              <ChevronRight className="w-4 h-4 text-[#666] group-hover:text-white group-hover:translate-x-0.5 transition-all duration-[var(--duration-fast)] shrink-0 hidden sm:block" />
+            </button>
+
+            <button
+              onClick={() => { setDeleteStep(1); setDeleteAccountOpen(true) }}
+              className="w-full flex items-center gap-3 p-3.5 rounded-[15px] bg-[#ef44440a] border border-[#ef444420] hover:bg-[#ef444414] hover:border-[#ef444430] hover:translate-x-[1px] active:scale-[0.99] active:duration-[var(--duration-quick)] transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] group text-left hover:cursor-pointer"
+            >
+              <span className="w-9 h-9 rounded-full bg-[#ef4444] flex items-center justify-center shrink-0">
+                <Trash2 className="w-4 h-4 text-white" />
+              </span>
+              <span className="flex-1 text-left">
+                <p className="text-[14px] font-semibold tracking-tight leading-none text-[#f87171]">Delete account</p>
+                <p className="text-[11px] font-medium tracking-wide uppercase text-[#f87171]/70 mt-1">Permanently remove your data</p>
+              </span>
+              <ChevronRight className="w-4 h-4 text-[#f87171]/60 group-hover:text-[#f87171] group-hover:translate-x-0.5 transition-all duration-[var(--duration-fast)] shrink-0 hidden sm:block" />
+            </button>
           </div>
-        </section>
-
-        {/* Appearance Section */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 text-primary">
-            <Monitor className="w-5 h-5" />
-            <h2 className="font-bold uppercase tracking-wider text-xs">Appearance</h2>
-          </div>
-          <div className="bg-card rounded-3xl border border-border p-4">
-            <p className="text-xs text-muted-foreground mb-4">
-              Choose how navigation appears on desktop. This is saved on this device only.
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { mode: "sidebar", title: "Sidebar", desc: "Classic left navigation" },
-                { mode: "dock", title: "Dock", desc: "Floating bottom dock" },
-              ].map((opt) => {
-                const selected = layoutMode === opt.mode
-                return (
-                  <button
-                    key={opt.mode}
-                    onClick={() => setLayoutMode(opt.mode)}
-                    className={cn(
-                      "card-chunky text-left p-4 space-y-3 transition-colors hover:cursor-pointer",
-                      selected ? "border-primary bg-primary/5" : "hover:bg-accent/50",
-                    )}
-                  >
-                    <div className="h-20 rounded-xl border border-border bg-background overflow-hidden relative">
-                      {opt.mode === "sidebar" ? (
-                        <div className="absolute left-0 top-0 h-full w-1/4 bg-primary/20 border-r border-primary/30" />
-                      ) : (
-                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1/2 h-3 rounded-full bg-primary/30 border border-primary/40" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm">{opt.title}</p>
-                      <p className="text-[11px] text-muted-foreground">{opt.desc}</p>
-                    </div>
-                    {selected && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Selected
-                      </span>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* Danger Zone */}
-        <section className="pt-4 pb-10">
-          <Button 
-            variant="ghost" 
-            onClick={handleLogout}
-            className="w-full justify-start gap-4 h-14 px-4 text-destructive hover:bg-destructive/10 rounded-2xl border border-destructive/20"
-          >
-            <LogOut className="w-5 h-5" />
-            <div className="flex flex-col items-start">
-              <span className="font-bold text-sm">Log out</span>
-              <span className="text-[10px] opacity-80 italic uppercase tracking-tighter">Sign out of your account</span>
-            </div>
-          </Button>
-
-          <Button 
-            variant="ghost" 
-            onClick={() => {
-              setDeleteStep(1)
-              setDeleteAccountOpen(true)
-            }}
-            className="w-full justify-start gap-4 h-14 px-4 text-destructive hover:bg-destructive/10 rounded-2xl border border-destructive/20 mt-3"
-          >
-            <Trash2 className="w-5 h-5" />
-            <div className="flex flex-col items-start">
-              <span className="font-bold text-sm">Delete Account</span>
-              <span className="text-[10px] opacity-80 italic uppercase tracking-tighter">Permanently remove your data</span>
-            </div>
-          </Button>
-
-          <p className="text-center text-[10px] text-muted-foreground mt-8 uppercase tracking-widest font-bold opacity-50">
-            CampusZen v1.2.0 • Built with ❤️ for Students
+          <p className="text-center text-[11px] font-medium tracking-[0.08em] uppercase text-[#666] pt-4">
+            CampusZen v1.2.0 • Built with <span className="text-[#f87171]">♥</span> for students
           </p>
         </section>
-
       </div>
 
-      {/* Edit Profile Drawer */}
-      <EditProfileDrawer 
+      {/* Edit Profile Drawer — panel 400/350, uses app transitions tokens */}
+      <EditProfileDrawer
         user={user}
         open={editDrawerOpen}
         onOpenChange={setEditDrawerOpen}
         onSave={handleEditSave}
       />
 
-      {/* Feature 1: Change Password Sheet */}
+      {/* Change Password — Sheet: bottom panel, Framer surfaces */}
       <Sheet open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
-        <SheetContent side="bottom" className="rounded-t-[2rem] border-t-primary/20 bg-card p-6 pb-12 max-w-2xl mx-auto">
-          <SheetHeader className="pb-6">
-            <SheetTitle className="text-2xl font-bold flex items-center gap-2">
-              <Lock className="w-6 h-6 text-primary" /> Change Password
+        <SheetContent side="bottom" className="rounded-t-[20px] border-t border-[#262626] bg-[#141414] p-0 max-w-[640px] mx-auto max-h-[92vh] overflow-hidden flex flex-col data-[state=open]:animate-[panelIn_var(--duration-slow)_var(--ease-smooth-out)] data-[state=closed]:animate-[panelOut_var(--duration-medium)_var(--ease-smooth-out)]">
+          <SheetHeader className="shrink-0 px-5 sm:px-6 pt-5 pb-4 border-b border-[#1a1a1a] text-left">
+            <SheetTitle className="text-[18px] font-bold tracking-[-0.3px] text-white flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0"><Lock className="w-4 h-4 text-black" /></span>
+              Change password
             </SheetTitle>
-            <SheetDescription>
-              Keep your account secure by updating your password regularly.
+            <SheetDescription className="text-[13px] leading-relaxed text-[#999] mt-1.5">
+              Keep your account secure with a strong password.
             </SheetDescription>
           </SheetHeader>
 
-          <form onSubmit={handlePasswordChange} className="space-y-6">
+          <form onSubmit={handlePasswordChange} className="flex-1 overflow-y-auto px-5 sm:px-6 py-5 space-y-5 custom-scrollbar">
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Current Password</Label>
+              <div className="space-y-1.5">
+                <Label className="text-[13px] font-medium text-white">Current password</Label>
                 <div className="relative">
-                  <Input 
-                    type={showOldPass ? "text" : "password"} 
+                  <Input
+                    type={showOldPass ? "text" : "password"}
                     placeholder="••••••••"
                     value={passwordForm.oldPassword}
-                    onChange={(e) => setPasswordForm({...passwordForm, oldPassword: e.target.value})}
-                    className="pr-10 bg-background border-border rounded-xl h-12"
+                    onChange={(e) => setPasswordForm({ ...passwordForm, oldPassword: e.target.value })}
+                    className="pr-10 bg-[#090909] border-[#262626] rounded-[10px] h-11 text-[14px] placeholder:text-[#666] focus-visible:ring-1 focus-visible:ring-[#4ba9e1]/30 focus-visible:border-[#4ba9e1]/30 transition-colors duration-[var(--duration-fast)]"
                     required
                   />
-                  <button type="button" onClick={() => setShowOldPass(!showOldPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  <button type="button" onClick={() => setShowOldPass(!showOldPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#666] hover:text-white transition-colors duration-[var(--duration-fast)] hover:cursor-pointer">
                     {showOldPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>New Password</Label>
+              <div className="space-y-1.5">
+                <Label className="text-[13px] font-medium text-white">New password</Label>
                 <div className="relative">
-                  <Input 
-                    type={showNewPass ? "text" : "password"} 
+                  <Input
+                    type={showNewPass ? "text" : "password"}
                     placeholder="••••••••"
                     value={passwordForm.newPassword}
-                    onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
-                    className="pr-10 bg-background border-border rounded-xl h-12"
+                    onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                    className="pr-10 bg-[#090909] border-[#262626] rounded-[10px] h-11 text-[14px] placeholder:text-[#666] focus-visible:ring-1 focus-visible:ring-[#4ba9e1]/30"
                     required
                   />
-                  <button type="button" onClick={() => setShowNewPass(!showNewPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  <button type="button" onClick={() => setShowNewPass(!showNewPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#666] hover:text-white transition-colors duration-[var(--duration-fast)] hover:cursor-pointer">
                     {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-                
                 {passwordForm.newPassword && (
                   <div className="space-y-2 pt-1">
-                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
-                      <span className="text-muted-foreground">Strength</span>
-                      <span style={{ color: getPasswordStrength().color.replace('bg-', '') }}>{getPasswordStrength().label}</span>
+                    <div className="flex justify-between text-[11px] font-bold tracking-widest uppercase">
+                      <span className="text-[#666]">Strength</span>
+                      <span className={`${getPasswordStrength().value === 100 ? 'text-[#22c55e]' : getPasswordStrength().value === 66 ? 'text-[#facc15]' : 'text-[#ef4444]'}`}>{getPasswordStrength().label}</span>
                     </div>
-                    <Progress value={getPasswordStrength().value} className="h-1.5" indicatorClassName={getPasswordStrength().color} />
-                    
-                    <div className="grid grid-cols-1 gap-1.5 pt-2">
-                      <div className="flex items-center gap-2 text-[11px]">
-                        <CheckCircle2 className={`w-3.5 h-3.5 ${passwordConditions.length ? 'text-green-500' : 'text-muted-foreground/30'}`} />
-                        <span className={passwordConditions.length ? 'text-foreground' : 'text-muted-foreground'}>Min 8 characters</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-[11px]">
-                        <CheckCircle2 className={`w-3.5 h-3.5 ${passwordConditions.uppercase ? 'text-green-500' : 'text-muted-foreground/30'}`} />
-                        <span className={passwordConditions.uppercase ? 'text-foreground' : 'text-muted-foreground'}>At least 1 uppercase</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-[11px]">
-                        <CheckCircle2 className={`w-3.5 h-3.5 ${passwordConditions.number ? 'text-green-500' : 'text-muted-foreground/30'}`} />
-                        <span className={passwordConditions.number ? 'text-foreground' : 'text-muted-foreground'}>At least 1 number</span>
-                      </div>
+                    <Progress value={getPasswordStrength().value} className="h-1.5 bg-[#1c1c1c]" indicatorClassName={getPasswordStrength().color} />
+                    <div className="grid grid-cols-1 gap-1.5 pt-1">
+                      <span className="flex items-center gap-2 text-[12px]"><CheckCircle2 className={`w-3.5 h-3.5 ${passwordConditions.length ? 'text-[#22c55e]' : 'text-[#333]'}`} /><span className={passwordConditions.length ? 'text-white' : 'text-[#666]'}>Min 8 characters</span></span>
+                      <span className="flex items-center gap-2 text-[12px]"><CheckCircle2 className={`w-3.5 h-3.5 ${passwordConditions.uppercase ? 'text-[#22c55e]' : 'text-[#333]'}`} /><span className={passwordConditions.uppercase ? 'text-white' : 'text-[#666]'}>At least 1 uppercase</span></span>
+                      <span className="flex items-center gap-2 text-[12px]"><CheckCircle2 className={`w-3.5 h-3.5 ${passwordConditions.number ? 'text-[#22c55e]' : 'text-[#333]'}`} /><span className={passwordConditions.number ? 'text-white' : 'text-[#666]'}>At least 1 number</span></span>
                     </div>
                   </div>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label>Confirm New Password</Label>
+              <div className="space-y-1.5">
+                <Label className="text-[13px] font-medium text-white">Confirm new password</Label>
                 <div className="relative">
-                  <Input 
-                    type={showConfirmPass ? "text" : "password"} 
+                  <Input
+                    type={showConfirmPass ? "text" : "password"}
                     placeholder="••••••••"
                     value={passwordForm.confirmPassword}
-                    onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
-                    className="pr-10 bg-background border-border rounded-xl h-12"
+                    onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                    className="pr-10 bg-[#090909] border-[#262626] rounded-[10px] h-11 text-[14px] placeholder:text-[#666] focus-visible:ring-1 focus-visible:ring-[#4ba9e1]/30"
                     required
                   />
-                  <button type="button" onClick={() => setShowConfirmPass(!showConfirmPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  <button type="button" onClick={() => setShowConfirmPass(!showConfirmPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#666] hover:text-white transition-colors duration-[var(--duration-fast)] hover:cursor-pointer">
                     {showConfirmPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
             </div>
-
-            <Button type="submit" disabled={passLoading} className="w-full h-12 rounded-xl text-base font-bold">
-              {passLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : "Save New Password"}
+            <Button type="submit" disabled={passLoading} className="w-full h-11 rounded-full bg-white text-black hover:bg-white/90 text-[14px] font-semibold tracking-tight active:scale-[0.98] active:duration-[var(--duration-quick)] transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] hover:cursor-pointer disabled:opacity-50">
+              {passLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Save new password
             </Button>
           </form>
+          <style>{`@keyframes panelIn { from { transform: translateY(8px) scale(var(--scale-medium)); opacity:0; filter: blur(var(--blur-small)); } to { transform: translateY(0) scale(1); opacity:1; filter: blur(0); } } @keyframes panelOut { from { transform: translateY(0) scale(1); opacity:1; } to { transform: translateY(8px) scale(var(--scale-tiny)); opacity:0; filter: blur(var(--blur-small)); } }`}</style>
         </SheetContent>
       </Sheet>
 
-      {/* Feature 2: Change Email Sheet */}
-      <Sheet open={changeEmailOpen} onOpenChange={setChangeEmailOpen}>
-        <SheetContent side="bottom" className="rounded-t-[2rem] border-t-primary/20 bg-card p-6 pb-12 max-w-2xl mx-auto">
-          <SheetHeader className="pb-6">
-            <SheetTitle className="text-2xl font-bold flex items-center gap-2">
-              <Mail className="w-6 h-6 text-primary" /> Change Email
+      {/* Change Email — Sheet */}
+      <Sheet open={changeEmailOpen} onOpenChange={(v) => { setChangeEmailOpen(v); if (!v) { setEmailStep(1); setEmailForm({ newEmail: '', otp: '' }) } }}>
+        <SheetContent side="bottom" className="rounded-t-[20px] border-t border-[#262626] bg-[#141414] p-0 max-w-[640px] mx-auto max-h-[92vh] overflow-hidden flex flex-col data-[state=open]:animate-[panelIn_var(--duration-slow)_var(--ease-smooth-out)] data-[state=closed]:animate-[panelOut_var(--duration-medium)_var(--ease-smooth-out)]">
+          <SheetHeader className="shrink-0 px-5 sm:px-6 pt-5 pb-4 border-b border-[#1a1a1a] text-left">
+            <SheetTitle className="text-[18px] font-bold tracking-[-0.3px] text-white flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0"><Mail className="w-4 h-4 text-black" /></span>
+              Change email
             </SheetTitle>
-            <SheetDescription>
-              We'll send a verification code to your new email address.
+            <SheetDescription className="text-[13px] leading-relaxed text-[#999] mt-1.5">
+              We&apos;ll send a 6-digit code to your new address.
             </SheetDescription>
           </SheetHeader>
 
-          <div className="space-y-6">
+          <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-5">
             {emailStep === 1 ? (
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>New Email Address</Label>
-                  <Input 
-                    type="email" 
+                <div className="space-y-1.5">
+                  <Label className="text-[13px] font-medium text-white">New email address</Label>
+                  <Input
+                    type="email"
                     placeholder="new@college.edu"
                     value={emailForm.newEmail}
-                    onChange={(e) => setEmailForm({...emailForm, newEmail: e.target.value})}
-                    className="bg-background border-border rounded-xl h-12"
+                    onChange={(e) => setEmailForm({ ...emailForm, newEmail: e.target.value })}
+                    className="bg-[#090909] border-[#262626] rounded-[10px] h-11 text-[14px] placeholder:text-[#666] focus-visible:ring-[#4ba9e1]/30"
                   />
                 </div>
-                <Button onClick={handleSendEmailOtp} disabled={emailLoading} className="w-full h-12 rounded-xl text-base font-bold">
-                  {emailLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : "Send OTP"}
+                <Button onClick={handleSendEmailOtp} disabled={emailLoading} className="w-full h-11 rounded-full bg-white text-black hover:bg-white/90 text-[14px] font-semibold active:scale-[0.98] transition-all duration-[var(--duration-fast)] hover:cursor-pointer disabled:opacity-50">
+                  {emailLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  Send OTP
                 </Button>
               </div>
             ) : (
-              <div className="space-y-6">
-                <div className="space-y-2 text-center">
-                  <Label className="text-muted-foreground">Enter the 6-digit code sent to {emailForm.newEmail}</Label>
-                  <div className="flex justify-center pt-4">
-                    <Input 
-                      className="w-48 text-center text-2xl font-bold tracking-[0.5em] h-14 bg-background border-border rounded-xl"
-                      maxLength={6}
-                      value={emailForm.otp}
-                      onChange={(e) => setEmailForm({...emailForm, otp: e.target.value.replace(/\D/g, '')})}
-                      placeholder="••••••"
-                    />
-                  </div>
+              <div className="space-y-5">
+                <div className="text-center space-y-3">
+                  <p className="text-[13px] leading-relaxed text-[#999]">Enter the code sent to <span className="font-semibold text-white">{emailForm.newEmail}</span></p>
+                  <Input
+                    className="w-full max-w-[280px] mx-auto text-center text-[22px] font-bold tracking-[0.4em] h-14 bg-[#090909] border-[#262626] rounded-[10px] placeholder:text-[#333] focus-visible:ring-[#4ba9e1]/30"
+                    maxLength={6}
+                    value={emailForm.otp}
+                    onChange={(e) => setEmailForm({ ...emailForm, otp: e.target.value.replace(/\D/g, '') })}
+                    placeholder="••••••"
+                    inputMode="numeric"
+                  />
                 </div>
-                
-                <div className="flex flex-col gap-3">
-                  <Button onClick={handleVerifyEmail} disabled={emailLoading} className="w-full h-12 rounded-xl text-base font-bold">
-                    {emailLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : "Verify & Update"}
+                <div className="space-y-3">
+                  <Button onClick={handleVerifyEmail} disabled={emailLoading} className="w-full h-11 rounded-full bg-white text-black hover:bg-white/90 text-[14px] font-semibold active:scale-[0.98] transition-all duration-[var(--duration-fast)] hover:cursor-pointer disabled:opacity-50">
+                    {emailLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    Verify & update
                   </Button>
-                  
                   <div className="flex justify-center">
-                    <Button 
-                      variant="ghost" 
-                      onClick={handleSendEmailOtp} 
-                      disabled={emailCountdown > 0 || emailLoading}
-                      className="text-xs font-semibold"
-                    >
-                      {emailCountdown > 0 ? (
-                        <span className="flex items-center gap-1.5">
-                          <Clock className="w-3 h-3" /> Resend in {emailCountdown}s
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1.5">
-                          <RefreshCw className="w-3 h-3" /> Resend OTP
-                        </span>
-                      )}
+                    <Button variant="ghost" onClick={handleSendEmailOtp} disabled={emailCountdown > 0 || emailLoading} className="h-8 px-3 rounded-full text-[12px] font-semibold text-[#999] hover:text-white hover:bg-[#1c1c1c] transition-colors duration-[var(--duration-fast)] hover:cursor-pointer">
+                      {emailCountdown > 0 ? <span className="flex items-center gap-1.5"><Clock className="w-3 h-3" /> Resend in {emailCountdown}s</span> : <span className="flex items-center gap-1.5"><RefreshCw className="w-3 h-3" /> Resend OTP</span>}
                     </Button>
                   </div>
                 </div>
@@ -883,91 +702,64 @@ export default function SettingsPage() {
         </SheetContent>
       </Sheet>
 
-      {/* Feature 3: Delete Account Alert Dialog */}
+      {/* Delete Account — AlertDialog, destructive, Framer hairlines */}
       <AlertDialog open={deleteAccountOpen} onOpenChange={setDeleteAccountOpen}>
-        <AlertDialogContent className="max-w-[400px] rounded-3xl border-destructive/20 bg-card p-6">
+        <AlertDialogContent className="max-w-[420px] rounded-[20px] border border-[#262626] bg-[#141414] p-0 overflow-hidden gap-0 data-[state=open]:animate-[modalIn_var(--duration-fast)_var(--ease-smooth-out)] data-[state=closed]:animate-[modalOut_var(--duration-quick)_var(--ease-smooth-out)]">
           {deleteStep === 1 ? (
             <>
-              <AlertDialogHeader className="items-center text-center space-y-4">
-                <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
-                  <AlertCircle className="w-10 h-10 text-destructive" />
-                </div>
-                <AlertDialogTitle className="text-2xl font-bold text-destructive">Delete Account?</AlertDialogTitle>
-                <AlertDialogDescription className="text-base leading-relaxed">
-                  This will permanently delete your account, all posts, VP (Viper Coins), and data. This action <span className="font-bold text-foreground underline underline-offset-4">cannot be undone</span>.
+              <div className="px-6 pt-6 pb-4 text-center">
+                <span className="w-14 h-14 rounded-full bg-[#ef444415] border border-[#ef444430] flex items-center justify-center mx-auto">
+                  <AlertCircle className="w-7 h-7 text-[#ef4444]" />
+                </span>
+                <AlertDialogTitle className="text-[20px] font-bold tracking-tight text-white mt-4">Delete account?</AlertDialogTitle>
+                <AlertDialogDescription className="text-[13px] leading-relaxed text-[#999] mt-2">
+                  This will permanently delete your account, posts and VP. This action <span className="font-semibold text-white underline underline-offset-4 decoration-[#ef4444]/50">cannot be undone</span>.
                 </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className="flex-col gap-2 mt-6 sm:flex-col">
-                <Button 
-                  onClick={handleSendDeleteOtp} 
-                  disabled={deleteLoading}
-                  variant="destructive" 
-                  className="w-full h-12 rounded-xl font-bold text-base"
-                >
-                  {deleteLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : "Send Confirmation OTP"}
+              </div>
+              <div className="p-4 bg-[#090909] border-t border-[#1a1a1a] flex flex-col gap-2">
+                <Button onClick={handleSendDeleteOtp} disabled={deleteLoading} variant="destructive" className="w-full h-11 rounded-full bg-[#ef4444] hover:bg-[#dc2626] text-white text-[14px] font-semibold active:scale-[0.98] transition-all duration-[var(--duration-fast)] hover:cursor-pointer">
+                  {deleteLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  Send confirmation OTP
                 </Button>
-                <AlertDialogCancel className="w-full h-12 rounded-xl border-border bg-transparent hover:bg-accent text-base mt-2">
-                  Cancel
-                </AlertDialogCancel>
-              </AlertDialogFooter>
+                <AlertDialogCancel className="w-full h-11 rounded-full bg-[#1c1c1c] border border-[#262626] text-white hover:bg-[#262626] hover:text-white text-[14px] font-medium m-0 hover:cursor-pointer transition-colors duration-[var(--duration-fast)]">Cancel</AlertDialogCancel>
+              </div>
             </>
           ) : (
             <>
-              <AlertDialogHeader className="items-center text-center space-y-4">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                  <Shield className="w-10 h-10 text-primary" />
-                </div>
-                <AlertDialogTitle className="text-2xl font-bold">Confirm Deletion</AlertDialogTitle>
-                <AlertDialogDescription className="text-base">
-                  Enter the 6-digit code sent to <strong>{user?.email}</strong>
+              <div className="px-6 pt-6 pb-4 text-center">
+                <span className="w-14 h-14 rounded-full bg-white flex items-center justify-center mx-auto">
+                  <ShieldCheck className="w-7 h-7 text-black" />
+                </span>
+                <AlertDialogTitle className="text-[20px] font-bold tracking-tight text-white mt-4">Confirm deletion</AlertDialogTitle>
+                <AlertDialogDescription className="text-[13px] leading-relaxed text-[#999] mt-1">
+                  Enter the code sent to <span className="font-semibold text-white">{user?.email}</span>
                 </AlertDialogDescription>
-              </AlertDialogHeader>
-              
-              <div className="flex justify-center py-6">
-                <Input 
-                  className="w-48 text-center text-2xl font-bold tracking-[0.5em] h-14 bg-background border-border rounded-xl"
-                  maxLength={6}
-                  value={deleteOtp}
-                  onChange={(e) => setDeleteOtp(e.target.value.replace(/\D/g, ''))}
-                  placeholder="••••••"
-                />
+                <div className="flex justify-center pt-5">
+                  <Input
+                    className="w-[260px] text-center text-[22px] font-bold tracking-[0.4em] h-14 bg-[#090909] border-[#262626] rounded-[10px] placeholder:text-[#333] focus-visible:ring-[#ef4444]/30"
+                    maxLength={6}
+                    value={deleteOtp}
+                    onChange={(e) => setDeleteOtp(e.target.value.replace(/\D/g, ''))}
+                    placeholder="••••••"
+                    inputMode="numeric"
+                  />
+                </div>
               </div>
-
-              <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
-                <Button 
-                  onClick={handleFinalDelete} 
-                  disabled={deleteLoading}
-                  variant="destructive" 
-                  className="w-full h-12 rounded-xl font-bold text-base shadow-lg shadow-destructive/20"
-                >
-                  {deleteLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : "Permanently Delete"}
+              <div className="p-4 bg-[#090909] border-t border-[#1a1a1a] flex flex-col gap-2">
+                <Button onClick={handleFinalDelete} disabled={deleteLoading} variant="destructive" className="w-full h-11 rounded-full bg-[#ef4444] hover:bg-[#dc2626] text-white text-[14px] font-semibold shadow-[0_2px_10px_rgba(239,68,68,0.25)] active:scale-[0.98] transition-all duration-[var(--duration-fast)] hover:cursor-pointer">
+                  {deleteLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  Permanently delete
                 </Button>
-                
-                <div className="flex justify-center mt-2">
-                   <Button 
-                    variant="ghost" 
-                    onClick={handleSendDeleteOtp} 
-                    disabled={deleteCountdown > 0 || deleteLoading}
-                    className="text-xs font-semibold"
-                  >
-                    {deleteCountdown > 0 ? (
-                      <span className="flex items-center gap-1.5">
-                        <Clock className="w-3 h-3" /> Resend in {deleteCountdown}s
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1.5 text-primary">
-                        <RefreshCw className="w-3 h-3" /> Resend OTP
-                      </span>
-                    )}
+                <div className="flex justify-center">
+                  <Button variant="ghost" onClick={handleSendDeleteOtp} disabled={deleteCountdown > 0 || deleteLoading} className="h-8 px-3 rounded-full text-[12px] font-semibold text-[#999] hover:text-white hover:bg-[#1c1c1c] hover:cursor-pointer">
+                    {deleteCountdown > 0 ? <span className="flex items-center gap-1.5"><Clock className="w-3 h-3" /> Resend in {deleteCountdown}s</span> : <span className="flex items-center gap-1.5 text-white"><RefreshCw className="w-3 h-3" /> Resend OTP</span>}
                   </Button>
                 </div>
-
-                <AlertDialogCancel className="w-full h-12 rounded-xl border-border bg-transparent hover:bg-accent text-base mt-2">
-                  Cancel
-                </AlertDialogCancel>
-              </AlertDialogFooter>
+                <AlertDialogCancel className="w-full h-11 rounded-full bg-[#1c1c1c] border border-[#262626] text-white hover:bg-[#262626] hover:text-white text-[14px] font-medium m-0 hover:cursor-pointer">Cancel</AlertDialogCancel>
+              </div>
             </>
           )}
+          <style>{`@keyframes modalIn { from { transform: scale(var(--scale-large)); opacity:0; filter: blur(var(--blur-small)); } to { transform: scale(1); opacity:1; filter: blur(0); } } @keyframes modalOut { from { transform: scale(1); opacity:1; } to { transform: scale(var(--scale-large)); opacity:0; filter: blur(var(--blur-small)); } }`}</style>
         </AlertDialogContent>
       </AlertDialog>
     </div>
