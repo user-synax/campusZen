@@ -1,17 +1,19 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { GraduationCap, Search, Plus } from 'lucide-react'
-import { Card, CardContent } from "@/components/ui/card"
+import { GraduationCap, Search, ShieldCheck } from 'lucide-react'
+import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import EmptyState from "@/components/shared/EmptyState"
 import CreateCommunityDialog from "@/components/post/CreateCommunityDialog"
 import { useDebounce } from "@/hooks/useDebounce"
+import useUser from "@/hooks/useUser"
 
 export default function CommunitiesPage() {
+  const { user: currentUser } = useUser()
   const [communities, setCommunities] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -35,9 +37,33 @@ export default function CommunitiesPage() {
     fetchCommunities()
   }, [])
 
-  const filteredCommunities = communities.filter(c => 
-    c.name.toLowerCase().includes(debouncedSearch.toLowerCase())
-  )
+  const { filteredCommunities, collegeCommunitySlug } = useMemo(() => {
+    const collegeName = currentUser?.college?.trim() || ""
+    const slugify = (name) => name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
+    let collegeCommunity = null
+    let rest = [...communities]
+    if (collegeName) {
+      const expectedSlug = slugify(collegeName)
+      const idx = rest.findIndex(
+        (c) => c.name.toLowerCase() === collegeName.toLowerCase() || c.slug === expectedSlug
+      )
+      if (idx !== -1) {
+        collegeCommunity = rest[idx]
+        rest.splice(idx, 1)
+      }
+    }
+    // sort rest by verifiedMemberCount desc then postCount desc
+    rest.sort(
+      (a, b) =>
+        (b.verifiedMemberCount || 0) - (a.verifiedMemberCount || 0) ||
+        (b.postCount || 0) - (a.postCount || 0)
+    )
+    const ordered = collegeCommunity ? [collegeCommunity, ...rest] : rest
+    const filtered = ordered.filter((c) =>
+      c.name.toLowerCase().includes(debouncedSearch.toLowerCase())
+    )
+    return { filteredCommunities: filtered, collegeCommunitySlug: collegeCommunity?.slug || null }
+  }, [communities, currentUser?.college, debouncedSearch])
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -84,25 +110,57 @@ export default function CommunitiesPage() {
           </div>
         ) : (
           <div className="grid gap-4">
-            {filteredCommunities.map(community => (
-              <Link key={community.slug} href={`/community/${community.slug}`}>
-                <Card className="p-4 border-border hover:bg-accent/30 transition-all cursor-pointer group">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="font-bold text-lg group-hover:text-primary transition-colors">
-                        🎓 {community.name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {community.postCount} posts · {community.memberCount} members
-                      </p>
+            {filteredCommunities.map(community => {
+              const isPinned = community.slug === collegeCommunitySlug
+              return (
+                <Link key={community.slug} href={`/community/${community.slug}`}>
+                  <Card
+                    className={`p-4 transition-all cursor-pointer group ${
+                      isPinned
+                        ? "border-[#22c55e]/50 bg-[#22c55e]/[0.06] hover:bg-[#22c55e]/10 shadow-[0_0_0_1px_rgba(34,197,94,0.15)]"
+                        : "border-border hover:bg-accent/30"
+                    }`}
+                  >
+                    <div className="flex justify-between items-center gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-bold text-lg group-hover:text-primary transition-colors truncate">
+                            🎓 {community.name}
+                          </h3>
+                          {isPinned && (
+                            <span className="inline-flex items-center text-[10px] font-bold tracking-wider uppercase bg-[#22c55e] text-white rounded-full px-2 py-0.5">
+                              Your College
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap mt-1">
+                          <p className="text-sm text-muted-foreground">
+                            {community.postCount} posts · {community.memberCount} members
+                          </p>
+                          {(community.verifiedMemberCount ?? 0) > 0 && (
+                            <span className="inline-flex items-center gap-1 text-xs font-medium bg-[#22c55e]/10 text-[#22c55e] border border-[#22c55e]/20 rounded-full px-2 py-0.5">
+                              <ShieldCheck className="w-3 h-3" />
+                              {community.verifiedMemberCount} verified
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        variant={isPinned ? "default" : "outline"}
+                        size="sm"
+                        className={`rounded-full px-4 shrink-0 transition-all ${
+                          isPinned
+                            ? "bg-[#22c55e] hover:bg-[#16a34a] text-white border-transparent"
+                            : "group-hover:bg-primary group-hover:text-primary-foreground"
+                        }`}
+                      >
+                        {isPinned ? "Open" : "View"}
+                      </Button>
                     </div>
-                    <Button variant="outline" size="sm" className="rounded-full px-4 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                      View
-                    </Button>
-                  </div>
-                </Card>
-              </Link>
-            ))}
+                  </Card>
+                </Link>
+              )
+            })}
           </div>
         )}
       </div>

@@ -1,9 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, GraduationCap } from 'lucide-react'
-import { Button } from "@/components/ui/button"
+import { useParams } from 'next/navigation'
+import { GraduationCap } from 'lucide-react'
 import PostComposer from "@/components/post/PostComposer"
 import PostCard from "@/components/post/PostCard"
 import PostSkeleton from "@/components/post/PostSkeleton"
@@ -13,10 +12,10 @@ import useUser from "@/hooks/useUser"
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"
 import InfiniteScrollSentinel from "@/components/shared/InfiniteScrollSentinel"
 import { formatCollegeName } from "@/utils/formatters"
+import VerifiedCommunityHeader from "@/components/community/VerifiedCommunityHeader"
 
 export default function CollegeCommunityPage() {
   const params = useParams()
-  const router = useRouter()
   const { user: currentUser } = useUser()
   
   const collegeSlug = params.college
@@ -47,50 +46,85 @@ export default function CollegeCommunityPage() {
     return await updatePostLike(postId)
   }, [updatePostLike])
 
-  const [stats, setStats] = useState({ postCount: 0, memberCount: 0 })
+  const [stats, setStats] = useState({ postCount: 0, memberCount: 0, verifiedMemberCount: 0 })
+  const [isMember, setIsMember] = useState(false)
   const [statsLoading, setStatsLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await fetch(`/api/communities?name=${encodeURIComponent(displayName)}`)
-        const data = await res.json()
-        if (res.ok) {
-          setStats(data)
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/communities?name=${encodeURIComponent(displayName)}`)
+      const data = await res.json()
+      if (res.ok) {
+        setStats({
+          postCount: data.postCount ?? 0,
+          memberCount: data.memberCount ?? 0,
+          verifiedMemberCount: data.verifiedMemberCount ?? 0,
+        })
+        if (typeof data.isMember === "boolean") {
+          setIsMember(data.isMember)
         }
-      } catch (error) {
-        console.error('Failed to fetch community stats:', error)
-      } finally {
-        setStatsLoading(false)
       }
+    } catch (error) {
+      console.error('Failed to fetch community stats:', error)
+    } finally {
+      setStatsLoading(false)
     }
-
-    if (displayName) fetchStats()
   }, [displayName])
+
+  useEffect(() => {
+    if (displayName) {
+      setStatsLoading(true)
+      fetchStats()
+    }
+  }, [displayName, fetchStats])
+
+  const handleJoin = useCallback(async () => {
+    try {
+      const slug = displayName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
+      const res = await fetch("/api/communities/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug }),
+      })
+      if (res.ok) {
+        setIsMember(true)
+        await fetchStats()
+      } else {
+        const err = await res.json().catch(() => ({}))
+        console.error("Join failed:", err)
+      }
+    } catch (error) {
+      console.error("Join error:", error)
+    }
+  }, [displayName, fetchStats])
 
   const isAuthenticated = !!currentUser;
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Community header */}
-      <div className="sticky top-0 bg-background/80 backdrop-blur-md border-b border-border p-4 z-10">
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => router.back()}
-            className="rounded-full hover:bg-accent"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="min-w-0">
-            <h1 className="font-bold text-lg truncate">🎓 {displayName}</h1>
-            <p className="text-xs text-muted-foreground">
-              {statsLoading ? '...' : `${stats.postCount} posts · ${stats.memberCount} members`}
-            </p>
+      {/* Verified-first community header */}
+      {statsLoading ? (
+        <div className="sticky top-0 bg-background/80 backdrop-blur-md border-b border-border p-4 z-10">
+          <div className="flex items-center gap-4 animate-pulse">
+            <div className="w-9 h-9 rounded-full bg-muted" />
+            <div className="space-y-2 flex-1">
+              <div className="h-4 w-32 bg-muted rounded" />
+              <div className="h-3 w-48 bg-muted rounded" />
+            </div>
+          </div>
+          <div className="mt-3 h-1.5 w-full bg-[#1a1a1a] rounded-full overflow-hidden">
+            <div className="h-full w-0 bg-[#22c55e]" />
           </div>
         </div>
-      </div>
+      ) : (
+        <VerifiedCommunityHeader
+          displayName={displayName}
+          stats={stats}
+          isMember={isMember}
+          onJoin={handleJoin}
+          currentUser={currentUser}
+        />
+      )}
 
       {/* Composer pre-filled with this community (authenticated users only) */}
       {isAuthenticated && (

@@ -16,7 +16,7 @@ const FEED_WEIGHTS = {
     comments: 2,       // per comment (2× likes)
     shares: 1.5,
     reposts: 1.5,
-    verified: 3,       // small boost for verified
+    verified: 8,       // stronger verified boost
     random: 3,         // was 12 — keep fresh but not chaotic
 };
 
@@ -57,9 +57,10 @@ export async function GET(request) {
         const mode = sanitizeMongoInput(searchParams.get("mode")) || "default"; // default or latest8h
         const feedType =
             sanitizeMongoInput(searchParams.get("feedType")) || "discover"; // discover or interests
+        const verifiedOnly = searchParams.get("verifiedOnly") === "true";
 
         // Create a cache key based on query params and current user (if logged in)
-        const cacheKey = `feed:${community || "global"}:${author || username || "all"}:${mode}:${feedType}:${cursor || "start"}:${limit}:${currentUser?._id || "guest"}`;
+        const cacheKey = `feed:${community || "global"}:${author || username || "all"}:${mode}:${feedType}:${cursor || "start"}:${limit}:${verifiedOnly ? "verified" : "all"}:${currentUser?._id || "guest"}`;
 
         await connectDB();
 
@@ -99,6 +100,44 @@ export async function GET(request) {
 
             if (resolvedAuthor) {
                 query.author = resolvedAuthor;
+            }
+
+            if (verifiedOnly) {
+                const verifiedUsers = await User.find({ isVerified: true }).select("_id").lean();
+                const verifiedUserIds = verifiedUsers.map((u) => u._id);
+                if (verifiedUserIds.length === 0) {
+                    return {
+                        posts: [],
+                        pagination: {
+                            nextCursor: null,
+                            hasNextPage: false,
+                            limit,
+                        },
+                    };
+                }
+                if (query.author) {
+                    const existingAuthorIds = [];
+                    if (query.author && typeof query.author === "object" && query.author.$in) {
+                        existingAuthorIds.push(...query.author.$in.map((id) => id.toString()));
+                    } else {
+                        existingAuthorIds.push(query.author.toString());
+                    }
+                    const verifiedIdStrs = new Set(verifiedUserIds.map((id) => id.toString()));
+                    const intersection = existingAuthorIds.filter((id) => verifiedIdStrs.has(id));
+                    if (intersection.length === 0) {
+                        return {
+                            posts: [],
+                            pagination: {
+                                nextCursor: null,
+                                hasNextPage: false,
+                                limit,
+                            },
+                        };
+                    }
+                    query.author = { $in: intersection };
+                } else {
+                    query.author = { $in: verifiedUserIds };
+                }
             }
 
             // Mode-specific queries
@@ -224,19 +263,11 @@ export async function GET(request) {
                 return acc;
             }, {});
 
-            // Compute liked-state per post using index-backed existence
-            // checks so we never materialize the full `likes` array.
-            const likedSet = new Set();
-            if (currentUser && resultPosts.length > 0) {
-                await Promise.all(
-                    resultPosts.map(async (post) => {
-                        const liked = await Post.exists({
-                            _id: post._id,
-                            likes: currentUser._id,
-                        });
-                        if (liked) likedSet.add(post._id.toString());
-                    }),
-                );
+            // Single query to fix N+1 — fetch all liked post ids at once
+            let likedSet = new Set();
+            if (currentUser?._id && resultPosts.length > 0) {
+                const likedPosts = await Post.find({ _id: { $in: resultPosts.map((p) => p._id) }, likes: currentUser._id }).select("_id").lean();
+                likedSet = new Set(likedPosts.map((p) => p._id.toString()));
             }
 
             const processedPosts = resultPosts.map((post) => {
@@ -323,8 +354,9 @@ export async function GET(request) {
             },
             {
                 headers: {
-                    "Cache-Control":
-                        "public, s-maxage=90, stale-while-revalidate=60",
+                    "Cache-Control": verifiedOnly
+                        ? "private, max-age=0, must-revalidate"
+                        : "public, s-maxage=90, stale-while-revalidate=60",
                     Vary: "Cookie",
                 },
             },

@@ -9,6 +9,7 @@ import {
     Settings,
     Shield,
     Search,
+    BookOpen,
 } from "lucide-react";
 
 // Shared navigation config used by Sidebar, Dock, and MobileNav.
@@ -19,6 +20,7 @@ export const primaryNavItems = [
     { label: "Feed", href: "/feed", icon: Home },
     { label: "Explore", href: "/search", icon: Search },
     { label: "Communities", href: "/community", icon: GraduationCap },
+    { label: "Study Rooms", href: "/study-rooms", icon: BookOpen },
     { label: "Chats", href: "/chats", icon: MessageSquare, badgeKey: "chatUnread" },
     {
         label: "Notifications",

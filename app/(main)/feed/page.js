@@ -16,6 +16,8 @@ import InfiniteScrollSentinel from "@/components/shared/InfiniteScrollSentinel";
 import PushPromptManager from "@/components/notifications/PushPromptManager";
 import Link from "next/link";
 import CommunitySwitcher from "@/components/feed/CommunitySwitcher";
+import VerifiedFilterToggle from "@/components/feed/VerifiedFilterToggle";
+import VerificationNudgeBanner from "@/components/shared/VerificationNudgeBanner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const PostComposer = dynamic(() => import("@/components/post/PostComposer"), {
@@ -54,6 +56,7 @@ export default function FeedPage() {
     const { user: currentUser, refetch: refetchCurrentUser } = useUser();
     const [selectedCommunity, setSelectedCommunity] = useState(null);
     const [activeTab, setActiveTab] = useState("discover");
+    const [verifiedOnly, setVerifiedOnly] = useState(false);
 
     const isLatestMode = activeTab === "new";
     const feedType = activeTab === "new" ? "discover" : activeTab;
@@ -73,6 +76,7 @@ export default function FeedPage() {
         ...(selectedCommunity && { community: selectedCommunity }),
         mode: isLatestMode ? "latest8h" : "default",
         feedType,
+        verifiedOnly,
     });
 
     const postsRef = useRef(posts);
@@ -163,6 +167,7 @@ export default function FeedPage() {
                 <div className="flex items-center justify-between px-3 h-[44px]">
                     <h1 className="text-[16px] font-bold tracking-tight">Home</h1>
                     <div className="flex items-center gap-1">
+                        <VerifiedFilterToggle active={verifiedOnly} onToggle={() => setVerifiedOnly((v) => !v)} />
                         <CommunitySwitcher selectedCommunity={selectedCommunity} onSelect={setSelectedCommunity} />
                     </div>
                 </div>
@@ -204,6 +209,8 @@ export default function FeedPage() {
                 <div className="border-b border-border/40 bg-background hover:bg-background transition-colors">
                     <PostComposer onPostCreated={handlePostCreated} defaultCommunity={selectedCommunity} />
                 </div>
+
+                <VerificationNudgeBanner />
 
                 <PushPromptManager newNotification={newNotification} />
 

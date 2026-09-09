@@ -15,15 +15,14 @@
 
 CampusZen is a student-focused social platform for Indian colleges. The app combines verified sign-in, campus communities, posts, clips, chats, resources, events, notifications, and admin moderation in one Next.js application.
 
-## ✨ Highlights
+## ✨ Highlights — v2.0 Verified Campus Graph
 
-- Verified student accounts with email/password, Google sign-in, OTP flows, and forgot-password recovery.
-- Social feed with posts, comments, reactions, shares, bookmarks, hashtags, and trending discovery.
-- Real-time direct messages and group chats with typing indicators and read states.
-- Resources, events, and clips for campus content beyond the main feed.
-- Notifications through in-app delivery, push subscriptions, and realtime updates.
-- Admin and moderation tooling for content, users, security, reports, verifications, and promo codes.
-- Public utility hub with developer-style tools for text, SEO, color, regex, UUIDs, JWTs, and more.
+- Verified student accounts: college email auto-verify (`@iitb.ac.in` → instant) + ID-card review queue (`/admin/verifications`), JWT HTTP-only cookies, Google OTP.
+- Verified-boosted feed: `FEED_WEIGHTS.verified` 8 points + `?verifiedOnly=true` filter (`app/api/posts/cursor-feed`).
+- College communities: verified member counts, verified ratio bar, college-gated discovery (`/community/[college]` + `VerifiedCommunityHeader`).
+- Study Rooms (new): college-gated LiveKit rooms (`/study-rooms`), `requiresVerified` default, `max 50`, realtime via Socket.IO (`CHAT_BACKEND_URL`).
+- Real-time DMs + group chats with typing/read, LiveKit voice, notification bell with push (`/api/notifications` + `emitToUser`).
+- Admin queue + user management with ban/verify/pro actions.
 
 ## 🧭 Core Product Areas
 
@@ -47,17 +46,17 @@ CampusZen is a student-focused social platform for Indian colleges. The app comb
 
 ### 💬 Chat and Realtime
 
-- Direct messages
-- Group chats
+- Direct messages + group chats (Socket.IO `CHAT_BACKEND_URL`, not Pusher)
+- Study Rooms — college-gated LiveKit voice (`/study-rooms`)
 - Typing indicators and read receipts
-- Realtime updates through Pusher channels
-- Notification bell and push notification preferences
+- Realtime updates via `lib/realtime.js` → `emitToUser/emitToGroup`
+- Notification bell and push (`Web Push` + `emitRealtime`)
 
-### 📚 Events and Resources
+### 📚 Communities & Study
 
-- Event creation and RSVP flows
-- Resource uploads, browsing, saved resources, and personal uploads
-- Resource moderation and admin review
+- College communities with verified counts (`VerifiedCommunityHeader`)
+- Community join + post count tracking
+- Study Rooms discovery by college/topic
 
 ### 👤 Profile and Account Management
 

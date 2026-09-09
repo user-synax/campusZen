@@ -101,6 +101,12 @@ export function usePosts(queryParams = {}, initialPosts = []) {
                     limit: 15,
                     ...queryParams,
                 });
+                // verifiedOnly: normalize boolean to "true"/"false" (default false)
+                if (queryParams.verifiedOnly !== undefined) {
+                    params.set("verifiedOnly", queryParams.verifiedOnly ? "true" : "false");
+                } else {
+                    params.set("verifiedOnly", "false");
+                }
                 if (currentCursor) params.set("cursor", currentCursor);
 
                 const res = await fetch(
@@ -241,6 +247,11 @@ export function usePosts(queryParams = {}, initialPosts = []) {
                 cursor,
                 ...queryParams,
             });
+            if (queryParams.verifiedOnly !== undefined) {
+                params.set("verifiedOnly", queryParams.verifiedOnly ? "true" : "false");
+            } else {
+                params.set("verifiedOnly", "false");
+            }
 
             const res = await fetch(
                 `/api/posts/cursor-feed?${params.toString()}`,

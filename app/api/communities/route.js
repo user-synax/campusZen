@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import { withCache, deleteCachePattern } from '@/lib/cache';
 import Community from '@/models/Community';
+import User from '@/models/User';
 import { sanitizeMongoInput } from '@/lib/sanitize';
 import { getCurrentUser } from '@/lib/auth';
 import { errorResponse, APIError, BadRequestError, UnauthorizedError } from '@/lib/api-response';
@@ -14,7 +15,7 @@ export async function GET(request) {
 
     await connectDB();
 
-    // Specific community stats
+    // Specific community stats — include verifiedMemberCount with on-the-fly fallback
     if (specificName) {
       const community = await Community.findOne({
         $or: [
@@ -23,8 +24,32 @@ export async function GET(request) {
         ]
       })
       if (!community) {
-        return NextResponse.json({ name: specificName, postCount: 0, memberCount: 0 })
+        return NextResponse.json({ name: specificName, postCount: 0, memberCount: 0, verifiedMemberCount: 0, isCollege: false })
       }
+
+      // Prefer stored field; compute on-the-fly if zero but members exist
+      let verifiedMemberCount = community.verifiedMemberCount ?? 0
+      if (verifiedMemberCount === 0 && community.members?.length > 0) {
+        try {
+          verifiedMemberCount = await User.countDocuments({ _id: { $in: community.members }, isVerified: true })
+          // Fire-and-forget sync stored value if we found verified members
+          if (verifiedMemberCount > 0) {
+            Community.updateOne({ _id: community._id }, { $set: { verifiedMemberCount } }).catch(() => {})
+          }
+        } catch {
+          verifiedMemberCount = community.verifiedMemberCount ?? 0
+        }
+      }
+
+      // Optional isMember for current user (non-breaking — undefined if guest)
+      let isMember = undefined
+      try {
+        const currentUser = await getCurrentUser(request)
+        if (currentUser) {
+          isMember = community.members.some((m) => m.toString() === currentUser._id.toString())
+        }
+      } catch {}
+
       return NextResponse.json({
         name: community.name,
         slug: community.slug,
@@ -32,15 +57,20 @@ export async function GET(request) {
         description: community.description,
         type: community.type,
         postCount: community.postCount,
-        memberCount: community.members.length
+        memberCount: community.members.length,
+        verifiedMemberCount: verifiedMemberCount ?? 0,
+        collegeDomain: community.collegeDomain || "",
+        isCollege: community.type === "college",
+        ...(isMember !== undefined ? { isMember } : {}),
       })
     }
 
-    // All communities
+    // All communities — sorted by verified first, include verifiedMemberCount
     const communities = await withCache('communities_list_v2', 60, async () => {
       const list = await Community.find()
-        .sort({ postCount: -1 })
+        .sort({ verifiedMemberCount: -1, postCount: -1 })
         .limit(limit)
+        .select("name slug emoji description type postCount members verifiedMemberCount collegeDomain updatedAt")
         .lean()
 
       return list.map(c => ({
@@ -51,6 +81,8 @@ export async function GET(request) {
         type: c.type,
         postCount: c.postCount,
         memberCount: c.members?.length || 0,
+        verifiedMemberCount: c.verifiedMemberCount ?? 0,
+        collegeDomain: c.collegeDomain || "",
         lastPost: c.updatedAt
       }))
     })

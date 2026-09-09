@@ -33,6 +33,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { CrownIcon } from "lucide-react";
 import Image from "next/image";
+import VerificationNudgeBanner from "@/components/shared/VerificationNudgeBanner";
 import { cn } from "@/lib/utils";
 
 const FollowListModal = dynamic(
@@ -659,6 +660,13 @@ export default function ProfileClient({ username: initialUsername }) {
                     </div>
                 </div>
             </div>
+
+            {/* Verification nudge for own profile */}
+            {isOwnProfile && !profileUser?.isVerified && profileUser?.verificationStatus !== "pending" && (
+                <div className="max-w-3xl w-full mx-auto sm:border-x sm:border-border/40">
+                    <VerificationNudgeBanner />
+                </div>
+            )}
 
             {/* Posts header — X style */}
             <div className="sticky top-0 z-20 flex border-b border-border mt-2 bg-background/80 backdrop-blur-md max-w-3xl w-full mx-auto sm:border-x sm:border-border/40">
