@@ -135,6 +135,28 @@ export default function SettingsPage() {
     return () => clearInterval(timer)
   }, [deleteCountdown])
 
+  // Reset email flow after drawer fully closes to avoid content swap during exit animation
+  useEffect(() => {
+    if (!changeEmailOpen) {
+      const t = setTimeout(() => {
+        setEmailStep(1)
+        setEmailForm({ newEmail: '', otp: '' })
+      }, 400)
+      return () => clearTimeout(t)
+    }
+  }, [changeEmailOpen])
+
+  // Reset delete flow after dialog closes
+  useEffect(() => {
+    if (!deleteAccountOpen) {
+      const t = setTimeout(() => {
+        setDeleteStep(1)
+        setDeleteOtp('')
+      }, 400)
+      return () => clearTimeout(t)
+    }
+  }, [deleteAccountOpen])
+
   const passwordConditions = {
     length: passwordForm.newPassword.length >= 8,
     uppercase: /[A-Z]/.test(passwordForm.newPassword),
@@ -554,7 +576,7 @@ export default function SettingsPage() {
 
       {/* Change Password — Sheet: bottom panel, Framer surfaces */}
       <Sheet open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
-        <SheetContent side="bottom" className="rounded-t-[20px] border-t border-[#262626] bg-[#141414] p-0 max-w-[640px] mx-auto max-h-[92vh] overflow-hidden flex flex-col data-[state=open]:animate-[panelIn_var(--duration-slow)_var(--ease-smooth-out)] data-[state=closed]:animate-[panelOut_var(--duration-medium)_var(--ease-smooth-out)]">
+        <SheetContent side="bottom" className="rounded-t-[20px] border-t border-[#262626] bg-[#141414] p-0 max-w-[640px] mx-auto max-h-[92vh] overflow-hidden flex flex-col">
           <SheetHeader className="shrink-0 px-5 sm:px-6 pt-5 pb-4 border-b border-[#1a1a1a] text-left">
             <SheetTitle className="text-[18px] font-bold tracking-[-0.3px] text-white flex items-center gap-2.5">
               <span className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0"><Lock className="w-4 h-4 text-black" /></span>
@@ -637,13 +659,12 @@ export default function SettingsPage() {
               Save new password
             </Button>
           </form>
-          <style>{`@keyframes panelIn { from { transform: translateY(8px) scale(var(--scale-medium)); opacity:0; filter: blur(var(--blur-small)); } to { transform: translateY(0) scale(1); opacity:1; filter: blur(0); } } @keyframes panelOut { from { transform: translateY(0) scale(1); opacity:1; } to { transform: translateY(8px) scale(var(--scale-tiny)); opacity:0; filter: blur(var(--blur-small)); } }`}</style>
         </SheetContent>
       </Sheet>
 
       {/* Change Email — Sheet */}
-      <Sheet open={changeEmailOpen} onOpenChange={(v) => { setChangeEmailOpen(v); if (!v) { setEmailStep(1); setEmailForm({ newEmail: '', otp: '' }) } }}>
-        <SheetContent side="bottom" className="rounded-t-[20px] border-t border-[#262626] bg-[#141414] p-0 max-w-[640px] mx-auto max-h-[92vh] overflow-hidden flex flex-col data-[state=open]:animate-[panelIn_var(--duration-slow)_var(--ease-smooth-out)] data-[state=closed]:animate-[panelOut_var(--duration-medium)_var(--ease-smooth-out)]">
+      <Sheet open={changeEmailOpen} onOpenChange={setChangeEmailOpen}>
+        <SheetContent side="bottom" className="rounded-t-[20px] border-t border-[#262626] bg-[#141414] p-0 max-w-[640px] mx-auto max-h-[92vh] overflow-hidden flex flex-col">
           <SheetHeader className="shrink-0 px-5 sm:px-6 pt-5 pb-4 border-b border-[#1a1a1a] text-left">
             <SheetTitle className="text-[18px] font-bold tracking-[-0.3px] text-white flex items-center gap-2.5">
               <span className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0"><Mail className="w-4 h-4 text-black" /></span>
@@ -759,9 +780,11 @@ export default function SettingsPage() {
               </div>
             </>
           )}
-          <style>{`@keyframes modalIn { from { transform: scale(var(--scale-large)); opacity:0; filter: blur(var(--blur-small)); } to { transform: scale(1); opacity:1; filter: blur(0); } } @keyframes modalOut { from { transform: scale(1); opacity:1; } to { transform: scale(var(--scale-large)); opacity:0; filter: blur(var(--blur-small)); } }`}</style>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Global motion keyframes — outside conditional mounts so Sheets can close even if sibling never opened */}
+      <style>{`@keyframes panelIn { from { transform: translateY(8px) scale(var(--scale-medium)); opacity:0; filter: blur(var(--blur-small)); } to { transform: translateY(0) scale(1); opacity:1; filter: blur(0); } } @keyframes panelOut { from { transform: translateY(0) scale(1); opacity:1; } to { transform: translateY(8px) scale(var(--scale-tiny)); opacity:0; filter: blur(var(--blur-small)); } } @keyframes modalIn { from { transform: scale(var(--scale-large)); opacity:0; filter: blur(var(--blur-small)); } to { transform: scale(1); opacity:1; filter: blur(0); } } @keyframes modalOut { from { transform: scale(1); opacity:1; } to { transform: scale(var(--scale-large)); opacity:0; filter: blur(var(--blur-small)); } }`}</style>
     </div>
   )
 }
