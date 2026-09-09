@@ -6,7 +6,6 @@ import '@/models/User'
 import '@/models/Post'
 import '@/models/Comment'
 import '@/models/GroupChat'
-import '@/models/Resource'
 import { getNotificationText, getNotificationIcon, getNotificationURL } from '@/lib/notifications'
  
 export async function GET(request) { 

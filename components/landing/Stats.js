@@ -1,9 +1,9 @@
 "use client"
 
 import { useEffect, useRef } from 'react'
-import { Users, FileText, BookOpen, Code } from 'lucide-react'
+import { Users, FileText, Code } from 'lucide-react'
 
-export default function Stats({ users = 50, posts = 120, resources = 20, codeAreas = 3 }) {
+export default function Stats({ users = 50, posts = 120, codeAreas = 3 }) {
   const sectionRef = useRef(null)
   const staggerRef = useRef(null)
   const tiltRefs = useRef([])
@@ -13,7 +13,6 @@ export default function Stats({ users = 50, posts = 120, resources = 20, codeAre
   const STATS_CONFIG = [
     { label: 'Users', value: users, suffix: '+', icon: Users },
     { label: 'Posts', value: posts, suffix: '+', icon: FileText },
-    { label: 'Resources', value: resources, suffix: '+', icon: BookOpen },
     { label: 'Code Areas', value: codeAreas, suffix: '', icon: Code },
   ]
 
@@ -128,7 +127,7 @@ export default function Stats({ users = 50, posts = 120, resources = 20, codeAre
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:gap-8 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:gap-8 lg:grid-cols-3">
           {STATS_CONFIG.map((stat, i) => (
             <div
               key={i}

@@ -466,7 +466,7 @@ export default function PostComposer({
     return (
         <div
             className={cn(
-                "px-4 py-3.5 transition-colors duration-300",
+                "px-3 sm:px-4 py-3 transition-colors duration-300 overflow-hidden",
                 isBlocked
                     ? "bg-red-500/10 border-red-500/30"
                     : "bg-background/50",

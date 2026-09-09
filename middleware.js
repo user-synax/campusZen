@@ -5,7 +5,6 @@ const protectedRoutes = [
     "/search",
     "/notifications",
     "/communities",
-    "/resources",
     "/settings",
     "/bookmarks",
     "/chats",

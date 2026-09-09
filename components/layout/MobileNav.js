@@ -239,61 +239,20 @@ export default function MobileNav() {
                             </div>
 
                             <nav className="p-2 space-y-1">
-                                <Link
-                                    href="/resources"
-                                    onClick={() => setOpen(false)}
-                                >
+                                <Link href="/search" onClick={() => setOpen(false)}>
                                     <Button
                                         variant="ghost"
                                         className={cn(
                                             "w-full justify-start gap-4 h-12 px-3",
-                                            pathname.startsWith("/resources")
+                                            pathname === "/search"
                                                 ? "bg-accent text-accent-foreground font-bold"
                                                 : "text-muted-foreground",
                                         )}
                                     >
-                                        <BookOpen className="w-5 h-5" />
-                                        <span className="text-base font-medium">
-                                            Resources
-                                        </span>
+                                        <Search className="w-5 h-5" />
+                                        <span className="text-base font-medium">Explore</span>
                                     </Button>
                                 </Link>
-
-                                {/* Resources Sub-links */}
-                                {pathname.startsWith("/resources") && (
-                                    <div className="flex flex-col gap-0.5 pl-12 pr-3 py-1">
-                                        {[
-                                            {
-                                                label: "My Uploads",
-                                                href: "/resources/my-uploads",
-                                                icon: History,
-                                            },
-                                            {
-                                                label: "Saved",
-                                                href: "/resources/saved",
-                                                icon: Heart,
-                                            },
-                                        ].map((sub) => (
-                                            <Link
-                                                key={sub.href}
-                                                href={sub.href}
-                                                onClick={() => setOpen(false)}
-                                            >
-                                                <button
-                                                    className={cn(
-                                                        "flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-bold transition-all uppercase tracking-wider",
-                                                        pathname === sub.href
-                                                            ? "bg-primary/10 text-primary"
-                                                            : "text-muted-foreground/60 hover:text-foreground",
-                                                    )}
-                                                >
-                                                    <sub.icon className="w-3 h-3" />
-                                                    {sub.label}
-                                                </button>
-                                            </Link>
-                                        ))}
-                                    </div>
-                                )}
                                 <Link
                                     href="/search"
                                     onClick={() => setOpen(false)}

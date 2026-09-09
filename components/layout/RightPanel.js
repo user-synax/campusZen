@@ -2,78 +2,27 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, Hash, Calendar, Users2, ChevronDown } from "lucide-react";
+import { Search, TrendingUp, Hash, Users2, Crown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import FollowButton from "@/components/user/FollowButton";
 import useUser from "@/hooks/useUser";
 import TrendingPosts from "@/components/feed/TrendingPosts";
 import clientCache from "@/lib/client-cache";
+import { Button } from "@/components/ui/button";
 
-// ─── localStorage helpers ─────────────────────────────────────────────────────
-function readLocalBool(key, defaultValue) {
-    if (typeof window === "undefined") return defaultValue;
-    const raw = localStorage.getItem(key);
-    if (raw === null) return defaultValue;
-    return raw === "true";
-}
-
-function writeLocalBool(key, value) {
-    if (typeof window === "undefined") return;
-    localStorage.setItem(key, String(value));
-}
-
-// ─── Accordion section header ─────────────────────────────────────────────────
-function AccordionSection({ icon: Icon, title, storageKey, defaultOpen = false, rightElement, children }) {
-    const [open, setOpen] = useState(defaultOpen);
-
-    useEffect(() => {
-        setOpen(readLocalBool(storageKey, defaultOpen));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    const toggle = () => {
-        const next = !open;
-        setOpen(next);
-        writeLocalBool(storageKey, next);
-    };
-
+function SectionCard({ children, className = "" }) {
     return (
-        <div className="right-panel-acc t-acc" data-open={open}>
-            {/* Header row — acts as toggle */}
-            <button
-                onClick={toggle}
-                className="chip-chunky hover:cursor-pointer flex items-center justify-between w-[calc(100%-1rem)] mx-2 my-1 p-3.5 group text-left"
-                aria-expanded={open}
-            >
-                <div className="flex items-center gap-2">
-                    <Icon className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors duration-150" />
-                    <h3 className="text-sm font-bold">{title}</h3>
-                </div>
-                <div className="flex items-center gap-2">
-                    {rightElement}
-                    <span className="t-acc-chevron inline-flex">
-                        <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-foreground transition-colors duration-150 shrink-0" />
-                    </span>
-                </div>
-            </button>
-
-            {/* Content — smooth grid-rows reveal */}
-            <div className="t-acc-panel">
-                <div className="t-acc-panel-inner">
-                    <div className="px-4 pb-4">{children}</div>
-                </div>
-            </div>
+        <div className={`bg-card border border-border/40 rounded-[16px] shadow-sm overflow-hidden hover:border-border/60 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] ${className}`}>
+            {children}
         </div>
     );
 }
 
 export default function RightPanel() {
-    const { user: currentUser, loading: userLoading } = useUser();
+    const { user: currentUser } = useUser();
     const [trending, setTrending] = useState([]);
     const [trendingHashtags, setTrendingHashtags] = useState([]);
-    const [upcomingEvents, setUpcomingEvents] = useState([]);
     const [suggestions, setSuggestions] = useState([]);
     const [loading, setLoading] = useState(true);
     const panelRef = useRef(null);
@@ -85,365 +34,199 @@ export default function RightPanel() {
 
     useEffect(() => {
         const CACHE_KEY = "cx_right_panel_data";
-        const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
+        const CACHE_TTL = 5 * 60 * 1000;
         const fetchData = async () => {
-            // Check client cache first
             const cached = clientCache.get(CACHE_KEY);
             if (cached) {
                 setTrending(cached.trending || []);
                 setSuggestions(cached.suggestions || []);
                 setTrendingHashtags(cached.trendingHashtags || []);
-                setUpcomingEvents(cached.upcomingEvents || []);
                 setLoading(false);
                 return;
             }
-
             try {
                 setLoading(true);
-                const [trendRes, suggestRes, hashtagRes, eventRes] =
-                    await Promise.all([
-                        fetch("/api/communities?limit=5"),
-                        fetch("/api/users/suggestions?limit=9"),
-                        fetch("/api/hashtags/trending?limit=6"),
-                        fetch("/api/events?filter=upcoming&limit=3"),
-                    ]);
-
+                const [trendRes, suggestRes, hashtagRes] = await Promise.all([
+                    fetch("/api/communities?limit=5"),
+                    fetch("/api/users/suggestions?limit=5"),
+                    fetch("/api/hashtags/trending?limit=6"),
+                ]);
                 const trendData = await trendRes.json();
                 const suggestData = await suggestRes.json();
                 const hashtagData = await hashtagRes.json();
-                const eventData = await eventRes.json();
-
                 const trendingVal = trendRes.ok ? trendData : [];
                 const suggestionsVal = suggestRes.ok ? suggestData : [];
                 const hashtagsVal = hashtagRes.ok ? (hashtagData.hashtags || []) : [];
-                const eventsVal = eventRes.ok ? (eventData.events || []) : [];
-
                 setTrending(trendingVal);
                 setSuggestions(suggestionsVal);
                 setTrendingHashtags(hashtagsVal);
-                setUpcomingEvents(eventsVal);
-
-                // Cache the combined result
-                clientCache.set(CACHE_KEY, {
-                    trending: trendingVal,
-                    suggestions: suggestionsVal,
-                    trendingHashtags: hashtagsVal,
-                    upcomingEvents: eventsVal,
-                }, CACHE_TTL);
-            } catch (error) {
-                console.error("Right panel fetch error:", error);
+                clientCache.set(CACHE_KEY, { trending: trendingVal, suggestions: suggestionsVal, trendingHashtags: hashtagsVal }, CACHE_TTL);
+            } catch (e) {
+                console.error("Right panel fetch error:", e);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchData();
     }, []);
 
-    const formatCount = (count) => {
-        if (count >= 1000) return (count / 1000).toFixed(1) + "k";
-        return count;
-    };
-
-    // After loading, hide the Events section entirely if there are no events
-    const showEventsSection = loading || upcomingEvents.length > 0;
+    const formatCount = (c) => (c >= 1000 ? (c / 1000).toFixed(1) + "k" : c);
 
     return (
-        <aside className="hidden xl:block fixed right-0 top-0 h-screen w-87.5 py-4 px-3 overflow-y-auto custom-scrollbar">
-            {/* Unified panel */}
-                <div className="card-chunky bg-card overflow-hidden">
-                <div className="t-stagger" ref={panelRef}>
-                <div className="t-stagger-line">
-                {/* ── Trending Communities — always expanded ── */}
-                <section className="p-4">
-                    <div className="flex items-center justify-between mb-3.5">
-                        <div className="flex items-center gap-2">
-                            <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
-                            <h3 className="text-sm font-bold">
-                                Trending Communities
-                            </h3>
+        <aside className="hidden xl:block fixed right-0 top-0 h-screen w-[320px] xl:w-[340px] pr-3 pl-5 py-2.5 overflow-y-auto custom-scrollbar bg-background">
+            <div ref={panelRef} className="t-stagger space-y-2.5">
+                {/* Search — compact */}
+                <div className="t-stagger-line sticky top-0 z-10 bg-background/80 backdrop-blur-xl pt-1 pb-2.5 -mx-1 px-1" style={{ "--i": 0 }}>
+                    <Link href="/search" className="group flex items-center gap-2.5 bg-muted/70 hover:bg-background border border-transparent hover:border-border/60 rounded-full px-3.5 py-2 hover:cursor-pointer transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] focus-within:bg-background focus-within:border-[var(--color-electric-violet)]/30 focus-within:ring-2 focus-within:ring-[var(--color-electric-violet)]/15">
+                        <Search className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-focus-within:text-[var(--color-electric-violet)] transition-colors duration-[var(--duration-fast)] shrink-0" />
+                        <span className="text-[13px] text-muted-foreground truncate">Search CampusZen</span>
+                    </Link>
+                </div>
+
+                {/* Premium upsell — compact */}
+                <SectionCard className="t-stagger-line p-3" style={{ "--i": 1 }}>
+                    <h2 className="text-[16px] font-extrabold tracking-tight leading-none">Subscribe to Premium</h2>
+                    <p className="text-[12px] text-muted-foreground leading-snug mt-1.5">Unlock custom themes, animated banners, and ad-free violet.</p>
+                    <Button className="mt-2.5 rounded-full bg-[var(--color-electric-violet)] hover:bg-[var(--color-deep-iris)] text-white font-bold px-4 py-2 h-7 text-[12px] hover:cursor-pointer transition-all duration-[var(--duration-fast)] hover:-translate-y-[1px] active:translate-y-0">
+                        Subscribe
+                    </Button>
+                </SectionCard>
+
+                {/* What's happening — compact */}
+                <SectionCard className="t-stagger-line" style={{ "--i": 2 }}>
+                    <div className="p-3 pb-1.5">
+                        <h3 className="text-[15px] font-bold tracking-tight flex items-center gap-1.5">
+                            <TrendingUp className="w-4 h-4 text-[var(--color-electric-violet)]" /> What&apos;s happening
+                        </h3>
+                    </div>
+
+                    <div className="px-1.5 pb-1.5">
+                        {loading ? (
+                            Array(3).fill(0).map((_, i) => (
+                                <div key={i} className="flex items-center gap-2.5 px-2.5 py-2">
+                                    <Skeleton className="h-3 w-5 rounded" />
+                                    <div className="flex-1 space-y-1">
+                                        <Skeleton className="h-3.5 w-24" />
+                                        <Skeleton className="h-2.5 w-14" />
+                                    </div>
+                                </div>
+                            ))
+                        ) : trending.length === 0 ? (
+                            <p className="text-[11px] text-muted-foreground text-center py-2">No trends yet.</p>
+                        ) : (
+                            trending.slice(0, 5).map((item) => (
+                                <Link key={item.slug} href={`/community/${item.slug}`} className="group flex items-center justify-between px-2.5 py-2 rounded-[10px] hover:bg-accent/60 hover:cursor-pointer transition-colors duration-[var(--duration-fast)]">
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-[11px] text-muted-foreground leading-none">Trending</p>
+                                        <p className="text-[13px] font-semibold truncate group-hover:text-[var(--color-electric-violet)] transition-colors">{item.name}</p>
+                                        <p className="text-[11px] text-muted-foreground">{formatCount(item.postCount)} posts</p>
+                                    </div>
+                                    <span className="text-[11px] font-bold text-muted-foreground/30">›</span>
+                                </Link>
+                            ))
+                        )}
+                    </div>
+
+                    <div className="border-t border-border/30">
+                        <div className="p-2.5">
+                            <TrendingPosts />
                         </div>
                     </div>
 
-                    <div className="space-y-3">
+                    <div className="border-t border-border/30 p-2.5">
+                        <div className="flex items-center gap-1.5 mb-1.5 px-1">
+                            <Hash className="w-3.5 h-3.5 text-muted-foreground" />
+                            <h4 className="text-[12px] font-bold">Trending tags</h4>
+                        </div>
                         {loading ? (
-                            Array(3)
-                                .fill(0)
-                                .map((_, i) => (
-                                    <div
-                                        key={i}
-                                        className="flex items-center gap-3"
-                                    >
-                                        <Skeleton className="h-3 w-4 bg-secondary rounded" />
-                                        <div className="flex-1 space-y-1.5">
-                                            <Skeleton className="h-3.5 w-28 bg-secondary" />
-                                            <Skeleton className="h-2.5 w-16 bg-secondary" />
-                                        </div>
-                                    </div>
-                                ))
-                        ) : trending.length === 0 ? (
-                            <p className="text-xs text-muted-foreground text-center py-2">
-                                No trending communities yet.
-                            </p>
-                        ) : (
-                            trending.slice(0, 5).map((item, i) => (
-                                <Link
-                                    key={item.slug}
-                                    href={`/community/${item.slug}`}
-                                    className="group flex items-center gap-3"
-                                >
-                                    <span className="text-[11px] font-bold text-muted-foreground/40 w-4 shrink-0 tabular-nums select-none">
-                                        {String(i + 1).padStart(2, "0")}
-                                    </span>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-semibold truncate group-hover:text-primary transition-colors duration-150">
-                                            {item.name}
-                                        </p>
-                                        <p className="text-[11px] text-muted-foreground">
-                                            {item.postCount} posts ·{" "}
-                                            {item.memberCount} members
-                                        </p>
-                                    </div>
-                                </Link>
-                            ))
-                        )}
-                    </div>
-                </section>
-
-                <div className="border-t border-border/40" />
-
-                {/* ── Trending Posts ── */}
-                <section className="p-4">
-                    <TrendingPosts />
-                </section>
-
-                <div className="border-t border-border/40" />
-
-                {/* ── Trending Hashtags — collapsible, closed by default ── */}
-                <AccordionSection
-                    icon={Hash}
-                    title="Trending Hashtags"
-                    storageKey="cx_rp_hashtags_open"
-                    defaultOpen={false}
-                >
-                    <div className="space-y-0.5">
-                        {loading ? (
-                            Array(3)
-                                .fill(0)
-                                .map((_, i) => (
-                                    <div
-                                        key={i}
-                                        className="flex items-center justify-between px-2 py-1.5"
-                                    >
-                                        <Skeleton className="h-3.5 w-20 bg-secondary" />
-                                        <Skeleton className="h-2.5 w-10 bg-secondary" />
-                                    </div>
-                                ))
-                        ) : trendingHashtags.length === 0 ? (
-                            <p className="text-xs text-muted-foreground text-center py-2">
-                                No trending hashtags yet.
-                            </p>
-                        ) : (
-                            trendingHashtags.map((ht, i) => (
-                                <Link
-                                    key={ht.tag}
-                                    href={`/hashtag/${ht.tag}`}
-                                    className="group flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-accent/60 transition-all duration-150"
-                                >
-                                    <div className="flex items-center gap-2.5 min-w-0">
-                                        <span className="text-[11px] font-bold text-muted-foreground/40 w-4 shrink-0 tabular-nums select-none">
-                                            {i + 1}
-                                        </span>
-                                        <span className="text-sm font-semibold text-primary truncate">
-                                            #{ht.tag}
-                                        </span>
-                                    </div>
-                                    <span className="text-[11px] text-muted-foreground shrink-0 pl-2">
-                                        {formatCount(ht.postCount)} posts
-                                    </span>
-                                </Link>
-                            ))
-                        )}
-                    </div>
-                </AccordionSection>
-
-                {/* ── Upcoming Events — collapsible, closed by default, hidden if empty ── */}
-                {showEventsSection && (
-                    <>
-                        <div className="border-t border-border/40" />
-                        <AccordionSection
-                            icon={Calendar}
-                            title="Upcoming Events"
-                            storageKey="cx_rp_events_open"
-                            defaultOpen={false}
-                            rightElement={
-                                <Link
-                                    href="/events"
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="text-[11px] text-primary font-medium hover:underline underline-offset-2"
-                                >
-                                    See all
-                                </Link>
-                            }
-                        >
-                            <div className="space-y-3">
-                                {loading ? (
-                                    Array(3)
-                                        .fill(0)
-                                        .map((_, i) => (
-                                            <div key={i} className="flex gap-3">
-                                                <Skeleton className="h-10 w-10 rounded-lg bg-secondary shrink-0" />
-                                                <div className="flex-1 space-y-1.5">
-                                                    <Skeleton className="h-3.5 w-32 bg-secondary" />
-                                                    <Skeleton className="h-2.5 w-20 bg-secondary" />
-                                                </div>
-                                            </div>
-                                        ))
-                                ) : (
-                                    upcomingEvents.map((event) => (
-                                        <Link
-                                            key={event._id}
-                                            href={`/events/${event._id}`}
-                                            className="group flex gap-3"
-                                        >
-                                            <div className="text-center bg-accent/50 rounded-lg px-2 py-1.5 shrink-0 min-w-[40px] border border-border/50 h-fit">
-                                                <p className="text-[8px] text-muted-foreground uppercase font-bold tracking-wide leading-none">
-                                                    {format(
-                                                        new Date(event.eventDate),
-                                                        "MMM",
-                                                    )}
-                                                </p>
-                                                <p className="text-base font-black leading-tight mt-0.5 tabular-nums">
-                                                    {format(
-                                                        new Date(event.eventDate),
-                                                        "d",
-                                                    )}
-                                                </p>
-                                            </div>
-                                            <div className="flex-1 min-w-0 py-0.5">
-                                                <p className="text-sm font-semibold group-hover:text-primary transition-colors duration-150 truncate">
-                                                    {event.title}
-                                                </p>
-                                                <p className="text-[11px] text-muted-foreground truncate">
-                                                    {event.college}
-                                                </p>
-                                            </div>
-                                        </Link>
-                                    ))
-                                )}
+                            <div className="flex flex-wrap gap-1 px-1">
+                                {Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-6 w-14 rounded-full" />)}
                             </div>
-                        </AccordionSection>
-                    </>
-                )}
-
-                <div className="border-t border-border/40" />
-
-                {/* ── Who to Follow — collapsible, closed by default ── */}
-                <AccordionSection
-                    icon={Users2}
-                    title="Who to Follow"
-                    storageKey="cx_rp_follow_open"
-                    defaultOpen={false}
-                >
-                    <div className="space-y-3">
-                        {loading ? (
-                            Array(3)
-                                .fill(0)
-                                .map((_, i) => (
-                                    <div
-                                        key={i}
-                                        className="flex items-center gap-3"
-                                    >
-                                        <Skeleton className="h-8 w-8 rounded-full bg-secondary shrink-0" />
-                                        <div className="flex-1 space-y-1.5">
-                                            <Skeleton className="h-3.5 w-24 bg-secondary" />
-                                            <Skeleton className="h-2.5 w-16 bg-secondary" />
-                                        </div>
-                                        <Skeleton className="h-6 w-14 rounded-full bg-secondary" />
-                                    </div>
-                                ))
-                        ) : suggestions.length === 0 ? (
-                            <p className="text-xs text-muted-foreground text-center py-2">
-                                No suggestions found.
-                            </p>
+                        ) : trendingHashtags.length === 0 ? (
+                            <p className="text-[11px] text-muted-foreground px-1 py-1">No tags trending.</p>
                         ) : (
-                            suggestions.slice(-9).map((user) => (
-                                <div
-                                    key={user._id}
-                                    className="flex items-center justify-between gap-2"
-                                >
-                                    <Link
-                                        href={`/profile/${user.username}`}
-                                        className="flex items-center gap-2.5 min-w-0 flex-1"
-                                    >
-                                        <Avatar className="h-8 w-8 shrink-0 ring-1 ring-border/60">
-                                            <AvatarImage
-                                                src={user.avatar}
-                                                alt={user.name}
-                                            />
-                                            <AvatarFallback className="text-xs font-semibold">
-                                                {user.name
-                                                    ?.charAt(0)
-                                                    ?.toUpperCase()}
-                                            </AvatarFallback>
+                            <div className="flex flex-wrap gap-1 px-1">
+                                {trendingHashtags.slice(0, 6).map((ht) => (
+                                    <Link key={ht.tag} href={`/hashtag/${ht.tag}`} className="px-2.5 py-1 rounded-full bg-accent hover:bg-[var(--color-soft-lilac)]/30 border border-transparent hover:border-[var(--color-electric-violet)]/20 text-[11px] font-semibold hover:text-[var(--color-electric-violet)] hover:cursor-pointer transition-all duration-[var(--duration-fast)]">
+                                        #{ht.tag}
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <Link href="/community" className="block px-3 py-2 text-[12px] text-[var(--color-electric-violet)] hover:bg-accent/40 rounded-b-[16px] hover:cursor-pointer transition-colors">
+                        Show more
+                    </Link>
+                </SectionCard>
+
+                {/* Who to follow — compact */}
+                <SectionCard className="t-stagger-line" style={{ "--i": 3 }}>
+                    <div className="p-3 pb-1.5">
+                        <h3 className="text-[15px] font-bold tracking-tight flex items-center gap-1.5">
+                            <Users2 className="w-4 h-4 text-[var(--color-electric-violet)]" /> Who to follow
+                        </h3>
+                    </div>
+                    <div className="px-1.5 pb-1.5 space-y-0.5">
+                        {loading ? (
+                            Array(3).fill(0).map((_, i) => (
+                                <div key={i} className="flex items-center gap-2.5 px-2.5 py-1.5">
+                                    <Skeleton className="h-8 w-8 rounded-full" />
+                                    <div className="flex-1 space-y-1">
+                                        <Skeleton className="h-3 w-20" />
+                                        <Skeleton className="h-2.5 w-14" />
+                                    </div>
+                                    <Skeleton className="h-7 w-14 rounded-full" />
+                                </div>
+                            ))
+                        ) : suggestions.length === 0 ? (
+                            <p className="text-[11px] text-muted-foreground text-center py-2">No suggestions.</p>
+                        ) : (
+                            suggestions.slice(0, 3).map((u) => (
+                                <div key={u._id} className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-[10px] hover:bg-accent/50 transition-colors group">
+                                    <Link href={`/profile/${u.username}`} className="flex items-center gap-2.5 min-w-0 flex-1 hover:cursor-pointer">
+                                        <Avatar className="h-8 w-8 ring-1 ring-border/50 group-hover:ring-[var(--color-electric-violet)]/20 transition-all">
+                                            <AvatarImage src={u.avatar} alt={u.name} />
+                                            <AvatarFallback className="text-[11px] font-bold bg-accent">{u.name?.charAt(0)?.toUpperCase()}</AvatarFallback>
                                         </Avatar>
                                         <div className="min-w-0">
-                                            <p className="text-sm font-semibold group-hover:text-primary truncate leading-tight hover:text-primary transition-colors duration-150">
-                                                {user.name}
-                                            </p>
-                                            <p className="text-[11px] text-muted-foreground truncate">
-                                                @{user.username}
-                                            </p>
+                                            <p className="text-[13px] font-semibold leading-none truncate">{u.name}</p>
+                                            <p className="text-[11px] text-muted-foreground truncate">@{u.username}</p>
                                         </div>
                                     </Link>
-                                    <FollowButton
-                                        targetUserId={user._id}
-                                        username={user.username}
-                                        initialIsFollowing={currentUser?.following?.includes(
-                                            user._id,
-                                        )}
-                                        size="xs"
-                                    />
+                                    <FollowButton targetUserId={u._id} username={u.username} initialIsFollowing={currentUser?.following?.includes(u._id)} size="xs" className="rounded-full bg-foreground text-background hover:bg-foreground/90 dark:bg-white dark:text-black font-bold px-3 h-7 text-[11px] hover:cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]" />
                                 </div>
                             ))
                         )}
                     </div>
-                </AccordionSection>
-                </div>
+                    <Link href="/connect" className="block px-3 py-2 text-[12px] text-[var(--color-electric-violet)] hover:bg-accent/40 rounded-b-[16px] hover:cursor-pointer transition-colors">
+                        Show more
+                    </Link>
+                </SectionCard>
+
+                {/* Footer — compact, no sparkle */}
+                <div className="t-stagger-line px-3 py-2.5 text-[11px] leading-4 text-muted-foreground/60 space-y-1.5" style={{ "--i": 4 }}>
+                    <div className="flex flex-wrap gap-x-2.5 gap-y-1">
+                        {[
+                            ["Terms", "/terms"],
+                            ["Privacy", "/privacy"],
+                            ["Docs", "/docs"],
+                            ["Brand", "/brand"],
+                            ["About", "/about"],
+                        ].map(([label, href]) => (
+                            <Link key={label} href={href} className="hover:underline hover:text-muted-foreground hover:cursor-pointer underline-offset-2 transition-colors">
+                                {label}
+                            </Link>
+                        ))}
+                        <a href="https://instagram.com/user.__.ayush" target="_blank" rel="noopener" className="hover:underline hover:cursor-pointer">
+                            Developer
+                        </a>
+                    </div>
+                    <p className="flex items-center gap-1 text-[11px]">
+                        <Crown className="w-3 h-3 text-[var(--color-electric-violet)]" /> © {new Date().getFullYear()} CampusZen · v1.0.0
+                    </p>
                 </div>
             </div>
-
-            {/* Footer */}
-            <footer className="mt-4 px-1 text-[10px] text-muted-foreground/50 space-y-1.5 pb-2">
-                <div className="flex flex-wrap gap-x-3 gap-y-1">
-                    <Link
-                        href="/terms"
-                        className="hover:text-muted-foreground transition-colors"
-                    >
-                        Terms
-                    </Link>
-                    <Link
-                        href="/privacy"
-                        className="hover:text-muted-foreground transition-colors"
-                    >
-                        Privacy
-                    </Link>
-                    <Link
-                        href="https://instagram.com/user.__.ayush"
-                        target="blank_"
-                        className="hover:text-muted-foreground transition-colors"
-                    >
-                        Developer
-                    </Link>
-                </div>
-                <p>
-                    © {new Date().getFullYear()} CampusZen · Built for students
-                </p>
-                <p>
-                    V - 1.0.0
-                </p>
-            </footer>
         </aside>
     );
 }

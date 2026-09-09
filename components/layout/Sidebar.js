@@ -10,13 +10,9 @@ import {
     Bookmark,
     Search,
     MessageSquare,
-    BarChart2,
     Settings,
     Shield,
     Palette,
-    BookOpen,
-    History,
-    Heart,
     Sun,
     Moon,
     Crown,
@@ -25,11 +21,14 @@ import {
     Star,
     Rocket,
     ShieldCheck,
-    ChevronDown,
-    ChevronRight,
     Link2,
     Check,
-    BookText
+    MoreHorizontal,
+    Feather,
+    LogOut,
+    Settings2,
+    HelpCircle,
+    Monitor,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useChatUnreadCount } from "@/context/ChatUnreadContext";
@@ -39,10 +38,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Logo from "@/components/shared/Logo";
 import useUser from "@/hooks/useUser";
 import { useNotifications } from "@/hooks/useNotifications";
-import NotificationBell from "@/components/notifications/NotificationBell";
 import { cn } from "@/lib/utils";
 import { isFounder } from "@/lib/founder";
 import { isAdmin } from "@/lib/admin";
+import { PREMIUM_THEMES } from "@/context/ThemeContext";
 import {
     primaryNavItems as basePrimaryNavItems,
     moreItems,
@@ -64,93 +63,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { PREMIUM_THEMES } from "@/context/ThemeContext";
-
-// ─── localStorage helpers ─────────────────────────────────────────────────────
-function readLocalBool(key, defaultValue) {
-    if (typeof window === "undefined") return defaultValue;
-    const raw = localStorage.getItem(key);
-    if (raw === null) return defaultValue;
-    return raw === "true";
-}
-
-function writeLocalBool(key, value) {
-    if (typeof window === "undefined") return;
-    localStorage.setItem(key, String(value));
-}
-
-function setDigits(group, str) {
-    if (!str) return;
-    group.textContent = "";
-    group.dataset.value = str;
-    [...str].forEach((ch, i) => {
-        const span = document.createElement("span");
-        span.className = "t-digit";
-        if (ch === " ") span.style.width = "0.35em";
-        span.textContent = ch;
-        if (i % 2 === 1) span.setAttribute("data-stagger", "1");
-        else if (i % 3 === 0) span.setAttribute("data-stagger", "2");
-        group.appendChild(span);
-    });
-    requestAnimationFrame(() => group.classList.add("is-animating"));
-}
-
-function CollapsibleSection({
-    label,
-    storageKey,
-    defaultOpen = false,
-    children,
-}) {
-    const [open, setOpen] = useState(defaultOpen);
-
-    useEffect(() => {
-        setOpen(readLocalBool(storageKey, defaultOpen));
-    }, []);
-
-    const toggle = () => {
-        const next = !open;
-        setOpen(next);
-        writeLocalBool(storageKey, next);
-    };
-
-    return (
-        <div className="mt-2 sidebar-acc t-acc" data-open={open}>
-            <button
-                onClick={toggle}
-                className="hover:cursor-pointer flex items-center gap-2 w-full px-3 py-2 rounded-lg group transition-all duration-200 hover:bg-accent/60 border border-transparent hover:border-border/40"
-                aria-expanded={open}
-            >
-                <span className={`text-[11px] font-semibold uppercase tracking-wider select-none transition-colors duration-150 flex-1 text-left ${open ? 'text-foreground' : 'text-muted-foreground/80 group-hover:text-foreground'}`}>
-                    {label}
-                </span>
-                <div className={`p-0.5 rounded transition-all duration-200 ${open ? 'bg-primary/10' : 'bg-transparent group-hover:bg-accent'}`}>
-                    <span className="t-acc-chevron inline-flex">
-                        <ChevronDown className="w-3 h-3 text-muted-foreground/70 group-hover:text-foreground transition-colors duration-150 shrink-0" />
-                    </span>
-                </div>
-            </button>
-            <div className="t-acc-panel">
-                <div className="t-acc-panel-inner">
-                    <div className="space-y-0.5 mt-0.5">{children}</div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function CollapsibleSectionIconOnly({
-    storageKey,
-    defaultOpen = false,
-    children,
-}) {
-    const [open, setOpen] = useState(defaultOpen);
-
-    useEffect(() => {
-        setOpen(readLocalBool(storageKey, defaultOpen));
-    }, []);
-
-    return open ? <div className="space-y-0.5">{children}</div> : null;
-}
 
 export default function Sidebar() {
     const pathname = usePathname();
@@ -161,12 +73,22 @@ export default function Sidebar() {
     const { theme, setTheme, toggleTheme } = useTheme();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const navRef = useRef(null);
+
+    const handleLogout = async () => {
+        try {
+            await fetch("/api/auth/logout", { method: "POST" });
+            window.location.href = "/login";
+        } catch (e) {
+            console.error("Logout failed:", e);
+        }
+    };
+
     useEffect(() => {
-        const el = navRef.current?.querySelector(".t-stagger");
-        if (el) requestAnimationFrame(() => el.classList.add("is-shown"));
+        const el = navRef.current;
+        if (!el) return;
+        requestAnimationFrame(() => el.classList.add("is-shown"));
     }, []);
 
-    // Compute admin/founder status once per render instead of calling repeatedly
     const isAdminUser = user ? isAdmin(user) : false;
     const isFounderUser = user ? isFounder(user.username) : false;
 
@@ -181,446 +103,278 @@ export default function Sidebar() {
     const adminNavItems = isAdminUser ? baseAdminItems : [];
 
     const proFeatures = [
-        {
-            icon: Palette,
-            title: "Custom Themes",
-            description:
-                "Create and apply custom color schemes, import/export themes, and use premium presets like Nebula, Sunset, and more",
-        },
-        {
-            icon: Zap,
-            title: "Animated Profile Headers",
-            description:
-                "Beautiful animated gradient profile banners that match your theme",
-        },
-        {
-            icon: Crown,
-            title: "Exclusive Avatar Frames",
-            description: "Theme-specific animated avatar borders",
-        },
-        {
-            icon: ShieldCheck,
-            title: "Ad-Free Experience",
-            description:
-                "No ads anywhere on any screen for a clean distraction-free experience",
-        },
-        {
-            icon: Star,
-            title: "Priority Support",
-            description:
-                "Get fast responses from our support team within 24 hours",
-        },
-        {
-            icon: Rocket,
-            title: "Early Access",
-            description:
-                "Be the first to try new features before they're released to everyone else",
-        },
-        {
-            icon: BarChart2,
-            title: "Advanced Analytics",
-            description:
-                "Detailed insights about your activity, engagement, and growth",
-        },
-        {
-            icon: Lock,
-            title: "Expanded Storage",
-            description:
-                "More storage for your resource uploads and media files",
-        },
+        { icon: Palette, title: "Custom Themes", description: "Create and apply custom color schemes and premium presets" },
+        { icon: Zap, title: "Animated Profile Headers", description: "Beautiful animated gradient profile banners" },
+        { icon: Crown, title: "Exclusive Avatar Frames", description: "Theme-specific animated avatar borders" },
+        { icon: ShieldCheck, title: "Ad-Free", description: "Clean distraction-free experience" },
+        { icon: Star, title: "Priority Support", description: "Fast responses within 24 hours" },
+        { icon: Rocket, title: "Early Access", description: "Try new features first" },
     ];
 
-    const renderNavItem = (item, i = 0, stagger = false) => {
-        const isActive = pathname === item.href;
+    const NavItem = ({ item, index }) => {
+        const isActive = pathname === item.href || (item.href !== "/feed" && pathname.startsWith(item.href));
         const Icon = item.icon;
-
         return (
-            <div
-                key={item.href}
-                className={cn(stagger && "t-stagger-line")}
-                style={stagger ? { ["--i"]: i } : undefined}
-            >
-                <div className="relative">
-                    {isActive && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.75 h-4.5 bg-primary rounded-r-full z-10" />
+            <Link href={item.href} className="group block hover:cursor-pointer" style={{ "--i": index }}>
+                <div
+                    className={cn(
+                        "flex items-center gap-3 px-3 py-2 rounded-full transition-all hover:cursor-pointer",
+                        "duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)]",
+                        "hover:bg-accent/70 hover:translate-x-[1px]",
+                        "active:scale-[0.98] active:duration-[var(--duration-quick)]",
+                        isActive ? "font-semibold text-foreground" : "font-normal text-foreground/85 hover:text-foreground",
                     )}
-                    <Link
-                        href={item.href}
-                    >
-                        <Button
-                            variant="ghost"
+                >
+                    <div className="relative shrink-0">
+                        <Icon
                             className={cn(
-                                "chip-chunky w-full justify-start hover:cursor-pointer gap-3 h-10 px-3 font-medium",
-                                isActive
-                                    ? "chip-chunky-active text-foreground font-semibold hover:bg-accent"
-                                    : "text-muted-foreground hover:text-foreground",
-                                item.className,
+                                "w-[15px] h-[15px] transition-colors duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)]",
+                                isActive ? "text-foreground stroke-[2.2]" : "text-foreground/85 group-hover:text-foreground",
                             )}
-                        >
-                            <div className="relative shrink-0">
-                                <Icon
-                                    className={cn(
-                                        "w-4.5 h-4.5 transition-colors",
-                                        isActive ? "text-primary" : "",
-                                    )}
-                                />
-                                {item.badge > 0 && (
-                                    <span className="t-badge" data-open="true">
-                                        <span className="t-badge-dot min-w-3.75 h-3.75 bg-primary text-[9px] text-primary-foreground font-bold flex items-center justify-center rounded-full px-1 border-2 border-background">
-                                            <AnimatedCount value={item.badge} max={9} />
-                                        </span>
-                                    </span>
-                                )}
-                            </div>
-                            <span className="hidden lg:block text-sm">
-                                {item.label}
+                            strokeWidth={isActive ? 2.3 : 1.8}
+                        />
+                        {item.badge > 0 && (
+                            <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] px-1 bg-[var(--color-electric-violet)] text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-background shadow-sm animate-[badgePop_var(--duration-very-slow)_var(--ease-bounce)]">
+                                <AnimatedCount value={item.badge} max={9} />
                             </span>
-                        </Button>
-                    </Link>
+                        )}
+                    </div>
+                    <span className="hidden lg:block text-[14.5px] leading-none tracking-tight pr-2">
+                        {item.label}
+                    </span>
                 </div>
-
-                {item.href === "/resources" &&
-                    pathname.startsWith("/resources") && (
-                        <div className="hidden lg:flex flex-col gap-0.5 mt-0.5 ml-9 mr-1">
-                            {[
-                                {
-                                    label: "My Uploads",
-                                    href: "/resources/my-uploads",
-                                    icon: History,
-                                },
-                                {
-                                    label: "Saved",
-                                    href: "/resources/saved",
-                                    icon: Heart,
-                                },
-                            ].map((sub) => (
-                                <Link key={sub.href} href={sub.href}>
-                                    <button
-                                        className={cn(
-                                            "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
-                                            pathname === sub.href
-                                                ? "bg-primary/8 text-primary"
-                                                : "text-muted-foreground/70 hover:text-foreground hover:bg-accent/50",
-                                        )}
-                                    >
-                                        <sub.icon className="w-3.5 h-3.5 shrink-0" />
-                                        {sub.label}
-                                    </button>
-                                </Link>
-                            ))}
-                        </div>
-                    )}
-
-
-            </div>
+            </Link>
         );
     };
 
     return (
         <>
-            <aside className="fixed left-0 top-0 h-screen w-18 lg:w-70 border-r border-border/60 bg-background z-50 hidden md:flex flex-col">
-                <div className="flex h-15 shrink-0 items-center px-3 lg:px-5 border-b border-border/40">
-                    <Logo className="lg:hidden" showText={false} />
-                    <Logo className="hidden lg:flex" />
+            <aside className="fixed left-0 top-0 h-screen w-[68px] lg:w-[260px] bg-background z-40 hidden md:flex flex-col border-r border-border/40">
+                {/* Logo — compact */}
+                <div className="shrink-0 px-2.5 lg:px-3 pt-3 pb-1">
+                    <Link href="/feed" className="inline-flex items-center gap-2 px-2 py-1.5 rounded-full hover:bg-accent/60 hover:cursor-pointer transition-colors duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] group">
+                        <span className="hidden lg:block font-bold text-[28px] tracking-tight text-foreground">CampusZen</span>
+                    </Link>
                 </div>
 
-                <nav ref={navRef} className="flex-1 px-2 py-3 overflow-y-auto overflow-x-hidden custom-scrollbar space-y-0.5">
-                    <div className="t-stagger space-y-0.5">
-                        {primaryNavItems.map((item, i) =>
-                            renderNavItem(item, i, true),
-                        )}
+                {/* Nav — compact, small text */}
+                <nav ref={navRef} className="flex-1 overflow-y-auto overflow-x-hidden px-1.5 py-2 space-y-1 t-stagger custom-scrollbar">
+                    <div className="space-y-0.5">
+                        {primaryNavItems.map((item, i) => (
+                            <div key={item.href} className="t-stagger-line" style={{ "--i": i }}>
+                                <NavItem item={item} index={i} />
+                            </div>
+                        ))}
                     </div>
 
-                    <div className="hidden lg:block">
-                        <CollapsibleSection
-                            label="More"
-                            storageKey="cx_sidebar_more_open"
-                            defaultOpen={false}
-                        >
-                            {moreItems.map((item) => renderNavItem(item))}
-                        </CollapsibleSection>
+                    <div className="pt-2.5 mt-2.5 border-t border-border/30 hidden lg:block">
+                        <p className="px-3 mb-1.5 text-[11px] font-semibold text-muted-foreground/60 tracking-wide">More</p>
+                        <div className="space-y-0.5">
+                            {moreItems.map((item, i) => (
+                                <NavItem key={item.href} item={item} index={i + 5} />
+                            ))}
+                        </div>
+                    </div>
+                    <div className="lg:hidden pt-2 border-t border-border/30">
+                        {moreItems.map((item) => (
+                            <NavItem key={item.href} item={item} />
+                        ))}
                     </div>
 
-                    <div className="lg:hidden mt-2">
-                        <CollapsibleSectionIconOnly
-                            storageKey="cx_sidebar_more_open"
-                            defaultOpen={false}
-                        >
-                            {moreItems.map((item) => renderNavItem(item))}
-                        </CollapsibleSectionIconOnly>
+                    <div className="pt-2.5 border-t border-border/30 space-y-0.5">
+                        {bottomNavItems.map((item) => (
+                            <NavItem key={item.href} item={item} />
+                        ))}
                     </div>
 
-                    <div className="mt-2 pt-2 border-t border-border/40">
-                        {bottomNavItems.map((item) => renderNavItem(item))}
-                    </div>
-
-                    {user && isAdminUser && (
-                        <div className="mt-3 pt-3 border-t border-border/40">
-                            <p className="hidden lg:block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40 px-3 mb-1.5 select-none">
-                                Admin
-                            </p>
-
-                            {adminNavItems.map((item) => {
-                                const isActive = pathname === item.href;
-                                const Icon = item.icon;
-
-                                return (
-                                    <div key={item.href} className="relative">
-                                        {isActive && (
-                                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.75 h-4.5 bg-primary rounded-r-full z-10" />
-                                        )}
-                                        <Link href={item.href}>
-                                            <Button
-                                                variant="ghost"
-                                                className={cn(
-                                                    "chip-chunky w-full justify-start gap-3 h-10 px-3 group",
-                                                    isActive
-                                                        ? "chip-chunky-active text-foreground font-semibold hover:bg-accent"
-                                                        : "text-muted-foreground hover:text-foreground",
-                                                    item.color,
-                                                )}
-                                            >
-                                <div className="relative shrink-0">
-                                    <Icon
-                                        className={cn(
-                                            "w-4.5 h-4.5 transition-colors",
-                                            item.color,
-                                        )}
-                                    />
-                                    {item.badge > 0 && (
-                                        <span className="t-badge" data-open="true">
-                                            <span className="t-badge-dot min-w-3.75 h-3.75 bg-red-500 text-[9px] text-white font-bold flex items-center justify-center rounded-full px-0.5 border-2 border-background">
-                                                {item.badge > 9
-                                                    ? "9+"
-                                                    : item.badge}
-                                            </span>
-                                        </span>
-                                    )}
-                                </div>
-                                <span className="hidden lg:block text-sm font-medium">
-                                    {item.label}
-                                </span>
-                                            </Button>
-                                        </Link>
-                                    </div>
-                                );
-                            })}
+                    {adminNavItems.length > 0 && (
+                        <div className="pt-2.5 border-t border-border/30">
+                            <p className="hidden lg:block px-3 mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40">Admin</p>
+                            {adminNavItems.map((item) => (
+                                <NavItem key={item.href} item={item} />
+                            ))}
                         </div>
                     )}
+                    <div className="pt-2 px-1.5 lg:hidden">
+                        <Link href="/feed" className="flex justify-center hover:cursor-pointer">
+                            <span className="w-10 h-10 rounded-full bg-[var(--color-electric-violet)] hover:bg-[var(--color-deep-iris)] text-white flex items-center justify-center shadow-sm hover:cursor-pointer transition-colors duration-[var(--duration-fast)]">
+                                <Feather className="w-4 h-4" />
+                            </span>
+                        </Link>
+                    </div>
                 </nav>
 
-                {/* Bottom: profile + actions */}
-                <div className="shrink-0 border-t border-border/40 p-2 space-y-1.5">
+                {/* Bottom — compact profile + separated 3-dots + logout (X-like) */}
+                <div className="shrink-0 p-2 space-y-2">
                     {!loading && user && user.username && (
-                        <>
-                            {/* User profile card */}
-                            <Link href={`/profile/${user.username}`}>
-                                <div
-                                    className={cn(
-                                        "card-chunky card-chunky-interactive flex items-center gap-2.5 p-2 group",
-                                        isFounderUser
-                                            ? "bg-primary/5 border-primary/20"
-                                            : "hover:bg-accent/70",
-                                    )}
-                                >
-                                    <Avatar className="h-9 w-9 shrink-0 ring-2 ring-border/60">
-                                        <AvatarImage
-                                            src={user.avatar}
-                                            alt={user.name}
-                                        />
-                                        <AvatarFallback className="text-sm font-bold bg-accent">
-                                            {user.name
-                                                ?.charAt(0)
-                                                ?.toUpperCase()}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <div className="hidden lg:flex flex-col flex-1 min-w-0">
-                                        <p className="text-sm font-semibold text-foreground truncate leading-tight">
-                                            {user.name}
-                                        </p>
-                                        <p
-                                            className={cn(
-                                                "text-[11px] truncate leading-tight",
-                                                isFounderUser
-                                                    ? "text-primary/70 font-medium"
-                                                    : "text-muted-foreground",
-                                            )}
-                                        >
-                                            {isFounderUser
-                                                ? "✦ Founder"
-                                                : `@${user.username}`}
-                                        </p>
+                        <div className="space-y-2">
+                            {/* Profile row — profile + 3-dots circle separated, same horizontal */}
+                            <div className="flex items-center gap-2">
+                                <Link href={`/profile/${user.username}`} className="flex-1 min-w-0 block hover:cursor-pointer">
+                                    <div className="flex items-center gap-2.5 p-2 rounded-full hover:bg-accent/70 hover:cursor-pointer transition-colors duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] group">
+                                        <Avatar className="h-8 w-8 shrink-0 ring-1 ring-border/50 group-hover:ring-border transition-all duration-[var(--duration-fast)]">
+                                            <AvatarImage src={user.avatar} alt={user.name} />
+                                            <AvatarFallback className="bg-accent font-bold text-xs">{user.name?.charAt(0)?.toUpperCase()}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="hidden lg:flex flex-col flex-1 min-w-0">
+                                            <p className="text-[13px] font-semibold leading-none truncate">{user.name}</p>
+                                            <p className="text-[11px] text-muted-foreground truncate">@{user.username}</p>
+                                        </div>
                                     </div>
-                                </div>
-                            </Link>
-                        </>
+                                </Link>
+                                {/* 3-dots — separated circle */}
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <button className="hidden lg:flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background hover:bg-accent hover:border-border hover:cursor-pointer transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] text-muted-foreground hover:text-foreground hover:scale-[1.04] active:scale-[0.96] shadow-sm">
+                                            <MoreHorizontal className="w-4 h-4" />
+                                        </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent side="top" align="end" className="w-56 rounded-xl shadow-md border-border/50 p-1.5">
+                                        <DropdownMenuItem onClick={() => router.push(`/profile/${user.username}`)} className="hover:cursor-pointer rounded-full text-[13px] gap-2.5 py-2">
+                                            <GraduationCap className="w-4 h-4" /> View Profile
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => router.push("/settings")} className="hover:cursor-pointer rounded-full text-[13px] gap-2.5 py-2">
+                                            <Settings2 className="w-4 h-4" /> Settings
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={toggleTheme} className="hover:cursor-pointer rounded-full text-[13px] gap-2.5 py-2">
+                                            <Monitor className="w-4 h-4" /> {theme === "dark" ? "Light mode" : "Dark mode"}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => router.push("/docs")} className="hover:cursor-pointer rounded-full text-[13px] gap-2.5 py-2">
+                                            <HelpCircle className="w-4 h-4" /> Help & Docs
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                            {/* Logout — under profile, full width */}
+                            <button
+                                onClick={handleLogout}
+                                className="hidden lg:flex w-full items-center gap-2.5 px-3 py-2 rounded-full hover:bg-accent/60 border border-transparent hover:border-border/40 hover:cursor-pointer transition-all duration-[var(--duration-fast)] text-[13px] font-medium text-muted-foreground hover:text-foreground"
+                            >
+                                <LogOut className="w-4 h-4" />
+                                Log out
+                            </button>
+                            {/* Mobile: icons row */}
+                            <div className="lg:hidden flex items-center justify-center gap-2">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <button className="w-8 h-8 rounded-full border border-border/60 flex items-center justify-center hover:bg-accent hover:cursor-pointer transition-colors">
+                                            <MoreHorizontal className="w-4 h-4" />
+                                        </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent side="top" align="center" className="w-48 rounded-xl">
+                                        <DropdownMenuItem onClick={() => router.push(`/profile/${user.username}`)} className="hover:cursor-pointer rounded-full">View Profile</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => router.push("/settings")} className="hover:cursor-pointer rounded-full">Settings</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={handleLogout} className="hover:cursor-pointer rounded-full text-destructive">Log out</DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                                <button onClick={handleLogout} className="w-8 h-8 rounded-full hover:bg-accent flex items-center justify-center text-muted-foreground hover:text-foreground hover:cursor-pointer transition-colors">
+                                    <LogOut className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
                     )}
 
-                    {/* Actions */}
-                    <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-1">
-                            <div className="shrink-0">
-                                <NotificationBell currentUser={user} />
-                            </div>
-                            <Button
-                                variant="ghost"
-                                onClick={toggleTheme}
-                                className="chip-chunky flex-1 justify-start gap-3 h-9 px-3 text-muted-foreground hover:text-foreground"
-                            >
-                                <span
-                                    className="t-icon-swap"
-                                    data-state={theme === "dark" ? "b" : "a"}
-                                >
-                                    <Sun
-                                        className="t-icon w-4 h-4 shrink-0"
-                                        data-icon="a"
-                                    />
-                                    <Moon
-                                        className="t-icon w-4 h-4 shrink-0"
-                                        data-icon="b"
-                                    />
-                                </span>
-                                <span className="hidden lg:block text-xs font-semibold">
-                                    {theme === "dark"
-                                        ? "Light mode"
-                                        : "Dark mode"}
-                                </span>
-                            </Button>
-                        </div>
+                    <div className="hidden lg:flex items-center gap-1 px-0.5">
+                        <button
+                            onClick={toggleTheme}
+                            className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-full border border-border/60 hover:border-border hover:bg-accent/60 hover:cursor-pointer transition-all duration-[var(--duration-fast)] text-muted-foreground hover:text-foreground"
+                            aria-label="Toggle theme"
+                        >
+                            <span className="t-icon-swap" data-state={theme === "dark" ? "b" : "a"}>
+                                <Sun className="t-icon w-3.5 h-3.5" data-icon="a" />
+                                <Moon className="t-icon w-3.5 h-3.5" data-icon="b" />
+                            </span>
+                            <span className="text-[11px] font-semibold hidden xl:inline">{theme === "dark" ? "Light" : "Dark"}</span>
+                        </button>
 
-
-                        {/* Theme Picker */}
                         {user?.isPro ? (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        className="chip-chunky w-full justify-start gap-3 h-9 px-3 text-muted-foreground hover:text-foreground hover:cursor-pointer"
-                                    >
-                                        <Palette className="w-4 h-4 shrink-0" />
-                                        <span className="hidden lg:block text-xs font-semibold">
-                                            Theme
-                                        </span>
-                                    </Button>
+                                    <button className="h-8 w-8 rounded-full border border-border/60 hover:border-[var(--color-electric-violet)]/30 hover:bg-[var(--color-soft-lilac)]/30 hover:cursor-pointer flex items-center justify-center text-muted-foreground hover:text-[var(--color-electric-violet)] transition-all duration-[var(--duration-fast)]">
+                                        <Palette className="w-3.5 h-3.5" />
+                                    </button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                    side="right"
-                                    align="start"
-                                    sideOffset={8}
-                                    className="w-52 max-h-80 overflow-y-auto"
-                                >
-                                    <DropdownMenuLabel>Theme</DropdownMenuLabel>
-                                    <DropdownMenuItem
-                                        onClick={() => setTheme("light")}
-                                        className="gap-3 cursor-pointer"
-                                    >
-                                        <span className="w-3 h-3 rounded-full bg-[#ffffff] border border-border shrink-0" />
-                                        Light
-                                        {theme === "light" && (
-                                            <Check className="w-3.5 h-3.5 ml-auto text-primary" />
-                                        )}
+                                <DropdownMenuContent side="top" align="end" className="w-48 rounded-xl shadow-md border-border/50">
+                                    <DropdownMenuLabel className="text-[11px] font-bold tracking-wide">Theme</DropdownMenuLabel>
+                                    <DropdownMenuItem onClick={() => setTheme("light")} className="hover:cursor-pointer rounded-full text-xs">
+                                        <span className="w-3 h-3 rounded-full bg-white border border-border shrink-0" /> Light {theme === "light" && <Check className="w-3 h-3 ml-auto text-[var(--color-electric-violet)]" />}
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={() => setTheme("dark")}
-                                        className="gap-3 cursor-pointer"
-                                    >
-                                        <span className="w-3 h-3 rounded-full bg-[#0a0a0a] border border-border shrink-0" />
-                                        Dark
-                                        {theme === "dark" && (
-                                            <Check className="w-3.5 h-3.5 ml-auto text-primary" />
-                                        )}
+                                    <DropdownMenuItem onClick={() => setTheme("dark")} className="hover:cursor-pointer rounded-full text-xs">
+                                        <span className="w-3 h-3 rounded-full bg-[#0a0a0a] border border-border shrink-0" /> Dark {theme === "dark" && <Check className="w-3 h-3 ml-auto text-[var(--color-electric-violet)]" />}
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuLabel>Premium</DropdownMenuLabel>
+                                    <DropdownMenuLabel className="text-[11px] font-bold tracking-wide">Premium</DropdownMenuLabel>
                                     {PREMIUM_THEMES.map((preset) => (
-                                        <DropdownMenuItem
-                                            key={preset.id}
-                                            onClick={() => setTheme(preset.id)}
-                                            className="gap-3 cursor-pointer"
-                                        >
-                                            <span
-                                                className="w-3 h-3 rounded-full shrink-0"
-                                                style={{ backgroundColor: preset.colors.primary }}
-                                            />
-                                            {preset.name}
-                                            {theme === preset.id && (
-                                                <Check className="w-3.5 h-3.5 ml-auto text-primary" />
-                                            )}
+                                        <DropdownMenuItem key={preset.id} onClick={() => setTheme(preset.id)} className="hover:cursor-pointer rounded-full text-xs">
+                                            <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: preset.colors.primary }} /> {preset.name}
+                                            {theme === preset.id && <Check className="w-3 h-3 ml-auto text-[var(--color-electric-violet)]" />}
                                         </DropdownMenuItem>
                                     ))}
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         ) : (
-                            <Button
-                                variant="ghost"
+                            <button
                                 onClick={() => setShowUpgradeModal(true)}
-                                className="chip-chunky w-full justify-start gap-3 h-9 px-3 text-muted-foreground hover:text-foreground hover:cursor-pointer"
+                                className="h-8 w-8 rounded-full border border-border/60 hover:border-[var(--color-electric-violet)]/30 hover:bg-[var(--color-soft-lilac)]/20 hover:cursor-pointer flex items-center justify-center text-muted-foreground hover:text-[var(--color-electric-violet)] transition-all duration-[var(--duration-fast)] relative"
                             >
-                                <div className="relative shrink-0">
-                                    <Palette className="w-4 h-4" />
-                                    <Lock className="w-2.5 h-2.5 absolute -bottom-0.5 -right-0.5 text-muted-foreground" />
-                                </div>
-                                <span className="hidden lg:block text-xs font-semibold">
-                                    Customize
-                                </span>
-                            </Button>
+                                <Palette className="w-3.5 h-3.5" />
+                                <Lock className="w-2 h-2 absolute -bottom-0.5 -right-0.5 bg-background rounded-full p-0.5" />
+                            </button>
                         )}
+                    </div>
+
+                    <div className="lg:hidden flex justify-center">
+                        <button onClick={toggleTheme} className="w-9 h-9 rounded-full hover:bg-accent/60 hover:cursor-pointer flex items-center justify-center text-muted-foreground transition-colors duration-[var(--duration-fast)]">
+                            <span className="t-icon-swap" data-state={theme === "dark" ? "b" : "a"}>
+                                <Sun className="t-icon w-3.5 h-3.5" data-icon="a" />
+                                <Moon className="t-icon w-3.5 h-3.5" data-icon="b" />
+                            </span>
+                        </button>
                     </div>
                 </div>
             </aside>
 
-            {/* Upgrade Modal */}
             <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
-                <DialogContent className="sm:max-w-125 max-h-[80vh] flex flex-col p-0">
-                    <DialogHeader className="px-6 pt-6 pb-2">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-linear-to-r from-primary to-accent flex items-center justify-center">
-                                <Crown className="w-5 h-5 text-white" />
+                <DialogContent className="sm:max-w-[440px] rounded-[14px] shadow-md border-border/50 p-0 overflow-hidden">
+                    <div className="px-5 pt-5 pb-2">
+                        <DialogHeader>
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-9 h-9 rounded-full bg-[var(--color-electric-violet)] flex items-center justify-center text-white shadow-sm">
+                                    <Crown className="w-4 h-4" />
+                                </div>
+                                <div className="text-left">
+                                    <DialogTitle className="text-[17px] font-bold tracking-tight">Unlock Premium</DialogTitle>
+                                    <DialogDescription className="text-[12px]">Customize everything in violet</DialogDescription>
+                                </div>
                             </div>
-                            <div>
-                                <DialogTitle className="text-xl">
-                                    Unlock Premium Features
-                                </DialogTitle>
-                                <DialogDescription>
-                                    Upgrade to Pro to customize your experience
-                                </DialogDescription>
-                            </div>
-                        </div>
-                    </DialogHeader>
-                    <div className="flex-1 overflow-y-auto px-6 py-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {proFeatures.map((feature, index) => {
-                                const Icon = feature.icon;
-                                return (
-                                    <div
-                                        key={index}
-                                        className="flex gap-3 p-3 rounded-lg bg-accent/30 border border-border/50"
-                                    >
-                                        <Icon className="w-6 h-6 shrink-0 text-primary mt-0.5" />
-                                        <div>
-                                            <h4 className="font-semibold text-sm">
-                                                {feature.title}
-                                            </h4>
-                                            <p className="text-xs text-muted-foreground">
-                                                {feature.description}
-                                            </p>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                        </DialogHeader>
                     </div>
-                    <div className="px-6 pb-6 pt-2 flex flex-col gap-2">
-                        <Button
-                            size="lg"
-                            onClick={() => setShowUpgradeModal(false)}
-                            className="w-full"
-                        >
-                            Upgrade to Pro
+                    <div className="px-5 py-3 grid grid-cols-1 gap-2 max-h-[45vh] overflow-y-auto custom-scrollbar">
+                        {proFeatures.map((f) => (
+                            <div key={f.title} className="flex gap-2.5 p-2.5 rounded-[12px] border border-border/50 hover:border-[var(--color-soft-lilac)]/60 hover:bg-[var(--color-soft-lilac)]/10 hover:cursor-pointer transition-colors duration-[var(--duration-fast)]">
+                                <f.icon className="w-4 h-4 text-[var(--color-electric-violet)] mt-0.5 shrink-0" />
+                                <div>
+                                    <p className="text-[13px] font-semibold leading-none">{f.title}</p>
+                                    <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{f.description}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="p-5 pt-2">
+                        <Button onClick={() => setShowUpgradeModal(false)} className="w-full rounded-full bg-[var(--color-electric-violet)] hover:bg-[var(--color-deep-iris)] text-white font-bold py-5 text-[13px] hover:cursor-pointer transition-colors duration-[var(--duration-fast)]">
+                            Upgrade — Keep violet
                         </Button>
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <style>{`
+                @keyframes badgePop {
+                    0% { transform: scale(0.6); filter: blur(var(--blur-small)); }
+                    60% { transform: scale(1.08); filter: blur(0); }
+                    100% { transform: scale(1); }
+                }
+            `}</style>
         </>
     );
 }

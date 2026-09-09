@@ -1,6 +1,5 @@
 import {
     Bookmark,
-    BookOpen,
     Bot,
     FileJson,
     GraduationCap,
@@ -52,18 +51,6 @@ export const PRODUCT_FEATURES = [
             "Markdown, images and GIFs",
             "Emotion reactions and hashtags",
             "Cursor-based feed with moderation checks",
-        ],
-    },
-    {
-        id: "resources",
-        icon: BookOpen,
-        category: "learn",
-        title: "Study Resources",
-        body: "A peer-curated library of approved study materials. Browse resources your classmates have shared and level up together.",
-        detail: [
-            "Peer-curated library",
-            "Approved materials only",
-            "Shared by your classmates",
         ],
     },
     {
@@ -188,12 +175,6 @@ export const CHECKLIST = [
         label: "Write your first post",
         hint: "Markdown, images and GIFs are all supported",
     },
-    {
-        id: "study",
-        label: "Open a study resource a classmate shared",
-        hint: "Peer-curated and approved",
-    },
-
 ];
 
 export const FAQ = [

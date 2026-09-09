@@ -117,9 +117,9 @@ export default function MainLayout({ children }) {
                     {/* Floating Bottom Dock (alternative nav mode) - Hide for whiteboard */}
                     {!isWhiteboard && layoutMode === "dock" && <Dock />}
 
-                    {/* Main Content Area */}
+                    {/* Main Content Area — small layout */}
                     <main
-                        className={`flex-1 flex flex-col ${isWhiteboard ? "m-0 w-screen h-screen" : layoutMode === "dock" ? "md:ml-0 lg:ml-0" : "md:ml-[72px] lg:ml-[280px]"} ${isStudyRoom || isWhiteboard ? "" : "xl:mr-[350px]"} ${isChatRoom ? "pb-0 h-[100dvh] overflow-hidden" : layoutMode === "dock" ? "pb-20 md:pb-28 min-h-screen" : "pb-20 min-h-screen md:pb-0"} overflow-x-hidden`}
+                        className={`flex-1 flex flex-col ${isWhiteboard ? "m-0 w-screen h-screen" : layoutMode === "dock" ? "md:ml-0 lg:ml-0" : "md:ml-[68px] lg:ml-[260px]"} ${isStudyRoom || isWhiteboard ? "" : "xl:mr-[340px]"} ${isChatRoom ? "pb-0 h-[100dvh] overflow-hidden" : layoutMode === "dock" ? "pb-20 md:pb-28 min-h-screen" : "pb-20 min-h-screen md:pb-0"} overflow-x-hidden`}
                     >
                         {/* Broadcast banner — site-wide announcement */}
                         {/* Verification prompt for unverified students */}
@@ -128,7 +128,7 @@ export default function MainLayout({ children }) {
                         )}
 
                         <div
-                            className={`w-full ${isStudyRoom ? "max-w-7xl mx-auto" : isWhiteboard ? "" : "max-w-2xl border-x"} border-border ${isChatRoom ? "flex-1 h-full overflow-hidden" : isWhiteboard ? "flex-1 h-full" : "min-h-screen"}                             bg-background/50 backdrop-blur-sm ${!isStudyRoom && !isWhiteboard ? "mx-auto self-center" : ""}`}
+                            className={`w-full ${isStudyRoom ? "max-w-7xl mx-auto" : isWhiteboard ? "" : "max-w-[680px] sm:border-x"} border-border ${isChatRoom ? "flex-1 h-full overflow-hidden" : isWhiteboard ? "flex-1 h-full" : "min-h-screen"} bg-background sm:bg-background/50 sm:backdrop-blur-sm ${!isStudyRoom && !isWhiteboard ? "mx-auto self-center" : ""}`}
                         >
                             {children}
                         </div>

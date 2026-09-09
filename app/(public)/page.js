@@ -6,7 +6,6 @@ import { Bot, Globe2, FileJson, TriangleAlert, FileText, KeyRound, BookOpen } fr
 import connectDB from "@/lib/db";
 import User from "@/models/User";
 import Post from "@/models/Post";
-import Resource from "@/models/Resource";
 import { verifyToken } from "@/lib/auth-edge";
 
 const Stats = dynamic(() => import("@/components/landing/Stats"));
@@ -60,16 +59,14 @@ export const metadata = {
 async function getLandingStats() {
     try {
         await connectDB();
-        const [users, posts, resources] = await Promise.all([
+        const [users, posts] = await Promise.all([
             User.estimatedDocumentCount(),
             Post.estimatedDocumentCount(),
-            Resource.countDocuments({ status: "approved" }),
         ]);
 
         return {
             users: users || 0,
             posts: posts || 0,
-            resources: resources || 0,
             codeAreas: 5,
         };
     } catch (error) {
@@ -77,7 +74,6 @@ async function getLandingStats() {
         return {
             users: 50,
             posts: 120,
-            resources: 20,
             codeAreas: 3,
         };
     }
@@ -116,7 +112,6 @@ export default async function LandingPage() {
                 <Stats
                     users={stats.users}
                     posts={stats.posts}
-                    resources={stats.resources}
                     codeAreas={stats.codeAreas}
                 />
                 <ProductShowcase />

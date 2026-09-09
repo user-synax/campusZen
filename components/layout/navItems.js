@@ -5,10 +5,10 @@ import {
     Bell,
     Link2,
     Bookmark,
-    BookOpen,
     BookText,
     Settings,
     Shield,
+    Search,
 } from "lucide-react";
 
 // Shared navigation config used by Sidebar, Dock, and MobileNav.
@@ -17,6 +17,7 @@ import {
 
 export const primaryNavItems = [
     { label: "Feed", href: "/feed", icon: Home },
+    { label: "Explore", href: "/search", icon: Search },
     { label: "Communities", href: "/community", icon: GraduationCap },
     { label: "Chats", href: "/chats", icon: MessageSquare, badgeKey: "chatUnread" },
     {
@@ -29,9 +30,7 @@ export const primaryNavItems = [
     { label: "Bookmarks", href: "/bookmarks", icon: Bookmark },
 ];
 
-export const moreItems = [
-    { label: "Resources", href: "/resources", icon: BookOpen },
-];
+export const moreItems = [];
 
 export const bottomNavItems = [
     { label: "Docs", href: "/docs", icon: BookText },
