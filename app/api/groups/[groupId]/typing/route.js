@@ -3,7 +3,8 @@ import connectDB from '@/lib/db'
 import GroupChat from '@/models/GroupChat'
 import { getCurrentUser } from '@/lib/auth'
 import { applyRateLimit } from '@/lib/rate-limit'
-import { triggerPusher } from '@/lib/pusher-server'
+// Typing is now handled by the Socket.IO backend (typing:start / typing:stop).
+// This HTTP route is kept for backward compatibility but is a no-op for emits.
 import { validateObjectId } from '@/utils/validators'
 import { sanitizeMongoInput } from '@/lib/sanitize'
 
@@ -49,16 +50,7 @@ export async function POST(request, { params }) {
 
     const { isTyping } = sanitizeMongoInput(body)
 
-    // 3. Trigger Pusher — No DB save
-    await triggerPusher(
-      `private-group-${groupId}`,
-      isTyping ? 'typing-start' : 'typing-stop',
-      {
-        userId: currentUser._id,
-        userName: currentUser.name,
-        userAvatar: currentUser.avatar
-      }
-    )
+    // Typing is now socket-native — no Pusher emit needed
 
     return NextResponse.json({ success: true })
 

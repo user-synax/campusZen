@@ -8,7 +8,6 @@ import {
     getCurrentUserLegacy,
     migrateLegacyUser,
 } from "@/lib/auth";
-import { awardDailyLoginVP } from "@/lib/coins";
 import { applyRateLimit, rateLimit } from "@/lib/rate-limit";
 import { sanitizeUser } from "@/lib/sanitize";
 import { sendSuspiciousLoginEmail } from "@/lib/email-templates";
@@ -184,11 +183,6 @@ export async function POST(request) {
         const userAgent = request.headers.get("user-agent") || "";
         const { device, browser } = parseUserAgent(userAgent);
         const ipAddress = getClientIp(request);
-
-        // Award daily-login VP (idempotent per calendar day, background)
-        awardDailyLoginVP(finalMongoUser._id).catch((err) =>
-            console.error("Daily VP award error:", err),
-        );
 
         // Check last 5 logins for this user
         const recentLogins = await LoginHistory.find({

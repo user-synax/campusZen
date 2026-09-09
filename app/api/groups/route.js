@@ -7,7 +7,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { isAdmin } from '@/lib/admin'
 import { sanitizeText, sanitizeMongoInput } from '@/lib/sanitize'
 import { applyRateLimit } from '@/lib/rate-limit'
-import { triggerPusher } from '@/lib/pusher-server'
+import { emitToUsers } from '@/lib/realtime'
 import { validateObjectId } from '@/utils/validators'
 
 /**
@@ -157,10 +157,9 @@ export async function POST(request) {
       type: 'system'
     })
 
-    // Trigger Pusher for all members to notify them about the new group
-    for (const memberId of [currentUser._id, ...validMemberIds]) {
-      triggerPusher(`private-user-${memberId}`, 'group-created', group).catch(err => console.error('Operation failed:', err))
-    }
+    // Emit group:created to every member's personal room
+    const allMemberIds = [String(currentUser._id), ...validMemberIds.map(String)]
+    emitToUsers(allMemberIds, 'group:created', group).catch(err => console.error('[realtime] group:created failed:', err))
 
     return NextResponse.json(group, { status: 201 })
 

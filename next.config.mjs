@@ -103,13 +103,6 @@ const nextConfig = {
                 headers: [{ key: "Cache-Control", value: "public, s-maxage=600, stale-while-revalidate=120" }],
             },
             {
-                source: "/api/shop",
-                headers: [
-                    { key: "Cache-Control", value: "public, max-age=60, stale-while-revalidate=300" },
-                    { key: "Vary", value: "Cookie" },
-                ],
-            },
-            {
                 source: "/api/users/:username/followers",
                 headers: [{ key: "Cache-Control", value: "public, max-age=60, stale-while-revalidate=300" }],
             },

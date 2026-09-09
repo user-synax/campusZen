@@ -6,7 +6,7 @@ import DMMessage from "@/models/DMMessage";
 import { getCurrentUser } from "@/lib/auth";
 import { sanitizeText, sanitizeMongoInput } from "@/lib/sanitize";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { triggerPusher } from "@/lib/pusher-server";
+import { emitToUser } from "@/lib/realtime";
 import { createNotification } from "@/lib/notifications";
 import { validateObjectId } from "@/utils/validators";
 import { attachBubbleThemes } from "@/lib/server/attachBubbleThemes";
@@ -246,19 +246,19 @@ export async function POST(request, { params }) {
             arrayFilters: [{ "elem.userId": { $ne: new mongoose.Types.ObjectId(currentUser._id) } }, { "elem.isMuted": { $ne: true } }],
         }).catch((err) => console.error("Update last message failed:", err));
 
-        // Trigger Pusher for both participants, but skip muted recipient
+        // Emit message:new to both participants' personal rooms
         for (const participant of conversation.participants) {
             if (participant.userId.toString() !== currentUser._id.toString() && participant.isMuted) continue;
-            await triggerPusher(
-                `private-dm-${participant.userId}`,
-                "new-dm-message",
+            await emitToUser(
+                String(participant.userId),
+                "message:new",
                 {
                     ...populated,
                     clientId,
                     reactions: [],
                     conversationId,
                 },
-            ).catch((err) => console.error("Pusher failed:", err));
+            ).catch((err) => console.error("[realtime] message:new to DM user failed:", err));
         }
 
         // Create in-app notification + push for the recipient (respect mute)

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { WebhookReceiver } from "livekit-server-sdk";
 import connectDB from "@/lib/db";
 import GroupChat from "@/models/GroupChat";
-import { getPusherServer } from "@/lib/pusher-server";
+import { emitToGroup, emitToUsers } from "@/lib/realtime";
 import { getRoomService } from "@/lib/livekit";
 
 function parseMeta(meta) {
@@ -72,21 +72,15 @@ export async function POST(request) {
 
         const payload = { groupId, participantCount, participants, active };
 
-        // One batched trigger covering the group channel + every member's
-        // user channel. Pusher allows up to 100 channels per call, so chunk.
-        const channels = [
-            `private-group-${groupId}`,
-            ...group.members.map((m) => `private-user-${m.userId}`),
-        ];
-
+        // Emit vc:update to the group room + every member's personal room
         try {
-            const pusher = getPusherServer();
-            for (let i = 0; i < channels.length; i += 100) {
-                const chunk = channels.slice(i, i + 100);
-                await pusher.trigger(chunk, "vc-update", payload);
+            await emitToGroup(groupId, "vc:update", payload);
+            const memberIds = group.members.map((m) => String(m.userId));
+            if (memberIds.length > 0) {
+                await emitToUsers(memberIds, "vc:update", payload);
             }
         } catch (e) {
-            console.error("[LivekitWebhook] pusher trigger failed:", e.message);
+            console.error("[LivekitWebhook] realtime emit failed:", e.message);
         }
 
         return NextResponse.json({ ok: true });

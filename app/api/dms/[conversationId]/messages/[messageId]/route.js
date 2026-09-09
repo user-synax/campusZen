@@ -3,7 +3,7 @@ import connectDB from "@/lib/db";
 import DMMessage from "@/models/DMMessage";
 import DMConversation from "@/models/DMConversation";
 import { getCurrentUser } from "@/lib/auth";
-import { triggerPusher } from "@/lib/pusher-server";
+import { emitToUser } from "@/lib/realtime";
 import { validateObjectId } from "@/utils/validators";
 
 /**
@@ -77,15 +77,15 @@ export async function DELETE(request, { params }) {
             message.deletedAt = new Date();
             await message.save();
 
-            // 5. Trigger Pusher to both participants
+            // 5. Emit message:deleted to both participants' personal rooms
             for (const participant of conversation.participants) {
                 if (participant.isMuted) continue;
-                await triggerPusher(
-                    `private-dm-${participant.userId}`,
-                    "dm-message-deleted",
+                await emitToUser(
+                    String(participant.userId),
+                    "message:deleted",
                     { messageId: message._id, conversationId },
                 ).catch((err) =>
-                    console.error("Pusher dm-message-deleted failed:", err),
+                    console.error("[realtime] message:deleted failed:", err),
                 );
             }
         }

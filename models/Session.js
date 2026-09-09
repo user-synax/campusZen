@@ -26,7 +26,9 @@ const sessionSchema = new mongoose.Schema({
 // Index for faster lookups
 sessionSchema.index({ userId: 1 });
 sessionSchema.index({ token: 1 });
-sessionSchema.index({ expiresAt: 1 });
+// TTL index: MongoDB auto-deletes expired sessions (expireAfterSeconds: 0
+// means delete at the time stored in expiresAt).
+sessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 const Session = mongoose.model('Session', sessionSchema);
 

@@ -248,7 +248,7 @@ export default function useChatRoom({
                 });
 
                 if (res.ok) {
-                    // Start recovery timeout — if Pusher confirmation doesn't arrive in 7s, refetch
+                    // Start recovery timeout — if socket confirmation doesn't arrive in 7s, refetch
                     pendingTimeoutsRef.current[clientId] = setTimeout(() => {
                         setMessages((prev) => {
                             const stuck = prev.some(

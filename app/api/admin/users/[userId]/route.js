@@ -8,8 +8,6 @@ import { getCurrentUser, blacklistAllUserTokens } from "@/lib/auth";
 import { isAdmin, isFounder } from "@/lib/admin";
 import { createNotification } from "@/lib/notifications";
 import { logAdminAction } from "@/lib/admin-log";
-import { awardVP, adminGrantVP } from "@/lib/coins";
-import { CURRENCY } from "@/lib/currency";
 import mongoose from "mongoose";
 
 // GET - Detailed user profile for admin
@@ -274,43 +272,10 @@ export async function POST(request, { params }) {
             }
 
             case "award_coins": {
-                const coins = parseInt(amount);
-                if (!coins || coins <= 0) {
-                    return NextResponse.json(
-                        { error: "Valid amount required" },
-                        { status: 400 },
-                    );
-                }
-
-                // Server-authoritative admin gift (bypasses caps + config).
-                // Pass the admin's userId as sourceId — adminGrantVP composes
-                // it into a traceable, unique source and creates the notification.
-                const result = await adminGrantVP(userId, coins, {
-                    sourceId: String(currentUser._id),
-                });
-
-                if (!result.granted) {
-                    return NextResponse.json(
-                        { error: "Failed to award VP" },
-                        { status: 500 },
-                    );
-                }
-
-                // NOTE: recipient notification created inside adminGrantVP with
-                // proper CURRENCY.shortName and reason "admin_gift" ledger entry.
-
-                const shortName = CURRENCY?.shortName || "VP";
-                await logAdminAction({
-                    adminId: currentUser._id,
-                    action: "user_award_coins",
-                    targetType: "user",
-                    targetId: userId,
-                    summary: `Gifted ${coins} ${shortName} to ${targetUser.username}`,
-                    reason: reason || "Admin gift",
-                    meta: { amount: coins },
-                });
-
-                return NextResponse.json({ success: true, awarded: coins });
+                return NextResponse.json(
+                    { error: "VP economy has been removed" },
+                    { status: 410 },
+                );
             }
 
             case "force_logout": {

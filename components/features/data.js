@@ -8,11 +8,9 @@ import {
     Link2,
     MessageSquare,
     Network,
-    ShoppingBag,
     Sparkles,
     Trophy,
     Video,
-    Wallet,
 } from "lucide-react";
 
 /**
@@ -103,26 +101,6 @@ export const PRODUCT_FEATURES = [
         title: "Clips",
         body: "Short campus video clips to share moments, notes, and highlights with your network.",
         detail: ["Short-form campus video", "Moments, notes and highlights"],
-    },
-    {
-        id: "shop",
-        icon: ShoppingBag,
-        category: "rewards",
-        title: "Shop & Cosmetics",
-        body: "Personalize your profile with avatar frames, themes, and rarity items from the CampusZen shop.",
-        detail: ["Avatar frames and themes", "Rarity items"],
-    },
-    {
-        id: "wallet",
-        icon: Wallet,
-        category: "rewards",
-        title: "Wallet",
-        body: "A lightweight in-app currency for cosmetics and rewards, kept separate from your real campus identity.",
-        detail: [
-            "In-app currency only",
-            "Spends on cosmetics and rewards",
-            "Separate from your campus identity",
-        ],
     },
     {
         id: "connect",
@@ -218,7 +196,7 @@ export const METRICS = [
         id: "surfaces",
         value: PRODUCT_FEATURES.length,
         label: "product surfaces",
-        note: "communities through to the wallet",
+        note: "communities through to bookmarks",
     },
     {
         id: "paths",
@@ -256,11 +234,7 @@ export const CHECKLIST = [
         label: "Open a study resource a classmate shared",
         hint: "Peer-curated and approved",
     },
-    {
-        id: "shop",
-        label: "Spend your first coins in the shop",
-        hint: "Avatar frames, themes, rarity items",
-    },
+
 ];
 
 export const FAQ = [
@@ -278,11 +252,6 @@ export const FAQ = [
         id: "pro",
         q: "What does Pro add?",
         a: "Extras on top of the free feed, such as creating polls. Pricing is the source of truth for the current list, so check there rather than trusting a summary.",
-    },
-    {
-        id: "wallet",
-        q: "Is the wallet real money?",
-        a: "No. It is a lightweight in-app currency for cosmetics and rewards, kept separate from your real campus identity.",
     },
     {
         id: "reputation",

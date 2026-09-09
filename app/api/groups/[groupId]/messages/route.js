@@ -6,7 +6,7 @@ import GroupMessage from '@/models/GroupMessage'
 import { getCurrentUser } from '@/lib/auth'
 import { sanitizeText, sanitizeMongoInput } from '@/lib/sanitize'
 import { applyRateLimit } from '@/lib/rate-limit'
-import { triggerPusher } from '@/lib/pusher-server'
+import { emitToGroup, emitToUsers } from '@/lib/realtime'
 import { createNotification } from '@/lib/notifications'
 import { validateObjectId } from '@/utils/validators'
 import { attachBubbleThemes } from '@/lib/server/attachBubbleThemes'
@@ -204,13 +204,12 @@ export async function POST(request, { params }) {
       ]
     }).catch(err => console.error('Operation failed:', err))
 
-    // 6. Trigger Pusher
-    // We await this to ensure delivery before function ends in serverless environment
-    await triggerPusher(`private-group-${groupId}`, 'new-message', {
+    // Emit message:new to the group room (joinUsers ensures new members' sockets are in the room)
+    await emitToGroup(groupId, 'message:new', {
       ...populated,
       clientId,
       reactions: []
-    })
+    }, { joinUsers: group.members.map(m => String(m.userId)) })
 
     // 7. Create in-app notifications for each group member (except sender, respect mute) — batched
     const senderIdStr = currentUser._id.toString()
@@ -234,16 +233,21 @@ export async function POST(request, { params }) {
         }).catch(err => console.error('[GroupMessage] Notification failed for member:', member.userId.toString(), err.message))
       )
 
-    // 8. Notify each member's user channel for inbox invalidation (fire and forget)
-    const pusherPromises = group.members
+    // Emit message:new to each non-sender member's user room (for sidebar/unread badge)
+    const otherMemberIds = group.members
       .filter(member => member.userId.toString() !== senderIdStr)
-      .map(member =>
-        triggerPusher(`private-user-${member.userId}`, 'new-group-message', { groupId })
-          .catch(err => console.error('User channel push failed:', err))
-      )
+      .map(member => String(member.userId))
+    if (otherMemberIds.length > 0) {
+      emitToUsers(otherMemberIds, 'message:new', {
+        ...populated,
+        clientId,
+        reactions: [],
+        groupId
+      }).catch(err => console.error('[realtime] message:new to user rooms failed:', err))
+    }
 
-    // Fire all notifications and user-channel pushes concurrently
-    await Promise.all([...notificationPromises, ...pusherPromises])
+    // Fire all notifications concurrently
+    await Promise.all(notificationPromises)
 
     return NextResponse.json({ ...populated, clientId }, { status: 201 })
 

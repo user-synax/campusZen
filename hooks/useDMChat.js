@@ -2,17 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ensureChatSocket } from "@/lib/chat-socket";
-import { getPusherClient } from "@/lib/pusher-client";
 
 /**
- * DM chat realtime hook. Core chat (message:new, typing, presence, read
- * receipts) is now delivered over the Socket.IO backend. DMs previously had NO
- * presence at all — the backend now emits presence:online/offline/snapshot for
- * 1:1 conversations too, and this hook surfaces an `online` boolean.
+ * DM chat realtime hook. All events are now delivered over the Socket.IO
+ * backend — no Pusher dependency.
  *
- * Events NOT yet migrated (dm-message-deleted, dm-message-reaction) are still
- * broadcast by the existing Next.js Pusher routes, so we keep a Pusher
- * subscription for those this pass.
+ * Server emits (via dm: room + user: personal rooms):
+ *   message:new, message:deleted, message:reaction,
+ *   typing:start, typing:stop, presence:online/offline/snapshot, read:receipt
  */
 export function useDMChat(conversationId, currentUserId, handlers = {}) {
     const handlersRef = useRef(handlers);
@@ -26,8 +23,6 @@ export function useDMChat(conversationId, currentUserId, handlers = {}) {
         if (!conversationId || !currentUserId) return;
         let active = true;
         let socket;
-        let pusher;
-        let channel;
 
         ensureChatSocket()
             .then((s) => {
@@ -87,8 +82,20 @@ export function useDMChat(conversationId, currentUserId, handlers = {}) {
                         handlersRef.current.onReadReceipt(data);
                     }
                 };
+                const onMessageDeleted = (data) => {
+                    if (data.conversationId === conversationId && handlersRef.current.onMessageDeleted) {
+                        handlersRef.current.onMessageDeleted(data);
+                    }
+                };
+                const onMessageReaction = (data) => {
+                    if (data.conversationId === conversationId && handlersRef.current.onReaction) {
+                        handlersRef.current.onReaction(data);
+                    }
+                };
 
                 s.on("message:new", onNewMessage);
+                s.on("message:deleted", onMessageDeleted);
+                s.on("message:reaction", onMessageReaction);
                 s.on("typing:start", onTypingStart);
                 s.on("typing:stop", onTypingStop);
                 s.on("presence:online", onPresenceOnline);
@@ -96,32 +103,16 @@ export function useDMChat(conversationId, currentUserId, handlers = {}) {
                 s.on("presence:snapshot", onSnapshot);
                 s.on("read:receipt", onReadReceipt);
 
-                // Keep Pusher for not-yet-migrated events.
-                pusher = getPusherClient();
-                if (pusher) {
-                    channel = pusher.subscribe(`private-dm-${currentUserId}`);
-                    channel.bind("dm-message-deleted", (d) => {
-                        if (handlersRef.current.onMessageDeleted)
-                            handlersRef.current.onMessageDeleted(d);
-                    });
-                    channel.bind("dm-message-reaction", (d) => {
-                        if (handlersRef.current.onReaction)
-                            handlersRef.current.onReaction(d);
-                    });
-                }
-
                 cleanup = () => {
                     s.off("message:new", onNewMessage);
+                    s.off("message:deleted", onMessageDeleted);
+                    s.off("message:reaction", onMessageReaction);
                     s.off("typing:start", onTypingStart);
                     s.off("typing:stop", onTypingStop);
                     s.off("presence:online", onPresenceOnline);
                     s.off("presence:offline", onPresenceOffline);
                     s.off("presence:snapshot", onSnapshot);
                     s.off("read:receipt", onReadReceipt);
-                    if (channel) {
-                        channel.unbind_all();
-                        pusher.unsubscribe(`private-dm-${currentUserId}`);
-                    }
                 };
             })
             .catch(() => {});

@@ -3,7 +3,7 @@ import connectDB from "@/lib/db";
 import DMMessage from "@/models/DMMessage";
 import DMConversation from "@/models/DMConversation";
 import { getCurrentUser } from "@/lib/auth";
-import { triggerPusher } from "@/lib/pusher-server";
+import { emitToUser } from "@/lib/realtime";
 import { validateObjectId } from "@/utils/validators";
 import { sanitizeMongoInput } from "@/lib/sanitize";
 
@@ -131,19 +131,19 @@ export async function POST(request, { params }) {
             );
         }
 
-        // 7. Trigger Pusher to both participants
+        // 7. Emit message:reaction to both participants' personal rooms
         for (const participant of conversation.participants) {
             if (participant.isMuted) continue;
-            await triggerPusher(
-                `private-dm-${participant.userId}`,
-                "dm-message-reaction",
+            await emitToUser(
+                String(participant.userId),
+                "message:reaction",
                 {
                     messageId: messageId,
                     conversationId,
                     reactions: updatedMessage.reactions,
                 },
             ).catch((err) =>
-                console.error("Pusher dm-message-reaction failed:", err),
+                console.error("[realtime] message:reaction failed:", err),
             );
         }
 

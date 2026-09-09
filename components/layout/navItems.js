@@ -7,14 +7,10 @@ import {
     Bookmark,
     Trophy,
     CircleStar,
-    ShoppingBag,
-    Wallet,
     Video,
     BookOpen,
     Calendar,
-    Terminal,
     BookText,
-    CreditCard,
     Settings,
     Shield,
     BarChart2,
@@ -41,20 +37,16 @@ export const primaryNavItems = [
 export const gamificationItems = [
     { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
     { label: "Ranks", href: "/ranks", icon: CircleStar },
-    { label: "Shop", href: "/shop", icon: ShoppingBag },
-    { label: "Wallet", href: "/wallet", icon: Wallet },
 ];
 
 export const moreItems = [
     { label: "Clips", href: "/clips", icon: Video },
     { label: "Resources", href: "/resources", icon: BookOpen },
     { label: "Events", href: "/events", icon: Calendar },
-    { label: "Tools", href: "/tools", icon: Terminal },
 ];
 
 export const bottomNavItems = [
     { label: "Docs", href: "/docs", icon: BookText },
-    { label: "Billing", href: "/billing", icon: CreditCard },
     { label: "Settings", href: "/settings", icon: Settings },
 ];
 

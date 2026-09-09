@@ -14,7 +14,7 @@ import VerificationBanner from "@/components/shared/VerificationBanner";
 import useUser from "@/hooks/useUser";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { CatProvider } from "@/context/CatContext";
-import { useUserChannel } from "@/hooks/useUserChannel";
+import { useRealtime } from "@/hooks/useRealtime";
 import CustomCursor from "@/components/shared/FloatingCat";
 import CursorSelector from "@/components/shared/CursorSelector";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -39,27 +39,29 @@ export default function MainLayout({ children }) {
     // Register service worker and handle push permissions
     usePushNotifications();
 
-    // Subscribe to user-level Pusher channel for cross-device group sync
+    // Subscribe to user-level realtime events via Socket.IO user room
     const invalidateGroupCache = useCallback(() => {
         clientCache.delete(JSON.stringify(["tab", "chats-groups"]));
     }, []);
     const invalidateDMCache = useCallback(() => {
         clientCache.delete(JSON.stringify(["tab", "chats-dms"]));
     }, []);
-    useUserChannel(user?._id, {
-        onGroupCreated: invalidateGroupCache,
-        onGroupJoined: invalidateGroupCache,
-        onGroupLeft: useCallback(({ groupId }) => {
+    useRealtime({
+        "group:created": invalidateGroupCache,
+        "group:joined": invalidateGroupCache,
+        "group:left": useCallback(({ groupId }) => {
             invalidateGroupCache();
             if (pathname === `/chats/${groupId}`) {
                 router.push("/chats");
             }
         }, [invalidateGroupCache, pathname, router]),
-        onNewGroupMessage: useCallback(() => {
+        "message:new": useCallback(() => {
             invalidateGroupCache();
+            invalidateDMCache();
             window.dispatchEvent(new CustomEvent("chat-inbox-invalidate", { detail: { tab: "groups" } }));
-        }, [invalidateGroupCache]),
-        onVcStarted: useCallback(({ groupId, startedBy }) => {
+            window.dispatchEvent(new CustomEvent("chat-inbox-invalidate", { detail: { tab: "dms" } }));
+        }, [invalidateGroupCache, invalidateDMCache]),
+        "vc:started": useCallback(({ groupId, startedBy }) => {
             const name = startedBy?.name || "Someone";
             toast(`${name} started a voice chat`, {
                 action: {
@@ -75,7 +77,7 @@ export default function MainLayout({ children }) {
                 },
             });
         }, [pathname, router]),
-        onVcUpdate: useCallback(({ groupId, active, participantCount, participants }) => {
+        "vc:update": useCallback(({ groupId, active, participantCount, participants }) => {
             if (!active) {
                 useCallStore.getState().clearCall(groupId);
             } else {
@@ -86,11 +88,7 @@ export default function MainLayout({ children }) {
                 });
             }
         }, []),
-        onNewDMMessage: useCallback(() => {
-            invalidateDMCache();
-            window.dispatchEvent(new CustomEvent("chat-inbox-invalidate", { detail: { tab: "dms" } }));
-        }, [invalidateDMCache]),
-    });
+    }, { disabled: !user?._id });
 
     // Check if we are inside a specific chat room
     const isChatRoom = pathname.startsWith("/chats/") && pathname !== "/chats";

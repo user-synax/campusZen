@@ -18,8 +18,6 @@ import {
     Shield,
     BookOpen,
     BarChart2,
-    Terminal,
-    Type,
     History,
     Heart,
     Palette,
@@ -30,9 +28,6 @@ import {
     Rocket,
     ShieldCheck,
     Video,
-    CreditCard,
-    Wallet,
-    ShoppingBag,
     Link2,
     Check,
     ChevronDown,
@@ -40,7 +35,6 @@ import {
     BookText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import {
     Sheet,
     SheetContent,
@@ -244,24 +238,7 @@ export default function MobileNav() {
                                         </div>
                                     </Link>
                                 )}
-                                {/* XP Progress Bar */}
-                                {!loading && user && (
-                                    <div className="px-2 pt-4 pb-2 space-y-1.5 border-t mt-4">
-                                        <div className="flex justify-between items-end">
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                                                Level {user.level || 1}
-                                            </span>
-                                            <span className="text-[10px] font-medium text-muted-foreground">
-                                                {(user.xp || 0) % 1000} / 1000
-                                                XP
-                                            </span>
-                                        </div>
-                                        <Progress
-                                            value={((user.xp || 0) % 1000) / 10}
-                                            className="h-1.5"
-                                        />
-                                    </div>
-                                )}
+
                             </div>
 
                             <nav className="p-2 space-y-1">
@@ -435,131 +412,7 @@ export default function MobileNav() {
                                     </Button>
                                 </Link>
 
-                                <Link
-                                    href="/wallet"
-                                    onClick={() => setOpen(false)}
-                                >
-                                    <Button
-                                        variant="ghost"
-                                        className={cn(
-                                            "w-full justify-start gap-4 h-12 px-3",
-                                            pathname === "/wallet"
-                                                ? "bg-accent text-accent-foreground"
-                                                : "text-muted-foreground",
-                                        )}
-                                    >
-                                        <Wallet className="w-5 h-5" />
-                                        <span className="text-base font-medium">
-                                            Wallet
-                                        </span>
-                                    </Button>
-                                </Link>
 
-                                <Link
-                                    href="/shop"
-                                    onClick={() => setOpen(false)}
-                                >
-                                    <Button
-                                        variant="ghost"
-                                        className={cn(
-                                            "w-full justify-start gap-4 h-12 px-3",
-                                            pathname === "/shop"
-                                                ? "bg-accent text-accent-foreground"
-                                                : "text-muted-foreground",
-                                        )}
-                                    >
-                                        <ShoppingBag className="w-5 h-5" />
-                                        <span className="text-base font-medium">
-                                            Shop
-                                        </span>
-                                    </Button>
-                                </Link>
-
-                                <Link
-                                    href="/tools"
-                                    onClick={() => setOpen(false)}
-                                >
-                                    <Button
-                                        variant="ghost"
-                                        className={cn(
-                                            "w-full justify-start gap-4 h-12 px-3",
-                                            pathname.startsWith("/tools")
-                                                ? "bg-accent text-accent-foreground font-bold"
-                                                : "text-muted-foreground",
-                                        )}
-                                    >
-                                        <Terminal className="w-5 h-5" />
-                                        <span className="text-base font-medium">
-                                            Tools
-                                        </span>
-                                    </Button>
-                                </Link>
-
-                                {/* Tools Sub-links */}
-                                {pathname.startsWith("/tools") && (
-                                    <div className="flex flex-col gap-0.5 pl-12 pr-3 py-1">
-                                        {[
-                                            {
-                                                label: "Popular Tools",
-                                                href: "/tools",
-                                                icon: Terminal,
-                                            },
-                                            {
-                                                label: "Text Tools",
-                                                href: "/tools/text",
-                                                icon: Type,
-                                            },
-                                            {
-                                                label: "Color Tools",
-                                                href: "/tools/color",
-                                                icon: Palette,
-                                            },
-                                            {
-                                                label: "SEO Tools",
-                                                href: "/tools/seo",
-                                                icon: Search,
-                                            },
-                                        ].map((sub) => (
-                                            <Link
-                                                key={sub.href}
-                                                href={sub.href}
-                                                onClick={() => setOpen(false)}
-                                            >
-                                                <button
-                                                    className={cn(
-                                                        "flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-bold transition-all uppercase tracking-wider",
-                                                        pathname === sub.href
-                                                            ? "bg-primary/10 text-primary"
-                                                            : "text-muted-foreground/60 hover:text-foreground",
-                                                    )}
-                                                >
-                                                    <sub.icon className="w-3 h-3" />
-                                                    {sub.label}
-                                                </button>
-                                            </Link>
-                                        ))}
-                                    </div>
-                                )}
-
-                                <Link
-                                    href="/billing"
-                                    onClick={() => setOpen(false)}
-                                >
-                                    <Button
-                                        variant="ghost"
-                                        className={cn(
-                                            "w-full justify-start gap-4 h-12 px-3",
-                                            pathname.startsWith("/billing")
-                                                ? "bg-accent text-accent-foreground font-bold"
-                                                : "text-muted-foreground",
-                                        )}
-                                    >
-                                        <CreditCard className="w-5 h-5" />
-                                        <span className="text-base font-medium">
-                                            Billing
-                                        </span>
-                                    </Button>
-                                </Link>
 
                                 {/* Theme Picker */}
                                 {user?.isPro ? (
@@ -824,27 +677,10 @@ export default function MobileNav() {
                     <div className="px-6 pb-6 pt-2 flex flex-col gap-2">
                         <Button
                             size="lg"
-                            onClick={() => {
-                                setShowUpgradeModal(false);
-                                router.push("/billing");
-                            }}
+                            onClick={() => setShowUpgradeModal(false)}
                             className="w-full"
                         >
                             Upgrade to Pro
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="lg"
-                            className="w-full"
-                            onClick={() => {
-                                // Placeholder for promo code link
-                                window.open(
-                                    "https://wa.me/+918826343179?text=Hello%20I%20need%20a%20promo%20code%20For%20campusZen.",
-                                    "_blank",
-                                );
-                            }}
-                        >
-                            Get Promo Code
                         </Button>
                     </div>
                 </DialogContent>

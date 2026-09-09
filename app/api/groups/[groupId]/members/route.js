@@ -6,7 +6,7 @@ import User from '@/models/User'
 import { getCurrentUser } from '@/lib/auth'
 import { sanitizeMongoInput } from '@/lib/sanitize'
 import { applyRateLimit } from '@/lib/rate-limit'
-import { triggerPusher } from '@/lib/pusher-server'
+import { emitToGroup, emitToUser } from '@/lib/realtime'
 import { validateObjectId } from '@/utils/validators'
 import { createNotification } from '@/lib/notifications'
 
@@ -112,9 +112,8 @@ export async function POST(request, { params }) {
       dedupe: false
     }).catch(err => console.error('Operation failed:', err))
 
-    // 8. Trigger Pusher events
-    // Trigger on group channel for existing members
-    triggerPusher(`private-group-${groupId}`, 'member-added', {
+    // Emit member:added to group room
+    emitToGroup(groupId, 'member:added', {
       member: {
         userId: userToAdd._id,
         name: userToAdd.name,
@@ -125,10 +124,10 @@ export async function POST(request, { params }) {
         joinedAt: new Date()
       },
       message: systemMessage
-    }).catch(err => console.error('Operation failed:', err))
+    }).catch(err => console.error('[realtime] member:added failed:', err))
 
-    // Trigger on user's personal channel to notify them about being added
-    triggerPusher(`private-user-${userId}`, 'group-joined', group).catch(err => console.error('Operation failed:', err))
+    // Emit group:joined to the added user's personal room
+    emitToUser(userId, 'group:joined', group).catch(err => console.error('[realtime] group:joined failed:', err))
 
     return NextResponse.json({ 
       success: true, 
@@ -251,14 +250,14 @@ export async function DELETE(request, { params }) {
       type: 'system'
     })
 
-    // 3. Trigger Pusher events
-    triggerPusher(`private-group-${groupId}`, 'member-removed', {
+    // Emit member:removed to group room
+    emitToGroup(groupId, 'member:removed', {
       userId: targetUserIdStr,
       message: systemMessage
-    }).catch(err => console.error('Operation failed:', err))
+    }).catch(err => console.error('[realtime] member:removed failed:', err))
 
-    // Trigger on user's personal channel to notify them about being removed/left
-    triggerPusher(`private-user-${targetUserIdStr}`, 'group-left', { groupId: group._id }).catch(err => console.error('Operation failed:', err))
+    // Emit group:left to the removed/left user's personal room
+    emitToUser(targetUserIdStr, 'group:left', { groupId: group._id }).catch(err => console.error('[realtime] group:left failed:', err))
 
     return NextResponse.json({ success: true })
 

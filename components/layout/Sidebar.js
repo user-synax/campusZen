@@ -14,14 +14,10 @@ import {
     BarChart2,
     Settings,
     Shield,
-    Terminal,
-    Type,
     Palette,
     BookOpen,
     History,
     Heart,
-    Trophy,
-    CreditCard,
     Sun,
     Moon,
     Crown,
@@ -31,12 +27,9 @@ import {
     Rocket,
     ShieldCheck,
     Video,
-    ShoppingBag,
     ChevronDown,
     ChevronRight,
-    Coins,
     Link2,
-    Wallet,
     Check,
     BookText
 } from "lucide-react";
@@ -177,18 +170,10 @@ export default function Sidebar() {
     const { theme, setTheme, toggleTheme } = useTheme();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const navRef = useRef(null);
-    const vpDigitsRef = useRef(null);
-
     useEffect(() => {
         const el = navRef.current?.querySelector(".t-stagger");
         if (el) requestAnimationFrame(() => el.classList.add("is-shown"));
     }, []);
-
-    useEffect(() => {
-        if (vpDigitsRef.current) {
-            setDigits(vpDigitsRef.current, (user?.vp || 0).toLocaleString());
-        }
-    }, [user?.vp]);
 
     // Compute admin/founder status once per render instead of calling repeatedly
     const isAdminUser = user ? isAdmin(user) : false;
@@ -367,46 +352,7 @@ export default function Sidebar() {
                         </div>
                     )}
 
-                {item.href === "/tools" && pathname.startsWith("/tools") && (
-                    <div className="hidden lg:flex flex-col gap-0.5 mt-0.5 ml-9 mr-1">
-                        {[
-                            {
-                                label: "Popular",
-                                href: "/tools",
-                                icon: Terminal,
-                            },
-                            {
-                                label: "Text tools",
-                                href: "/tools/text",
-                                icon: Type,
-                            },
-                            {
-                                label: "Color tools",
-                                href: "/tools/color",
-                                icon: Palette,
-                            },
-                            {
-                                label: "SEO tools",
-                                href: "/tools/seo",
-                                icon: Search,
-                            },
-                        ].map((sub) => (
-                            <Link key={sub.href} href={sub.href}>
-                                <button
-                                    className={cn(
-                                        "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
-                                        pathname === sub.href
-                                            ? "bg-primary/8 text-primary"
-                                            : "text-muted-foreground/70 hover:text-foreground hover:bg-accent/50",
-                                    )}
-                                >
-                                    <sub.icon className="w-3.5 h-3.5 shrink-0" />
-                                    {sub.label}
-                                </button>
-                            </Link>
-                        ))}
-                    </div>
-                )}
+
             </div>
         );
     };
@@ -617,20 +563,7 @@ export default function Sidebar() {
                                 </span>
                             </Button>
                         </div>
-                        {user && (
-                            <div className="flex items-center gap-2 w-full px-2 py-1.5">
-                                <img src="/icon/vp-coin.png" alt="VP" className="w-5 h-5 shrink-0" />
-                                <span className="hidden lg:block text-sm font-semibold text-foreground">
-                                    <span
-                                        className="t-digit-group"
-                                        ref={vpDigitsRef}
-                                    >
-                                        {(user.vp || 0).toLocaleString()}
-                                    </span>{" "}
-                                    VP
-                                </span>
-                            </div>
-                        )}
+
 
                         {/* Theme Picker */}
                         {user?.isPro ? (
@@ -756,26 +689,10 @@ export default function Sidebar() {
                     <div className="px-6 pb-6 pt-2 flex flex-col gap-2">
                         <Button
                             size="lg"
-                            onClick={() => {
-                                setShowUpgradeModal(false);
-                                router.push("/billing");
-                            }}
+                            onClick={() => setShowUpgradeModal(false)}
                             className="w-full"
                         >
                             Upgrade to Pro
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="lg"
-                            className="w-full"
-                            onClick={() => {
-                                window.open(
-                                    "https://wa.me/+918826343179?text=Hello%20I%20need%20a%20promo%20code%20For%20campusZen.",
-                                    "_blank",
-                                );
-                            }}
-                        >
-                            Get Promo Code
                         </Button>
                     </div>
                 </DialogContent>

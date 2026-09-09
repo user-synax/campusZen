@@ -1,19 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ensureChatSocket } from "@/lib/chat-socket";
-import { getPusherClient } from "@/lib/pusher-client";
 import useUser from "@/hooks/useUser";
 
 /**
- * Group chat realtime hook. Core chat (message:new, typing, presence, read
- * receipts) is now delivered over the Socket.IO backend instead of Pusher.
+ * Group chat realtime hook. All events are now delivered over the Socket.IO
+ * backend — no Pusher dependency.
  *
- * Events NOT yet migrated (message-deleted, message-reaction, member-added,
- * member-removed, group-updated, group-deleted) are still broadcast by the
- * existing Next.js Pusher routes, so we keep a Pusher subscription for those to
- * avoid regressing shipped features this pass. They can be moved to the socket
- * backend in a follow-up.
+ * Server emits (via group: room + user: personal rooms):
+ *   message:new, message:deleted, message:reaction,
+ *   typing:start, typing:stop, presence:online/offline/snapshot,
+ *   read:receipt, member:added, member:removed,
+ *   group:deleted, group:updated, vc:started, vc:update
  */
 export function useGroupChat(groupId, handlers = {}) {
     const handlersRef = useRef(handlers);
@@ -29,8 +28,6 @@ export function useGroupChat(groupId, handlers = {}) {
         if (!groupId) return;
         let active = true;
         let socket;
-        let pusher;
-        let channel;
 
         const upsertOnline = (user) =>
             setOnlineMembers((prev) => {
@@ -83,45 +80,80 @@ export function useGroupChat(groupId, handlers = {}) {
                         handlersRef.current.onReadReceipt(data);
                     }
                 };
+                const onMessageDeleted = (data) => {
+                    if (handlersRef.current.onMessageDeleted) {
+                        handlersRef.current.onMessageDeleted(data);
+                    }
+                };
+                const onMessageReaction = (data) => {
+                    if (handlersRef.current.onReaction) {
+                        handlersRef.current.onReaction(data);
+                    }
+                };
+                const onMemberAdded = (data) => {
+                    if (handlersRef.current.onMemberAdded) {
+                        handlersRef.current.onMemberAdded(data);
+                    }
+                };
+                const onMemberRemoved = (data) => {
+                    if (handlersRef.current.onMemberRemoved) {
+                        handlersRef.current.onMemberRemoved(data);
+                    }
+                };
+                const onGroupDeleted = (data) => {
+                    if (handlersRef.current.onGroupDeleted) {
+                        handlersRef.current.onGroupDeleted(data);
+                    }
+                };
+                const onGroupUpdated = (data) => {
+                    if (handlersRef.current.onGroupUpdated) {
+                        handlersRef.current.onGroupUpdated(data);
+                    }
+                };
+                const onVcStarted = (data) => {
+                    if (data.groupId === groupId && handlersRef.current.onVcStarted) {
+                        handlersRef.current.onVcStarted(data);
+                    }
+                };
+                const onVcUpdate = (data) => {
+                    if (data.groupId === groupId && handlersRef.current.onVcUpdate) {
+                        handlersRef.current.onVcUpdate(data);
+                    }
+                };
 
+                // Socket-native events (via group room)
                 s.on("message:new", onNewMessage);
+                s.on("message:deleted", onMessageDeleted);
+                s.on("message:reaction", onMessageReaction);
                 s.on("typing:start", onTypingStart);
                 s.on("typing:stop", onTypingStop);
                 s.on("presence:online", onPresenceOnline);
                 s.on("presence:offline", onPresenceOffline);
                 s.on("presence:snapshot", onSnapshot);
                 s.on("read:receipt", onReadReceipt);
-
-                // Keep Pusher for not-yet-migrated events.
-                pusher = getPusherClient();
-                if (pusher) {
-                    channel = pusher.subscribe(`private-group-${groupId}`);
-                    const bind = (event, handlerKey) =>
-                        channel.bind(event, (d) => {
-                            if (handlersRef.current[handlerKey]) {
-                                handlersRef.current[handlerKey](d);
-                            }
-                        });
-                    bind("message-deleted", "onMessageDeleted");
-                    bind("message-reaction", "onReaction");
-                    bind("member-added", "onMemberAdded");
-                    bind("member-removed", "onMemberRemoved");
-                    bind("group-deleted", "onGroupDeleted");
-                    bind("group-updated", "onGroupUpdated");
-                }
+                s.on("member:added", onMemberAdded);
+                s.on("member:removed", onMemberRemoved);
+                s.on("group:deleted", onGroupDeleted);
+                s.on("group:updated", onGroupUpdated);
+                s.on("vc:started", onVcStarted);
+                s.on("vc:update", onVcUpdate);
 
                 cleanup = () => {
                     s.off("message:new", onNewMessage);
+                    s.off("message:deleted", onMessageDeleted);
+                    s.off("message:reaction", onMessageReaction);
                     s.off("typing:start", onTypingStart);
                     s.off("typing:stop", onTypingStop);
                     s.off("presence:online", onPresenceOnline);
                     s.off("presence:offline", onPresenceOffline);
                     s.off("presence:snapshot", onSnapshot);
                     s.off("read:receipt", onReadReceipt);
-                    if (channel) {
-                        channel.unbind_all();
-                        pusher.unsubscribe(`private-group-${groupId}`);
-                    }
+                    s.off("member:added", onMemberAdded);
+                    s.off("member:removed", onMemberRemoved);
+                    s.off("group:deleted", onGroupDeleted);
+                    s.off("group:updated", onGroupUpdated);
+                    s.off("vc:started", onVcStarted);
+                    s.off("vc:update", onVcUpdate);
                 };
             })
             .catch(() => {});

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { usePathname } from 'next/navigation'
-import { getPusherClient } from '@/lib/pusher-client'
+import { useRealtime } from '@/hooks/useRealtime'
 import useUser from '@/hooks/useUser'
 import { playNotificationSound, shouldPlaySound } from '@/lib/notificationSound'
 
@@ -13,9 +13,7 @@ export function NotificationProvider({ children }) {
   const pathname = usePathname()
   const [unreadCount, setUnreadCount] = useState(0)
   const [newNotification, setNewNotification] = useState(null)
-  const channelRef = useRef(null)
   const timerRef = useRef(null)
-  const prevUserIdRef = useRef(null)
 
   // Fetch initial unread count
   const fetchCount = useCallback(async () => {
@@ -32,25 +30,12 @@ export function NotificationProvider({ children }) {
   }, [user?._id])
 
   useEffect(() => {
-    const userId = user?._id
-    if (!userId) return
+    if (user?._id) fetchCount()
+  }, [user?._id, fetchCount])
 
-    // Only resubscribe if userId actually changed (not on every effect run)
-    if (prevUserIdRef.current === userId) return
-    prevUserIdRef.current = userId
-
-    fetchCount()
-
-    // Subscribe to Pusher private notifications channel
-    const pusher = getPusherClient()
-    if (!pusher) return
-
-    const channelName = `private-notifications-${userId}`
-    const channel = pusher.subscribe(channelName)
-    channelRef.current = channel
-
-    // New notification arrives
-    channel.bind('new-notification', (data) => {
+  // Subscribe to notification events via Socket.IO user room
+  useRealtime({
+    'notification:new': useCallback((data) => {
       // Check if notification is for the chat the user is actively viewing
       const isGroupMessage = data.type === 'group_message' && data.groupId
       const isDMMessage = data.type === 'dm_message' && data.meta?.conversationId
@@ -77,31 +62,27 @@ export function NotificationProvider({ children }) {
       // Clear new notification state after a delay to allow UI to react
       if (timerRef.current) clearTimeout(timerRef.current)
       timerRef.current = setTimeout(() => setNewNotification(null), 5000)
-    })
+    }, [pathname]),
 
-    // Notification removed (unlike, unfollow)
-    channel.bind('remove-notification', () => {
+    'notification:remove': useCallback(() => {
       fetchCount()
-    })
+    }, [fetchCount]),
 
-    // Read status synced across tabs
-    channel.bind('notifications-read', ({ notificationId }) => {
+    'notification:read': useCallback(({ notificationId }) => {
       if (notificationId === 'all') {
         setUnreadCount(0)
       } else {
         setUnreadCount(prev => Math.max(0, prev - 1))
       }
-    })
+    }, []),
+  }, { disabled: !user?._id })
 
+  // Clean up timer on unmount
+  useEffect(() => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
-      if (channelRef.current) {
-        channelRef.current.unbind_all()
-        pusher.unsubscribe(channelName)
-        channelRef.current = null
-      }
     }
-  }, [user?._id, fetchCount, pathname])
+  }, [])
 
   const markAllRead = useCallback(async () => {
     try {

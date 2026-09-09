@@ -25,8 +25,6 @@ import AdminReportedContent from "@/components/admin/AdminReportedContent";
 import AdminBlockedContent from "@/components/admin/AdminBlockedContent";
 import AdminSecurityPanel from "@/components/admin/AdminSecurityPanel";
 import AdminVerifications from "@/components/admin/AdminVerifications";
-import AdminShopManager from "@/components/admin/AdminShopManager";
-import AdminPromoCodes from "@/components/admin/AdminPromoCodes";
 import AdminDMMessages from "@/components/admin/AdminDMMessages";
 import { formatDistanceToNow } from "date-fns";
 import { useTheme } from "@/context/ThemeContext";
@@ -112,9 +110,6 @@ export default function AdminDashboard() {
                     <TabsList className="bg-muted/50 p-1 w-full justify-start overflow-x-auto no-scrollbar">
                         <TabsTrigger value="overview">Overview</TabsTrigger>
                         <TabsTrigger value="users">Users</TabsTrigger>
-                        <TabsTrigger value="promocodes">
-                            Promo Codes
-                        </TabsTrigger>
                         <TabsTrigger value="verifications">
                             Verify ID
                         </TabsTrigger>
@@ -122,7 +117,6 @@ export default function AdminDashboard() {
                         <TabsTrigger value="blocked">
                             Blocked Attempts
                         </TabsTrigger>
-                        <TabsTrigger value="shop">Shop</TabsTrigger>
                         <TabsTrigger value="dms">Direct Messages</TabsTrigger>
                         <TabsTrigger value="themes">Generate Theme</TabsTrigger>
                         <TabsTrigger value="security">Security</TabsTrigger>
@@ -245,14 +239,6 @@ export default function AdminDashboard() {
 
                 <TabsContent value="blocked">
                     <AdminBlockedContent />
-                </TabsContent>
-
-                <TabsContent value="shop">
-                    <AdminShopManager />
-                </TabsContent>
-
-                <TabsContent value="promocodes">
-                    <AdminPromoCodes />
                 </TabsContent>
 
                 <TabsContent value="dms">

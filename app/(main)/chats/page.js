@@ -118,7 +118,7 @@ export default function ChatsPage() {
         }
     }, [activeTab]);
 
-    // Refetch when Pusher-driven cache invalidation fires
+    // Refetch when realtime-driven cache invalidation fires
     useEffect(() => {
         const handleInvalidate = async (e) => {
             const { tab } = e.detail;

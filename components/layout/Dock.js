@@ -294,24 +294,9 @@ export default function Dock() {
                     <div className="flex flex-col gap-2 pt-2">
                         <Button
                             size="lg"
-                            onClick={() => {
-                                setShowUpgradeModal(false);
-                                router.push("/billing");
-                            }}
+                            onClick={() => setShowUpgradeModal(false)}
                         >
                             Upgrade to Pro
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="lg"
-                            onClick={() => {
-                                window.open(
-                                    "https://wa.me/+918826343179?text=Hello%20I%20need%20a%20promo%20code%20For%20campusZen.",
-                                    "_blank",
-                                );
-                            }}
-                        >
-                            Get Promo Code
                         </Button>
                     </div>
                 </DialogContent>

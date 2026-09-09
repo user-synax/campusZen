@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import useUser from "./useUser";
-import { getPusherClient } from "@/lib/pusher-client";
 
 export function usePushNotifications() {
     const { user } = useUser();

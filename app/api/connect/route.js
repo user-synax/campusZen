@@ -7,7 +7,6 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { validateObjectId } from "@/utils/validators";
 import { createNotification } from "@/lib/notifications";
 import { awardXP } from "@/lib/gamification";
-import { awardVP } from "@/lib/coins";
 import { findOrCreateDMConversation } from "@/lib/dms";
 
 export async function POST(request) {
@@ -138,11 +137,6 @@ export async function POST(request) {
 
         // Award XP (mirror /api/follow amounts: 100 XP)
         const xpResult = await awardXP(currentUser._id, "follow");
-
-        // Award VP (mirror /api/follow: 200 VP)
-        awardVP(currentUser._id, "follow", targetUser._id).catch((err) =>
-            console.error("VP award error:", err),
-        );
 
         return NextResponse.json({
             success: true,

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import connectDB from '@/lib/db'
 import GroupMessage from '@/models/GroupMessage'
 import { getCurrentUser } from '@/lib/auth'
-import { triggerPusher } from '@/lib/pusher-server'
+import { emitToGroup } from '@/lib/realtime'
 import { validateObjectId } from '@/utils/validators'
 import { sanitizeMongoInput } from '@/lib/sanitize'
 
@@ -81,10 +81,11 @@ export async function POST(request, { params }) {
       )
     }
 
-    // 6. Trigger Pusher with updated reactions
-    await triggerPusher(`private-group-${groupId}`, 'message-reaction', {
+    // 6. Emit message:reaction to group room
+    await emitToGroup(groupId, 'message:reaction', {
       messageId: messageId,
-      reactions: updatedMessage.reactions
+      reactions: updatedMessage.reactions,
+      groupId
     })
 
     return NextResponse.json({ reactions: updatedMessage.reactions })

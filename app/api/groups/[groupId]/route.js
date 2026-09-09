@@ -5,7 +5,7 @@ import GroupMessage from '@/models/GroupMessage'
 import { getCurrentUser } from '@/lib/auth'
 import { sanitizeText, sanitizeMongoInput } from '@/lib/sanitize'
 import { applyRateLimit } from '@/lib/rate-limit'
-import { triggerPusher } from '@/lib/pusher-server'
+import { emitToGroup } from '@/lib/realtime'
 import { validateObjectId } from '@/utils/validators'
 
 /**
@@ -126,8 +126,8 @@ export async function PATCH(request, { params }) {
       .populate('members.userId', 'name username avatar isVerified')
       .lean()
 
-    // Trigger Pusher for group update
-    triggerPusher(`private-group-${groupId}`, 'group-updated', populatedGroup).catch(err => console.error('Operation failed:', err))
+    // Emit group:updated to group room
+    emitToGroup(groupId, 'group:updated', populatedGroup).catch(err => console.error('[realtime] group:updated failed:', err))
 
     return NextResponse.json(populatedGroup)
 
@@ -198,11 +198,11 @@ export async function DELETE(request, { params }) {
       type: 'system'
     })
 
-    // 5. Trigger Pusher event: 'group-deleted'
-    triggerPusher(`private-group-${groupId}`, 'group-deleted', {
+    // Emit group:deleted to group room
+    emitToGroup(groupId, 'group:deleted', {
       groupId: group._id,
       deletedBy: currentUser.name
-    }).catch(err => console.error('Operation failed:', err))
+    }).catch(err => console.error('[realtime] group:deleted failed:', err))
 
     return NextResponse.json({ success: true })
 

@@ -3,7 +3,7 @@ import connectDB from "@/lib/db";
 import GroupChat from "@/models/GroupChat";
 import { getCurrentUser } from "@/lib/auth";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { triggerPusher } from "@/lib/pusher-server";
+import { emitToGroup, emitToUsers } from "@/lib/realtime";
 import { validateObjectId } from "@/utils/validators";
 import { getRoomService, createCallToken, callRoomName } from "@/lib/livekit";
 
@@ -95,18 +95,16 @@ export async function POST(request, { params }) {
             roomName,
         };
 
-        // Notify members currently on the chat page
-        await triggerPusher(`private-group-${groupId}`, "vc-started", payload);
+        // Emit vc:started to the group room (for those on the chat page)
+        await emitToGroup(groupId, "vc:started", payload);
 
-        // Notify each member via their user channel (for those not on the chat page)
-        const pusherPromises = group.members
+        // Emit vc:started to each non-sender member's personal room (for sidebar)
+        const otherMemberIds = group.members
             .filter((m) => m.userId.toString() !== currentUser._id.toString())
-            .map((m) =>
-                triggerPusher(`private-user-${m.userId}`, "vc-started", payload).catch((err) =>
-                    console.error("[GroupCallStart] User push failed:", err),
-                ),
-            );
-        await Promise.all(pusherPromises);
+            .map((m) => String(m.userId));
+        if (otherMemberIds.length > 0) {
+            await emitToUsers(otherMemberIds, "vc:started", payload);
+        }
 
         return NextResponse.json(
             { roomName, token, livekitUrl: process.env.NEXT_PUBLIC_LIVEKIT_URL },

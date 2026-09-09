@@ -5,7 +5,6 @@ import { getCurrentUser } from "@/lib/auth";
 import { validateObjectId } from "@/utils/validators";
 import { createNotification, deleteNotification } from "@/lib/notifications";
 import { awardXP } from "@/lib/gamification";
-import { awardVP } from "@/lib/coins";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { sanitizeMongoInput } from "@/lib/sanitize";
 import { cacheSet, cacheDel } from "@/lib/redis-cache";
@@ -99,12 +98,6 @@ export async function POST(request) {
             awardXP(currentUser._id, "like").catch((err) =>
                 console.error("XP award error:", err),
             );
-
-            // Award VP for giving a like (actor earns). Self-guard:
-            // don't reward liking your own post.
-            awardVP(currentUser._id, "like", postId, {
-                ownerId: postAuthor,
-            }).catch((err) => console.error("VP award error:", err));
         }
 
         // Double check count safety (to prevent negative likes if something goes wrong)

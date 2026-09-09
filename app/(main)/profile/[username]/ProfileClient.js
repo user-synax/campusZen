@@ -39,7 +39,6 @@ import { CrownIcon } from "lucide-react";
 import Image from "next/image";
 import { getLevelProgress, getRankForLevel } from "@/lib/ranks";
 import { cn } from "@/lib/utils";
-import CosmeticBadge from "@/components/profile/CosmeticBadge";
 
 const FollowListModal = dynamic(
     () => import("@/components/user/FollowListModal"),
@@ -523,11 +522,7 @@ export default function ProfileClient({ username: initialUsername }) {
                                 <CrownIcon className="w-4 h-4" /> &nbsp; Founder
                             </Badge>
                         )}
-                        {/* Cosmetic shop badge — distinct dashed style so users
-                            don't confuse purchased flex with earned/verified badges */}
-                        {equipped.special_badge && (
-                            <CosmeticBadge item={equipped.special_badge} />
-                        )}
+
                     </div>
                     <p className="text-muted-foreground text-sm font-medium">
                         @{profileUser.username}

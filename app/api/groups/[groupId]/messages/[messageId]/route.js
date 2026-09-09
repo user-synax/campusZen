@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import connectDB from '@/lib/db'
 import GroupMessage from '@/models/GroupMessage'
 import { getCurrentUser } from '@/lib/auth'
-import { triggerPusher } from '@/lib/pusher-server'
+import { emitToGroup } from '@/lib/realtime'
 import { validateObjectId } from '@/utils/validators'
 
 /**
@@ -41,8 +41,8 @@ export async function DELETE(request, { params }) {
       message.deletedAt = new Date()
       await message.save()
 
-      // 4. Trigger Pusher:
-      await triggerPusher(`private-group-${groupId}`, 'message-deleted', {
+      // 4. Emit message:deleted to group room
+      await emitToGroup(groupId, 'message:deleted', {
         messageId: message._id
       })
     }

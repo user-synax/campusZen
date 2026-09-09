@@ -2,12 +2,10 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Post from "@/models/Post";
 import { getCurrentUser } from "@/lib/auth";
-import { refreshUserProStatus } from "@/lib/subscription";
 import { sanitizeString } from "@/utils/validators";
 import { extractHashtags } from "@/utils/hashtags";
 import { indexHashtags } from "@/lib/hashtag-utils";
 import { awardXP } from "@/lib/gamification";
-import { awardVP } from "@/lib/coins";
 import { deleteCachePattern } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/sanitize";
@@ -31,9 +29,6 @@ export async function POST(request) {
                 { status: 401 },
             );
         }
-
-        // Check Pro status for restricted features
-        const isPro = await refreshUserProStatus(currentUser._id);
 
         let body;
         try {
@@ -138,11 +133,6 @@ export async function POST(request) {
 
         // Award XP for posting
         const xpResult = await awardXP(currentUser._id, "post");
-
-        // Award VP for posting (background, idempotent)
-        awardVP(currentUser._id, "post", post._id).catch((err) =>
-            console.error("VP award error:", err),
-        );
 
         return NextResponse.json(
             {

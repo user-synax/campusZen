@@ -3,7 +3,8 @@ import connectDB from "@/lib/db";
 import DMConversation from "@/models/DMConversation";
 import { getCurrentUser } from "@/lib/auth";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { triggerPusher } from "@/lib/pusher-server";
+// Typing is now handled by the Socket.IO backend (typing:start / typing:stop).
+// This HTTP route is kept for backward compatibility but is a no-op for emits.
 import { validateObjectId } from "@/utils/validators";
 import { sanitizeMongoInput } from "@/lib/sanitize";
 
@@ -69,18 +70,7 @@ export async function POST(request, { params }) {
             (p) => p.userId.toString() !== currentUser._id.toString(),
         );
 
-        if (otherParticipant) {
-            await triggerPusher(
-                `private-dm-${otherParticipant.userId}`,
-                isTyping ? "dm-typing-start" : "dm-typing-stop",
-                {
-                    conversationId,
-                    userId: currentUser._id,
-                    userName: currentUser.name,
-                    userAvatar: currentUser.avatar,
-                },
-            );
-        }
+        // Typing is now socket-native — no Pusher emit needed
 
         return NextResponse.json({ success: true });
     } catch (err) {

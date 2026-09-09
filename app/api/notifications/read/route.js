@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth' 
 import connectDB from '@/lib/db' 
 import Notification from '@/models/Notification' 
-import { triggerPusher } from '@/lib/pusher-server' 
+import { emitToUser } from '@/lib/realtime' 
 import { validateObjectId } from '@/utils/validators' 
  
 export async function PATCH(request) { 
@@ -35,12 +35,12 @@ export async function PATCH(request) {
       ) 
     } 
  
-    // Tell client via Pusher (so other tabs update too) 
-    triggerPusher( 
-      `private-notifications-${currentUser._id}`, 
-      'notifications-read', 
+    // Tell client via socket (so other tabs update too) 
+    emitToUser( 
+      currentUser._id, 
+      'notification:read', 
       { notificationId: notificationId || 'all' } 
-    ).catch(err => console.error('Operation failed:', err)) 
+    ).catch(err => console.error('[realtime] notification:read failed:', err)) 
  
     return NextResponse.json({ success: true }) 
  

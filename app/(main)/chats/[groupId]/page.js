@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import useUser from "@/hooks/useUser";
 import { useGroupChat } from "@/hooks/useGroupChat";
-import { getPusherClient } from "@/lib/pusher-client";
 import { ensureChatSocket } from "@/lib/chat-socket";
 import useChatRoom from "@/hooks/useChatRoom";
 import MessageBubble from "@/components/chat/MessageBubble";
@@ -170,18 +169,6 @@ export default function ChatRoomPage({ params: paramsPromise }) {
         [room.onNewMessage, markReadSocket],
     );
 
-    const { onlineMembers } = useGroupChat(groupId, {
-        onNewMessage,
-        onMessageDeleted,
-        onTypingStart,
-        onTypingStop,
-        onReaction,
-        onGroupDeleted,
-        onGroupUpdated,
-        onMemberRemoved,
-        onMemberAdded,
-    });
-
     // ━━━ Voice chat (VC) state ━━━
     const [callActive, setCallActive] = useState(false);
 
@@ -199,19 +186,24 @@ export default function ChatRoomPage({ params: paramsPromise }) {
         };
     }, [groupId]);
 
-    // Listen for "vc-started" on the group channel (others starting a call).
-    // NOTE: useGroupChat owns the private-group subscription lifecycle, so we
-    // only bind/unbind our event here and never unsubscribe the channel.
-    useEffect(() => {
-        if (!groupId) return;
-        const pusher = getPusherClient();
-        if (!pusher) return;
-        const ch = pusher.subscribe(`private-group-${groupId}`);
-        ch.bind("vc-started", () => setCallActive(true));
-        return () => {
-            ch.unbind("vc-started");
-        };
+    const onVcStarted = useCallback(() => setCallActive(true), []);
+    const onVcUpdate = useCallback(({ active, groupId: gid }) => {
+        if (!active && gid === groupId) setCallActive(false);
     }, [groupId]);
+
+    const { onlineMembers } = useGroupChat(groupId, {
+        onNewMessage,
+        onMessageDeleted,
+        onTypingStart,
+        onTypingStop,
+        onReaction,
+        onGroupDeleted,
+        onGroupUpdated,
+        onMemberRemoved,
+        onMemberAdded,
+        onVcStarted,
+        onVcUpdate,
+    });
 
     // Open the dedicated call page when the header button is clicked
     const openCallPage = useCallback(() => {
