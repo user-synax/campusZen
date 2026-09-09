@@ -6,11 +6,9 @@ import {
     Link2,
     Bookmark,
     BookOpen,
-    Calendar,
     BookText,
     Settings,
     Shield,
-    BarChart2,
 } from "lucide-react";
 
 // Shared navigation config used by Sidebar, Dock, and MobileNav.
@@ -33,7 +31,6 @@ export const primaryNavItems = [
 
 export const moreItems = [
     { label: "Resources", href: "/resources", icon: BookOpen },
-    { label: "Events", href: "/events", icon: Calendar },
 ];
 
 export const bottomNavItems = [
@@ -43,11 +40,4 @@ export const bottomNavItems = [
 
 export const adminItems = [
     { href: "/admin", icon: Shield, label: "Dashboard", color: "text-amber-500" },
-    {
-        href: "/admin/resources",
-        icon: BookOpen,
-        label: "Review",
-        badgeKey: "pendingResources",
-    },
-    { href: "/analytics", icon: BarChart2, label: "Analytics" },
 ];

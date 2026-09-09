@@ -2,7 +2,6 @@ import {
     Bookmark,
     BookOpen,
     Bot,
-    Calendar,
     FileJson,
     GraduationCap,
     Link2,
@@ -53,18 +52,6 @@ export const PRODUCT_FEATURES = [
             "Markdown, images and GIFs",
             "Emotion reactions and hashtags",
             "Cursor-based feed with moderation checks",
-        ],
-    },
-    {
-        id: "events",
-        icon: Calendar,
-        category: "learn",
-        title: "Campus Events",
-        body: "Browse upcoming and past campus events, filter by college, and RSVP in a click. Never miss a fest, hackathon, or placement drive again.",
-        detail: [
-            "Upcoming and past events",
-            "Filter by college",
-            "One-click RSVP",
         ],
     },
     {
@@ -200,11 +187,6 @@ export const CHECKLIST = [
         id: "post",
         label: "Write your first post",
         hint: "Markdown, images and GIFs are all supported",
-    },
-    {
-        id: "event",
-        label: "RSVP to something happening on campus",
-        hint: "Fests, hackathons, placement drives",
     },
     {
         id: "study",

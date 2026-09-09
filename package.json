@@ -7,13 +7,14 @@
         "type": "git",
         "url": "https://github.com/user-synax/campusX"
     },
+    "packageManager": "bun@1.3.14",
     "scripts": {
         "dev": "next dev",
         "build": "next build",
         "start": "next start",
         "lint": "next lint",
-        "test": "node --test tests/agent-readiness.test.mjs",
-        "sync:shop": "node scripts/syncShopItems.mjs"
+        "test": "bun --test tests/agent-readiness.test.mjs",
+        "test:node": "node --test tests/agent-readiness.test.mjs"
     },
     "dependencies": {
         "@animateicons/react": "^0.3.4",

@@ -19,11 +19,6 @@ const PUBLIC_ENDPOINTS = [
         description: "Liveness probe (public).",
     },
     {
-        method: "GET",
-        path: "/api/events",
-        description: "Upcoming campus events (public).",
-    },
-    {
         method: "POST",
         path: "/api/auth/login",
         description: "Authenticate and obtain a session cookie.",

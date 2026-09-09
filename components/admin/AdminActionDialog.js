@@ -9,9 +9,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Loader2, Coins } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import UserAvatar from "@/components/user/UserAvatar"
 import { toast } from "sonner"
 
@@ -31,64 +30,11 @@ const ACTION_CONFIGS = {
     color: 'default',
     requiresReason: false
   },
-  verify: {
-    title: 'Verify User',
-    description: 'User will receive a verified badge and 50 bonus coins.',
-    icon: '✅',
-    color: 'default',
-    requiresReason: false
-  },
-  unverify: {
-    title: 'Remove Verification',
-    description: 'Verified badge will be removed from user\'s profile.',
-    icon: '❌',
-    color: 'destructive',
-    requiresReason: false
-  },
-  force_logout: {
-    title: 'Force Logout',
-    description: 'All active sessions will be immediately invalidated.',
-    icon: '🔒',
-    color: 'default',
-    requiresReason: false
-  },
-  award_coins: {
-    title: 'Award VP',
-    description: 'Viper Coins (VP) will be added to user\'s wallet (bypasses daily cap).',
-    icon: <Coins className="w-5 h-5 text-amber-500" />,
-    color: 'default',
-    requiresAmount: true,
-    requiresReason: true
-  },
-  delete_user: {
-    title: 'Delete Account',
-    description: 'Account will be soft-deleted. This cannot be undone.',
-    icon: '⚠️',
-    color: 'destructive',
-    requiresReason: true,
-    requiresConfirmText: true
-  },
-  make_admin: {
-    title: 'Make Admin',
-    description: 'User will have full admin access to the platform.',
-    icon: '⭐',
-    color: 'default',
-    requiresReason: false
-  },
-  remove_admin: {
-    title: 'Remove Admin',
-    description: 'User will lose all admin privileges.',
-    icon: '🛡️',
-    color: 'destructive',
-    requiresReason: false
-  }
 }
 
 export default function AdminActionDialog({ open, action, user, onConfirm, onCancel }) {
   const [reason, setReason] = useState('')
   const [duration, setDuration] = useState('7')
-  const [amount, setAmount] = useState('')
-  const [confirmText, setConfirmText] = useState('')
   const [loading, setLoading] = useState(false)
 
   const config = ACTION_CONFIGS[action] || {
@@ -108,7 +54,6 @@ export default function AdminActionDialog({ open, action, user, onConfirm, onCan
           action,
           reason,
           duration: action === 'ban' ? (duration === 'null' ? null : parseInt(duration)) : undefined,
-          amount: action === 'award_coins' ? parseInt(amount) : undefined
         })
       })
 
@@ -131,8 +76,6 @@ export default function AdminActionDialog({ open, action, user, onConfirm, onCan
   const resetFields = () => {
     setReason('')
     setDuration('7')
-    setAmount('')
-    setConfirmText('')
   }
 
   const handleCancel = () => {
@@ -151,7 +94,6 @@ export default function AdminActionDialog({ open, action, user, onConfirm, onCan
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {/* Target user info */}
           <div className="flex items-center gap-3 p-3 bg-accent/30 rounded-xl border border-border/50">
             <UserAvatar user={user} size="sm" />
             <div className="min-w-0">
@@ -162,7 +104,6 @@ export default function AdminActionDialog({ open, action, user, onConfirm, onCan
 
           <p className="text-sm text-muted-foreground px-1">{config.description}</p>
 
-          {/* Duration picker for ban */}
           {config.requiresDuration && (
             <div className="space-y-1.5 px-1">
               <label className="text-sm font-medium">Ban Duration</label>
@@ -180,22 +121,6 @@ export default function AdminActionDialog({ open, action, user, onConfirm, onCan
             </div>
           )}
 
-          {/* Amount for coins */}
-          {config.requiresAmount && (
-            <div className="space-y-1.5 px-1">
-              <label className="text-sm font-medium">Coins to Award</label>
-              <Input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="1 - 10000"
-                min={1}
-                max={10000}
-              />
-            </div>
-          )}
-
-          {/* Reason */}
           {config.requiresReason && (
             <div className="space-y-1.5 px-1">
               <label className="text-sm font-medium">
@@ -211,20 +136,6 @@ export default function AdminActionDialog({ open, action, user, onConfirm, onCan
               />
             </div>
           )}
-
-          {/* Confirm text for destructive actions */}
-          {config.requiresConfirmText && (
-            <div className="space-y-1.5 px-1">
-              <label className="text-sm font-medium">
-                Type <strong>@{user?.username}</strong> to confirm
-              </label>
-              <Input
-                value={confirmText}
-                onChange={(e) => setConfirmText(e.target.value)}
-                placeholder={`@${user?.username}`}
-              />
-            </div>
-          )}
         </div>
 
         <DialogFooter className="flex gap-2 sm:gap-0 pt-2 px-1">
@@ -234,19 +145,10 @@ export default function AdminActionDialog({ open, action, user, onConfirm, onCan
           <Button
             variant={config.color === 'destructive' ? 'destructive' : 'default'}
             className="flex-1"
-            disabled={
-              loading ||
-              (config.requiresReason && !reason.trim()) ||
-              (config.requiresAmount && (!amount || amount < 1)) ||
-              (config.requiresConfirmText && confirmText !== `@${user?.username}`)
-            }
+            disabled={loading || (config.requiresReason && !reason.trim())}
             onClick={handleConfirm}
           >
-            {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              `Confirm ${config.title}`
-            )}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : `Confirm ${config.title}`}
           </Button>
         </DialogFooter>
       </DialogContent>

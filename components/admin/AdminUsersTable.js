@@ -7,13 +7,6 @@ import {
   Eye,
   Ban,
   UserCheck,
-  Shield,
-  ShieldOff,
-  Trash2,
-  BadgeCheck,
-  BadgeX,
-  Coins,
-  LogOut,
   Loader2
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -28,11 +21,8 @@ import {
 import UserAvatar from "@/components/user/UserAvatar"
 import AdminActionDialog from "./AdminActionDialog"
 import { formatDistanceToNow } from 'date-fns'
-import useUser from '@/hooks/useUser'
-import { isFounder } from '@/lib/admin'
 
 export default function AdminUsersTable() {
-  const { user: currentUser } = useUser()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -141,27 +131,6 @@ export default function AdminUsersTable() {
                     <Eye className="w-4 h-4 mr-2" /> View Profile
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-border/50" />
-
-                  {!user.isVerified ? (
-                    <DropdownMenuItem onClick={() => openAction('verify', user)}>
-                      <BadgeCheck className="w-4 h-4 mr-2" /> Verify User
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem onClick={() => openAction('unverify', user)}>
-                      <BadgeX className="w-4 h-4 mr-2" /> Remove Verification
-                    </DropdownMenuItem>
-                  )}
-
-                  <DropdownMenuItem onClick={() => openAction('award_coins', user)}>
-                    <Coins className="w-4 h-4 mr-2" /> Award VP
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem onClick={() => openAction('force_logout', user)}>
-                    <LogOut className="w-4 h-4 mr-2" /> Force Logout
-                  </DropdownMenuItem>
-
-                  <DropdownMenuSeparator className="bg-border/50" />
-
                   {!user.isBanned ? (
                     <DropdownMenuItem 
                       onClick={() => openAction('ban', user)} 
@@ -173,31 +142,6 @@ export default function AdminUsersTable() {
                     <DropdownMenuItem onClick={() => openAction('unban', user)}>
                       <UserCheck className="w-4 h-4 mr-2" /> Unban User
                     </DropdownMenuItem>
-                  )}
-
-                  {isFounder(currentUser) && (
-                    <>
-                      <DropdownMenuSeparator className="bg-border/50" />
-                      {!user.isAdmin ? (
-                        <DropdownMenuItem onClick={() => openAction('make_admin', user)}>
-                          <Shield className="w-4 h-4 mr-2" /> Make Admin
-                        </DropdownMenuItem>
-                      ) : (
-                        <DropdownMenuItem 
-                          onClick={() => openAction('remove_admin', user)}
-                          disabled={user.username === process.env.NEXT_PUBLIC_FOUNDER_USERNAME}
-                        >
-                          <ShieldOff className="w-4 h-4 mr-2" /> Remove Admin
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem 
-                        onClick={() => openAction('delete_user', user)}
-                        className="text-red-400 focus:text-red-400 focus:bg-red-400/10"
-                        disabled={user.username === process.env.NEXT_PUBLIC_FOUNDER_USERNAME}
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" /> Delete Account
-                      </DropdownMenuItem>
-                    </>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>

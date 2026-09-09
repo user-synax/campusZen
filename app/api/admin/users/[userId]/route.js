@@ -71,13 +71,21 @@ export async function POST(request, { params }) {
         }
 
         const body = await request.json();
-        const { action, reason, duration, amount } = body;
+        const { action, reason, duration } = body;
 
         const targetUser = await User.findById(userId).lean();
         if (!targetUser) {
             return NextResponse.json(
                 { error: "Target user not found" },
                 { status: 404 },
+            );
+        }
+
+        // Only ban / unban are allowed — X-like minimal moderation
+        if (!["ban", "unban"].includes(action)) {
+            return NextResponse.json(
+                { error: "Invalid action. Only ban/unban are allowed." },
+                { status: 400 },
             );
         }
 
@@ -166,169 +174,6 @@ export async function POST(request, { params }) {
                     targetId: userId,
                     summary: `Unbanned user ${targetUser.username}`,
                     reason: reason || "Ban lifted by admin",
-                });
-
-                return NextResponse.json({ success: true });
-            }
-
-            case "verify": {
-                await User.findByIdAndUpdate(userId, {
-                    isVerified: true,
-                    verifiedAt: new Date(),
-                });
-
-                await createNotification({
-                    recipient: userId,
-                    type: "system",
-                    meta: { message: "You've been verified on CampusZen ✅" },
-                });
-
-                await logAdminAction({
-                    adminId: currentUser._id,
-                    action: "user_verify",
-                    targetType: "user",
-                    targetId: userId,
-                    summary: `Verified user ${targetUser.username}`,
-                });
-
-                return NextResponse.json({ success: true });
-            }
-
-            case "unverify": {
-                await User.findByIdAndUpdate(userId, {
-                    isVerified: false,
-                    verifiedAt: null,
-                });
-
-                await logAdminAction({
-                    adminId: currentUser._id,
-                    action: "user_unverify",
-                    targetType: "user",
-                    targetId: userId,
-                    summary: `Unverified user ${targetUser.username}`,
-                });
-
-                return NextResponse.json({ success: true });
-            }
-
-            case "make_admin": {
-                if (!isFounder(currentUser)) {
-                    return NextResponse.json(
-                        { error: "Only founder can promote admins" },
-                        { status: 403 },
-                    );
-                }
-
-                await User.findByIdAndUpdate(userId, { isAdmin: true });
-
-                await createNotification({
-                    recipient: userId,
-                    type: "system",
-                    meta: {
-                        message: "You've been given admin access on CampusZen",
-                    },
-                });
-
-                await logAdminAction({
-                    adminId: currentUser._id,
-                    action: "user_make_admin",
-                    targetType: "user",
-                    targetId: userId,
-                    summary: `Promoted ${targetUser.username} to admin`,
-                });
-
-                return NextResponse.json({ success: true });
-            }
-
-            case "remove_admin": {
-                if (!isFounder(currentUser)) {
-                    return NextResponse.json(
-                        { error: "Only founder can demote admins" },
-                        { status: 403 },
-                    );
-                }
-                if (
-                    targetUser.username ===
-                    process.env.NEXT_PUBLIC_FOUNDER_USERNAME
-                ) {
-                    return NextResponse.json(
-                        { error: "Cannot demote founder" },
-                        { status: 400 },
-                    );
-                }
-
-                await User.findByIdAndUpdate(userId, { isAdmin: false });
-                await blacklistAllUserTokens(userId);
-
-                await logAdminAction({
-                    adminId: currentUser._id,
-                    action: "user_remove_admin",
-                    targetType: "user",
-                    targetId: userId,
-                    summary: `Demoted ${targetUser.username} from admin`,
-                });
-
-                return NextResponse.json({ success: true });
-            }
-
-            case "award_coins": {
-                return NextResponse.json(
-                    { error: "VP economy has been removed" },
-                    { status: 410 },
-                );
-            }
-
-            case "force_logout": {
-                await blacklistAllUserTokens(userId);
-
-                await logAdminAction({
-                    adminId: currentUser._id,
-                    action: "user_force_logout",
-                    targetType: "user",
-                    targetId: userId,
-                    summary: `Forced logout for user ${targetUser.username}`,
-                });
-
-                return NextResponse.json({ success: true });
-            }
-
-            case "delete_user": {
-                if (!isFounder(currentUser)) {
-                    return NextResponse.json(
-                        { error: "Only founder can delete users" },
-                        { status: 403 },
-                    );
-                }
-                if (
-                    targetUser.username ===
-                    process.env.NEXT_PUBLIC_FOUNDER_USERNAME
-                ) {
-                    return NextResponse.json(
-                        { error: "Cannot delete founder account" },
-                        { status: 400 },
-                    );
-                }
-
-                await User.findByIdAndUpdate(userId, {
-                    isDeleted: true,
-                    deletedAt: new Date(),
-                    isBanned: true, // prevent login
-                    email: `deleted_${userId}@deleted.campusZen`,
-                    name: "Deleted User",
-                    avatar: "",
-                    bio: "",
-                    college: "",
-                });
-
-                await blacklistAllUserTokens(userId);
-
-                await logAdminAction({
-                    adminId: currentUser._id,
-                    action: "user_delete",
-                    targetType: "user",
-                    targetId: userId,
-                    summary: `Soft deleted user ${targetUser.username}`,
-                    reason,
                 });
 
                 return NextResponse.json({ success: true });

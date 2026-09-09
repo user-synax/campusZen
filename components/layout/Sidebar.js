@@ -9,7 +9,6 @@ import {
     Bell,
     Bookmark,
     Search,
-    Calendar,
     MessageSquare,
     BarChart2,
     Settings,
@@ -44,8 +43,6 @@ import NotificationBell from "@/components/notifications/NotificationBell";
 import { cn } from "@/lib/utils";
 import { isFounder } from "@/lib/founder";
 import { isAdmin } from "@/lib/admin";
-import { useCat } from "@/context/CatContext";
-import clientCache from "@/lib/client-cache";
 import {
     primaryNavItems as basePrimaryNavItems,
     moreItems,
@@ -161,7 +158,6 @@ export default function Sidebar() {
     const { user, loading } = useUser();
     const { unreadCount } = useNotifications();
     const chatUnread = useChatUnreadCount();
-    const [pendingResources, setPendingResources] = useState(0);
     const { theme, setTheme, toggleTheme } = useTheme();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const navRef = useRef(null);
@@ -174,28 +170,6 @@ export default function Sidebar() {
     const isAdminUser = user ? isAdmin(user) : false;
     const isFounderUser = user ? isFounder(user.username) : false;
 
-    useEffect(() => {
-        if (user && isAdminUser) {
-            const CACHE_KEY = "cx_admin_pending_resources";
-            const CACHE_TTL = 60 * 1000; // 60 seconds
-
-            const cached = clientCache.get(CACHE_KEY);
-            if (cached !== null) {
-                setPendingResources(cached);
-                return;
-            }
-
-            fetch("/api/admin/resources?status=pending")
-                .then((res) => res.json())
-                .then((data) => {
-                    const count = data.total || 0;
-                    setPendingResources(count);
-                    clientCache.set(CACHE_KEY, count, CACHE_TTL);
-                })
-                .catch(() => {});
-        }
-    }, [user]);
-
     const primaryNavItems = basePrimaryNavItems.map((item) =>
         item.href === "/chats"
             ? { ...item, badge: chatUnread }
@@ -204,13 +178,7 @@ export default function Sidebar() {
               : item,
     );
 
-    const adminNavItems = isAdminUser
-        ? baseAdminItems.map((item) =>
-              item.href === "/admin/resources"
-                  ? { ...item, badge: pendingResources }
-                  : item,
-          )
-        : [];
+    const adminNavItems = isAdminUser ? baseAdminItems : [];
 
     const proFeatures = [
         {

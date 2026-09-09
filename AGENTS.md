@@ -8,13 +8,14 @@ CampusZen is a Next.js 16 (App Router) + React 19 student
 social platform for Indian college students. The repo is at
 `https://github.com/user-synax/campusX`.
 
-## Commands
+## Commands (Bun)
 
-- `npm run dev` — start the dev server.
-- `npm run build` / `npm start` — production build and serve.
-- `npm run lint` — ESLint (next lint).
-- `npm test` — runs `tests/agent-readiness.test.mjs` (node:test). This verifies
+- `bun run dev` — start the dev server.
+- `bun run build` / `bun start` — production build and serve.
+- `bun run lint` — ESLint (next lint).
+- `bun test` — runs `tests/agent-readiness.test.mjs` (bun:test, also `node --test`). This verifies
   the OpenAPI spec, llms.txt, markdown negotiation, robots.txt, and JSON-LD.
+- Package manager is **bun** (`bun.lock`). Do not use `npm` — use `bun install` / `bun add`.
 
 ## Architecture notes
 

@@ -12,7 +12,6 @@ import {
     LogOut,
     Menu,
     Search,
-    Calendar,
     Settings,
     MessageSquare,
     Shield,
@@ -371,25 +370,7 @@ export default function MobileNav() {
                                         </span>
                                     </Button>
                                 </Link>
-                                <Link
-                                    href="/events"
-                                    onClick={() => setOpen(false)}
-                                >
-                                    <Button
-                                        variant="ghost"
-                                        className={cn(
-                                            "w-full justify-start gap-4 h-12 px-3",
-                                            pathname === "/events"
-                                                ? "bg-accent text-accent-foreground"
-                                                : "text-muted-foreground",
-                                        )}
-                                    >
-                                        <Calendar className="w-5 h-5" />
-                                        <span className="text-base font-medium">
-                                            Events
-                                        </span>
-                                    </Button>
-                                </Link>
+
 
 
 
@@ -473,66 +454,25 @@ export default function MobileNav() {
                                 )}
 
                                 {user && isAdmin(user) && (
-                                    <>
-                                        <Link
-                                            href="/admin"
-                                            onClick={() => setOpen(false)}
+                                    <Link
+                                        href="/admin"
+                                        onClick={() => setOpen(false)}
+                                    >
+                                        <Button
+                                            variant="ghost"
+                                            className={cn(
+                                                "w-full justify-start gap-4 h-12 px-3 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10",
+                                                pathname === "/admin"
+                                                    ? "bg-emerald-500/10 font-bold"
+                                                    : "",
+                                            )}
                                         >
-                                            <Button
-                                                variant="ghost"
-                                                className={cn(
-                                                    "w-full justify-start gap-4 h-12 px-3 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10",
-                                                    pathname === "/admin"
-                                                        ? "bg-emerald-500/10 font-bold"
-                                                        : "",
-                                                )}
-                                            >
-                                                <Shield className="w-5 h-5" />
-                                                <span className="text-base font-medium">
-                                                    Admin Dashboard
-                                                </span>
-                                            </Button>
-                                        </Link>
-                                        <Link
-                                            href="/admin/resources"
-                                            onClick={() => setOpen(false)}
-                                        >
-                                            <Button
-                                                variant="ghost"
-                                                className={cn(
-                                                    "w-full justify-start gap-4 h-12 px-3 text-amber-500 hover:text-amber-600 hover:bg-amber-500/10",
-                                                    pathname ===
-                                                        "/admin/resources"
-                                                        ? "bg-amber-500/10 font-bold"
-                                                        : "",
-                                                )}
-                                            >
-                                                <Shield className="w-5 h-5" />
-                                                <span className="text-base font-medium">
-                                                    Review Queue
-                                                </span>
-                                            </Button>
-                                        </Link>
-                                        <Link
-                                            href="/analytics"
-                                            onClick={() => setOpen(false)}
-                                        >
-                                            <Button
-                                                variant="ghost"
-                                                className={cn(
-                                                    "w-full justify-start gap-4 h-12 px-3 text-violet-500 hover:text-violet-600 hover:bg-violet-500/10",
-                                                    pathname === "/analytics"
-                                                        ? "bg-violet-500/10 font-bold"
-                                                        : "",
-                                                )}
-                                            >
-                                                <BarChart2 className="w-5 h-5" />
-                                                <span className="text-base font-medium">
-                                                    Analytics
-                                                </span>
-                                            </Button>
-                                        </Link>
-                                    </>
+                                            <Shield className="w-5 h-5" />
+                                            <span className="text-base font-medium">
+                                                Admin Dashboard
+                                            </span>
+                                        </Button>
+                                    </Link>
                                 )}
 
                                 <Link

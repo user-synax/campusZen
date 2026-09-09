@@ -10,7 +10,6 @@ const protectedRoutes = [
     "/settings",
     "/bookmarks",
     "/chats",
-    "/events",
     "/connect",
 ];
 
@@ -62,7 +61,6 @@ function agentView() {
         capabilities: [
             "communities",
             "posts",
-            "events",
             "resources",
             "mcp",
         ],
@@ -76,7 +74,6 @@ function agentView() {
         endpoints: {
             communities: "GET /api/communities",
             stats: "GET /api/public/stats",
-            events: "GET /api/events",
             health: "GET /api/health",
             createPost: "POST /api/posts/create",
             openapi: "https://campuszen.tech/openapi.json",
