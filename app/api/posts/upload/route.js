@@ -39,8 +39,20 @@ export async function POST(request) {
         ];
         const maxFileSize = 8 * 1024 * 1024; // 8MB per file
 
-        const bucketId = getUserMediaBucketId();
-        const storage = getAppwriteAdminStorage();
+        let bucketId;
+        try {
+            bucketId = getUserMediaBucketId();
+        } catch (envError) {
+            console.error('Missing bucket env:', envError.message);
+            return NextResponse.json({ message: 'Storage not configured' }, { status: 500 });
+        }
+        let storage;
+        try {
+            storage = getAppwriteAdminStorage();
+        } catch (envError) {
+            console.error('Appwrite admin client error:', envError.message);
+            return NextResponse.json({ message: 'Storage not configured' }, { status: 500 });
+        }
         const uploadedUrls = [];
 
         for (const file of files) {
@@ -97,9 +109,13 @@ export async function POST(request) {
             uploadedUrls,
         });
     } catch (error) {
-        console.error("Post image upload route error:", error);
+        console.error("Post image upload route error:", error?.message || error, error?.stack);
+        // Surface storage misconfig clearly instead of generic 500
+        if (error?.message?.includes("Missing env") || error?.message?.includes("Missing Appwrite env") || error?.message?.includes("Storage not configured")) {
+            return NextResponse.json({ message: "Storage not configured" }, { status: 500 });
+        }
         return NextResponse.json(
-            { message: "Internal Server Error" },
+            { message: error?.message || "Internal Server Error" },
             { status: 500 },
         );
     }

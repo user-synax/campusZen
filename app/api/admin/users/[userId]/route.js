@@ -81,10 +81,10 @@ export async function POST(request, { params }) {
             );
         }
 
-        // Only ban / unban are allowed — X-like minimal moderation
-        if (!["ban", "unban"].includes(action)) {
+        const allowedActions = ["ban", "unban", "verify", "unverify", "grantPro", "revokePro", "grantProLifetime", "revokeProLifetime"];
+        if (!allowedActions.includes(action)) {
             return NextResponse.json(
-                { error: "Invalid action. Only ban/unban are allowed." },
+                { error: `Invalid action. Allowed: ${allowedActions.join(", ")}` },
                 { status: 400 },
             );
         }
@@ -177,6 +177,106 @@ export async function POST(request, { params }) {
                 });
 
                 return NextResponse.json({ success: true });
+            }
+
+            case "verify": {
+                if (targetUser.isVerified && targetUser.verificationStatus === "verified") {
+                    return NextResponse.json({ error: "User already verified" }, { status: 400 });
+                }
+                await User.findByIdAndUpdate(userId, {
+                    isVerified: true,
+                    verificationStatus: "verified",
+                    verificationType: "id_card",
+                    verificationApprovedAt: new Date(),
+                    verificationRejectedReason: null,
+                });
+                await createNotification({
+                    recipient: userId,
+                    type: "system",
+                    meta: { message: "🎓 You have been verified by admin — Verified Student badge granted!" },
+                });
+                await logAdminAction({
+                    adminId: currentUser._id,
+                    action: "user_verify",
+                    targetType: "user",
+                    targetId: userId,
+                    summary: `Verified user ${targetUser.username} (admin grant)`,
+                    reason: reason || "Admin verification grant",
+                });
+                return NextResponse.json({ success: true, message: "User verified" });
+            }
+
+            case "unverify": {
+                if (!targetUser.isVerified) {
+                    return NextResponse.json({ error: "User is not verified" }, { status: 400 });
+                }
+                await User.findByIdAndUpdate(userId, {
+                    isVerified: false,
+                    verificationStatus: "none",
+                    verificationType: null,
+                    verificationApprovedAt: null,
+                    verificationRejectedReason: null,
+                    collegeIdUrl: null,
+                });
+                await createNotification({
+                    recipient: userId,
+                    type: "system",
+                    meta: { message: "Your verification has been revoked by admin" },
+                });
+                await logAdminAction({
+                    adminId: currentUser._id,
+                    action: "user_unverify",
+                    targetType: "user",
+                    targetId: userId,
+                    summary: `Unverified user ${targetUser.username}`,
+                    reason: reason || "Admin verification revoke",
+                });
+                return NextResponse.json({ success: true, message: "Verification revoked" });
+            }
+
+            case "grantPro":
+            case "grantProLifetime": {
+                if (targetUser.isPro) {
+                    return NextResponse.json({ error: "User already has Pro" }, { status: 400 });
+                }
+                await User.findByIdAndUpdate(userId, { isPro: true });
+                await createNotification({
+                    recipient: userId,
+                    type: "system",
+                    meta: { message: "⭐ You have been granted Pro for lifetime by admin — enjoy premium features!" },
+                });
+                await logAdminAction({
+                    adminId: currentUser._id,
+                    action: "user_grant_pro",
+                    targetType: "user",
+                    targetId: userId,
+                    summary: `Granted Pro (lifetime) to ${targetUser.username}`,
+                    reason: reason || "Admin Pro grant lifetime",
+                    meta: { lifetime: true },
+                });
+                return NextResponse.json({ success: true, message: "Pro granted for lifetime" });
+            }
+
+            case "revokePro":
+            case "revokeProLifetime": {
+                if (!targetUser.isPro) {
+                    return NextResponse.json({ error: "User does not have Pro" }, { status: 400 });
+                }
+                await User.findByIdAndUpdate(userId, { isPro: false });
+                await createNotification({
+                    recipient: userId,
+                    type: "system",
+                    meta: { message: "Your Pro access has been revoked by admin" },
+                });
+                await logAdminAction({
+                    adminId: currentUser._id,
+                    action: "user_revoke_pro",
+                    targetType: "user",
+                    targetId: userId,
+                    summary: `Revoked Pro from ${targetUser.username}`,
+                    reason: reason || "Admin Pro revoke",
+                });
+                return NextResponse.json({ success: true, message: "Pro revoked" });
             }
 
             default:

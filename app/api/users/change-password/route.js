@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import User from '@/models/User';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, signToken, setAuthCookie } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 import { 
   successResponse, 
@@ -54,11 +54,19 @@ export async function POST(request) {
 
     // Update user
     dbUser.password = hashedPassword;
-    // Increment tokenVersion to invalidate other sessions if desired
+    // Increment tokenVersion to invalidate OTHER sessions, but keep THIS
+    // session alive by re-issuing a fresh JWT with the new version.
+    // Previous code incremented version without re-issuing, so the current
+    // cookie's version became < DB version -> getCurrentUserLegacy returned
+    // null on the very next request -> user appeared logged out after changing
+    // password and was forced to sign up/login again.
     dbUser.tokenVersion = (dbUser.tokenVersion || 0) + 1;
     await dbUser.save();
 
-    return successResponse({ message: 'Password updated successfully' });
+    const newToken = await signToken({ userId: dbUser._id.toString(), username: dbUser.username, version: dbUser.tokenVersion });
+    const response = successResponse({ message: 'Password updated successfully' });
+    await setAuthCookie(response, newToken);
+    return response;
   } catch (error) {
     console.error('[change-password] Error:', error);
     return errorResponse(error);

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { jwtVerify } from "jose";
 
 const protectedRoutes = [
     "/feed",
@@ -11,7 +12,35 @@ const protectedRoutes = [
     "/connect",
 ];
 
-export default function middleware(request) {
+// Edge-safe session check: presence AND validity (expiry, signature)
+// This is the ONLY place that decides if a cookie counts as "logged in".
+// Previous version checked only presence, so an expired/invalid JWT still
+// redirected /login -> /feed while /api/users/me returned 401 -> stuck loop.
+async function isValidSession(token) {
+    if (!token) return false;
+    const secret = process.env.JWT_SECRET;
+    if (!secret) return false;
+    try {
+        await jwtVerify(token, new TextEncoder().encode(secret), {
+            algorithms: ["HS256"],
+        });
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function clearSessionCookie(response) {
+    response.cookies.set("campusx_token", "", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production" || process.env.VERCEL === "1",
+        sameSite: "lax",
+        maxAge: 0,
+        path: "/",
+    });
+}
+
+export async function middleware(request) {
     const { pathname } = request.nextUrl;
 
     if (pathname.startsWith("/api/auth")) {
@@ -20,20 +49,54 @@ export default function middleware(request) {
         return response;
     }
 
-    const hasSession = !!request.cookies.get("campusx_token")?.value;
+    const rawToken = request.cookies.get("campusx_token")?.value || null;
+    const hasValidSession = await isValidSession(rawToken);
+    const hasCookie = !!rawToken;
 
-    if (hasSession && (pathname === "/login" || pathname === "/signup")) {
+    // Stale/invalid cookie present but token expired or forged:
+    // proactively clear it so the user is not stuck in
+    // "cookie exists -> /login redirects to /feed -> API 401" loop.
+    // We add the clearing Set-Cookie to whichever redirect/response we send.
+
+    if (hasValidSession && (pathname === "/login" || pathname === "/signup")) {
         const response = NextResponse.redirect(new URL("/feed", request.url));
+        addSecurityHeaders(response);
+        return response;
+    }
+
+    // Cookie present but invalid -> allow visiting /login /signup (clear it)
+    // and force protected routes to /login (clear it)
+    if (!hasValidSession && (pathname === "/login" || pathname === "/signup")) {
+        if (hasCookie) {
+            const response = NextResponse.next();
+            clearSessionCookie(response);
+            addSecurityHeaders(response);
+            return response;
+        }
+        const response = NextResponse.next();
         addSecurityHeaders(response);
         return response;
     }
 
     const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));
 
-    if (isProtectedRoute && !hasSession) {
+    if (isProtectedRoute && !hasValidSession) {
         const loginUrl = new URL("/login", request.url);
-        loginUrl.searchParams.set("redirect", pathname);
+        if (pathname !== "/feed") loginUrl.searchParams.set("redirect", pathname);
+        // If session expired, hint the UI so it can show "session expired, please log in again"
+        if (hasCookie) loginUrl.searchParams.set("reason", "expired");
         const response = NextResponse.redirect(loginUrl);
+        if (hasCookie) clearSessionCookie(response);
+        addSecurityHeaders(response);
+        return response;
+    }
+
+    // Edge case: valid session was cleared due to expiry but user hits landing "/"
+    // Let landing page's own server-side verifyToken handle the redirect; we just ensure
+    // stale cookies don't linger on any other public route.
+    if (hasCookie && !hasValidSession && pathname === "/") {
+        const response = NextResponse.next();
+        clearSessionCookie(response);
         addSecurityHeaders(response);
         return response;
     }

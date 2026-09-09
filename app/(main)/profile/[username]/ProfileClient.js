@@ -125,8 +125,8 @@ export default function ProfileClient({ username: initialUsername }) {
 
                 // Fetch profile and posts in parallel
                 const [userRes, postsRes] = await Promise.all([
-                    fetch(`/api/users/${username}`),
-                    fetch(`/api/posts/get?username=${username}`),
+                    fetch(`/api/users/${username}`, { credentials: "include", cache: "no-store" }),
+                    fetch(`/api/posts/get?username=${username}`, { credentials: "include", cache: "no-store" }),
                 ]);
 
                 const userData = await userRes.json();

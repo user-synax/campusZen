@@ -26,7 +26,9 @@ export async function GET(request) {
 
     if (filter === 'banned') query.isBanned = true
     if (filter === 'verified') query.isVerified = true
-    if (filter === 'admin') query.isAdmin = true
+    if (filter === 'pending') query.verificationStatus = 'pending'
+    if (filter === 'pro') query.isPro = true
+    if (filter === 'admin') query.role = 'admin'
 
     if (search) {
       const safeSearch = sanitizeMongoInput(search)
@@ -43,7 +45,7 @@ export async function GET(request) {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .select('name username email college isVerified isAdmin isBanned createdAt avatar')
+        .select('name username email college isVerified verificationStatus isPro role isBanned createdAt avatar')
         .lean(),
       User.countDocuments(query),
       User.countDocuments({ isBanned: true, isDeleted: { $ne: true } })

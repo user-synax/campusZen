@@ -95,10 +95,11 @@ export async function GET(request, { params }) {
         };
 
         const response = NextResponse.json(responseData);
-        // Public profile data with per-user fields (email/isMe/isFollowing) —
-        // cache at the edge but vary by Cookie so authenticated and anonymous
-        // responses never collide.
-        response.headers.set("Cache-Control", "public, max-age=120, stale-while-revalidate=300");
+        // Do not cache per-user profile with private fields at the edge for
+        // now - stale 404 after signup + Vary:Cookie edge semantics caused
+        // "profile not loading" right after sign in (cached miss). Use short
+        // private cache instead; re-enable public+Vary once verified on Vercel.
+        response.headers.set("Cache-Control", "private, max-age=30, stale-while-revalidate=60");
         response.headers.set("Vary", "Cookie");
         return response;
     } catch (error) {

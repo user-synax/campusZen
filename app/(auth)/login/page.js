@@ -46,6 +46,15 @@ function LoginContent() {
 
     useEffect(() => {
         const oauthError = searchParams.get("error");
+        const reason = searchParams.get("reason");
+        if (reason === "expired") {
+            // Middleware redirected here because cookie was present but JWT was
+            // expired/invalid. The stale cookie has already been cleared by
+            // middleware (Set-Cookie maxAge 0), so the user can log in fresh.
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setError("Your session expired. Please log in again.");
+            return;
+        }
         if (oauthError) {
             const errorMessages = {
                 oauth_init_failed: "Google sign-in is not configured properly.",

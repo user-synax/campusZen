@@ -36,8 +36,20 @@ export async function POST(request) {
       return NextResponse.json({ message: 'File content is not a valid image' }, { status: 400 })
     }
 
-    const bucketId = getUserMediaBucketId()
-    const storage = getAppwriteAdminStorage()
+    let bucketId
+    try {
+      bucketId = getUserMediaBucketId()
+    } catch (envError) {
+      console.error('Missing bucket env:', envError.message)
+      return NextResponse.json({ message: 'Storage not configured' }, { status: 500 })
+    }
+    let storage
+    try {
+      storage = getAppwriteAdminStorage()
+    } catch (envError) {
+      console.error('Appwrite admin client error:', envError.message)
+      return NextResponse.json({ message: 'Storage not configured' }, { status: 500 })
+    }
     const fileId = ID.unique()
     const permissions = [
       Permission.read(Role.any()),
@@ -80,8 +92,11 @@ export async function POST(request) {
       bannerUrl 
     })
   } catch (error) {
-    console.error('Banner upload route error:', error)
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 })
+    console.error('Banner upload route error:', error?.message || error, error?.stack)
+    if (error?.message?.includes("Missing env") || error?.message?.includes("Missing Appwrite env")) {
+      return NextResponse.json({ message: 'Storage not configured' }, { status: 500 })
+    }
+    return NextResponse.json({ message: error?.message || 'Internal Server Error' }, { status: 500 })
   }
 }
 

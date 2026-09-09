@@ -64,8 +64,20 @@ export async function POST(request) {
             );
         }
 
-        const bucketId = getUserMediaBucketId();
-        const storage = getAppwriteAdminStorage();
+        let bucketId;
+        try {
+            bucketId = getUserMediaBucketId();
+        } catch (envError) {
+            console.error('Missing bucket env:', envError.message);
+            return NextResponse.json({ message: 'Storage not configured' }, { status: 500 });
+        }
+        let storage;
+        try {
+            storage = getAppwriteAdminStorage();
+        } catch (envError) {
+            console.error('Appwrite admin client error:', envError.message);
+            return NextResponse.json({ message: 'Storage not configured' }, { status: 500 });
+        }
         const fileId = ID.unique();
         const permissions = [Permission.read(Role.any())];
 
@@ -94,9 +106,12 @@ export async function POST(request) {
             avatarUrl,
         });
     } catch (error) {
-        console.error("Group avatar upload route error:", error);
+        console.error("Group avatar upload route error:", error?.message || error, error?.stack);
+        if (error?.message?.includes("Missing env") || error?.message?.includes("Missing Appwrite env")) {
+            return NextResponse.json({ message: "Storage not configured" }, { status: 500 });
+        }
         return NextResponse.json(
-            { message: "Internal Server Error" },
+            { message: error?.message || "Internal Server Error" },
             { status: 500 },
         );
     }

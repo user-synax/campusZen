@@ -16,6 +16,7 @@ import {
     BadRequestError,
     UnauthorizedError,
     ConflictError,
+    APIError,
 } from "@/lib/api-response";
 
 const ALLOWED_TYPES = [
@@ -127,7 +128,10 @@ export async function POST(request) {
             verificationStatus: "pending",
         });
     } catch (error) {
-        console.error("[submit-verification] Error:", error);
+        console.error("[submit-verification] Error:", error?.message || error, error?.stack);
+        if (error?.message?.includes("Missing env") || error?.message?.includes("Missing Appwrite env")) {
+            return errorResponse(new APIError("Storage not configured", 500, "STORAGE_NOT_CONFIGURED"));
+        }
         return errorResponse(error);
     }
 }

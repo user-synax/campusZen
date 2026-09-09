@@ -9,12 +9,16 @@ export async function GET(request) {
     const user = await getCurrentUser(request);
 
     if (!user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      const res = NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      // Never cache 401 — otherwise a stale 401 can mask a fresh login
+      // (useUser does fetch no-store, but CDN/proxy must also not cache it)
+      res.headers.set('Cache-Control', 'no-store');
+      return res;
     }
 
     const response = NextResponse.json({ success: true, user: sanitizeUser(user) });
     
-    // Add private cache header to reduce redundant user fetches within short intervals
+    // Short private cache for valid user, but not for error paths
     response.headers.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60');
     
     return response;

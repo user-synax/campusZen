@@ -30,17 +30,23 @@ export default function useUser() {
     }
     
     try {
-      const res = await fetch("/api/users/me")
+      const res = await fetch("/api/users/me", {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      })
       
       if (res.status === 401) {
         globalUser = null
+        globalError = null
       } else if (!res.ok) {
         throw new Error("Failed to fetch user")
       } else {
         const data = await res.json()
         globalUser = data.user
+        globalError = null
       }
-      globalError = null
     } catch (err) {
       globalError = err.message
       globalUser = null
@@ -54,10 +60,17 @@ export default function useUser() {
   useEffect(() => {
     const callback = (newState) => setState(newState)
     subscribers.add(callback)
+    // Keep local state in sync with global cache immediately
+    setState({ user: globalUser, loading: globalLoading, error: globalError })
     
-    // Initial fetch if not already loaded or if error
-    if (globalUser === null && globalLoading && !globalError) {
-      fetchUser()
+    // Need to fetch if we have no user and no error (covers both
+    // initial load where globalLoading===true and post-401 re-login
+    // where globalLoading===false but globalUser is still null).
+    // Only the first subscriber triggers the fetch to avoid duplicate
+    // concurrent requests from Sidebar+RightPanel+MainLayout etc.
+    const shouldFetch = globalUser === null && !globalError
+    if (shouldFetch && subscribers.size === 1) {
+      fetchUser(false)
     }
 
     return () => {
@@ -69,10 +82,20 @@ export default function useUser() {
     return await fetchUser(true)
   }, [fetchUser])
 
+  // Explicit reset for logout / expiry: clears global cache so the next
+  // mount will refetch even if the previous fetch ended in 401.
+  const reset = useCallback(() => {
+    globalUser = null
+    globalError = null
+    globalLoading = false
+    notifySubscribers()
+  }, [])
+
   return { 
     user: state.user, 
     loading: state.loading, 
     error: state.error, 
-    refetch 
+    refetch,
+    reset,
   }
 }
