@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import connectDB from '@/lib/db'
 import User from '@/models/User'
 import { getCurrentUser } from '@/lib/auth'
-import { getAppwriteAdminStorage, getFileViewUrlString, getUserMediaBucketId } from '@/lib/appwrite'
+import { getAppwriteAdminStorage, getFileViewUrlString, getUserMediaBucketId, fileToBuffer } from '@/lib/appwrite'
 import { ID, Permission, Role } from 'appwrite'
 import { verifyImageBlob } from '@/lib/file-validation'
 
@@ -47,11 +47,13 @@ export async function POST(request) {
 
     let uploadedFile
     try {      
+      // Convert to buffer for Vercel serverless compatibility
+      const fileBuffer = await fileToBuffer(file)
       // Upload new banner
       uploadedFile = await storage.createFile(
         bucketId,
         fileId,
-        file,
+        fileBuffer,
         permissions
       )
     } catch (uploadError) {

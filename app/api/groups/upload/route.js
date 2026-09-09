@@ -5,6 +5,7 @@ import {
     getAppwriteAdminStorage,
     getFileViewUrlString,
     getUserMediaBucketId,
+    fileToBuffer,
 } from "@/lib/appwrite";
 import { ID, Permission, Role } from "appwrite";
 import { verifyImageBlob } from "@/lib/file-validation";
@@ -71,10 +72,11 @@ export async function POST(request) {
         // Upload to Appwrite
         let uploadedFile;
         try {
+            const fileBuffer = await fileToBuffer(file)
             uploadedFile = await storage.createFile(
                 bucketId,
                 fileId,
-                file,
+                fileBuffer,
                 permissions,
             );
         } catch (uploadError) {

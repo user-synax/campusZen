@@ -4,6 +4,9 @@ import withBundleAnalyzer from "@next/bundle-analyzer";
 const nextConfig = {
     /* config options here */
     reactCompiler: true,
+    api: {
+        bodySizeLimit: "10mb",
+    },
     images: {
         dangerouslyAllowSVG: true,
         contentDispositionType: "attachment",
