@@ -38,11 +38,8 @@ export default function PollDisplay({ poll, postId, currentUserId, isExpired }) 
   }, [poll, currentUserId])
 
   const handleVote = async (optionId) => {
-    if (!currentUserId) {
-      toast.error("Please login to vote")
-      return
-    }
-    if (isVoting || userVotedOptionId || isExpired) return
+    if (!currentUserId) { toast.error("Please login to vote"); return }
+    if (isVoting || userVotedOptionId || liveExpired) return
 
     setIsVoting(true)
     try {
@@ -79,21 +76,33 @@ export default function PollDisplay({ poll, postId, currentUserId, isExpired }) 
   }
 
   const getTimeUntilExpiry = () => {
-    if (isExpired) return "Poll ended"
-    const now = new Date()
-    const expiry = new Date(poll.expiresAt)
-    const diff = expiry - now
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-
-    if (hours > 0) return `${hours}h left`
-    return `${minutes}m left`
+    if (liveExpired) return "Poll ended"
+    const now = new Date(); const expiry = new Date(poll.expiresAt); const diff = expiry - now;
+    if (diff <= 0) return "Poll ended";
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    if (hours > 0) return `${hours}h left`;
+    if (minutes > 0) return `${minutes}m left`;
+    return "Less than a minute left";
   }
 
-  const showResults = !!userVotedOptionId || isExpired
+  // live expiry — re-check every 30s so poll flips to results when time hits 0
+  const [liveExpired, setLiveExpired] = useState(isExpired);
+  useEffect(() => {
+    setLiveExpired(isExpired);
+    if (isExpired || !poll?.expiresAt) return;
+    const id = setInterval(() => {
+      const now = new Date();
+      const exp = new Date(poll.expiresAt);
+      if (now >= exp) { setLiveExpired(true); clearInterval(id); }
+    }, 30000);
+    return () => clearInterval(id);
+  }, [isExpired, poll?.expiresAt]);
+
+  const showResults = !!userVotedOptionId || liveExpired
 
   return (
-    <div className="mt-3 space-y-2 border border-border rounded-lg p-3 bg-accent/5">
+    <div className="mt-3 space-y-2 border border-border rounded-[12px] p-3 bg-card hover:border-border/80 transition-colors">
       {results.map((option) => (
         <div key={option._id} className="relative">
           {showResults ? (

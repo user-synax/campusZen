@@ -50,11 +50,13 @@ export default function PostImageGrid({ images }) {
 
 function ImageCell({ url, ratio, onClick }) {
     const paddingMap = { "16/9": "pb-[56.25%]", "1/1": "pb-[100%]" };
+    // X caps single-image height at 510px, keep 16/9 but max-h
+    const capClass = ratio === "16/9" ? "max-h-[510px]" : "";
     return (
         <button
             type="button"
             onClick={onClick}
-            className={`relative w-full ${paddingMap[ratio]} block overflow-hidden bg-accent/10 hover:opacity-[0.96] hover:cursor-pointer transition-opacity duration-[var(--duration-fast)]`}
+            className={`relative w-full ${paddingMap[ratio]} ${capClass} block overflow-hidden bg-accent/10 hover:opacity-[0.96] hover:cursor-pointer transition-opacity duration-[var(--duration-fast)]`}
             aria-label="View image"
         >
             <Image
@@ -62,12 +64,10 @@ function ImageCell({ url, ratio, onClick }) {
                 alt="Post image"
                 fill
                 loading="lazy"
-                sizes="(max-width: 768px) 100vw, 600px"
+                sizes="(max-width: 680px) 100vw, 680px"
                 className="object-cover"
-                quality={100}
-                onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                }}
+                quality={85}
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
             />
         </button>
     );

@@ -7,46 +7,40 @@ import { getCurrentUser } from "@/lib/auth";
 import { sanitizeMongoInput, sanitizeUser } from "@/lib/sanitize";
 import { cacheWithFallback } from "@/lib/redis-cache";
 
-// Feed weights - easy to modify later!
+// X-like feed weights — tuned for relevance, not lottery
 const FEED_WEIGHTS = {
-    interest: 60,
-    sameCollege: 20,
-    likes: 1,
-    comments: 2,
-    random: 12,
+    interest: 40,      // per matching tag
+    sameCollege: 15,
+    community: 12,     // same community as user follows
+    likes: 1,          // per like
+    comments: 2,       // per comment (2× likes)
+    shares: 1.5,
+    reposts: 1.5,
+    verified: 3,       // small boost for verified
+    random: 3,         // was 12 — keep fresh but not chaotic
 };
 
-// Calculate post score based on user's interests and other factors
-function calculatePostScore(post, userInterests, userCollege) {
+function calculatePostScore(post, userInterests, userCollege, userCommunities = []) {
     let score = 0;
-
-    // Interest match score
-    if (userInterests && userInterests.length > 0 && post.tags) {
-        const matchingInterests = post.tags.filter((tag) =>
-            userInterests.includes(tag),
-        );
-        score += matchingInterests.length * FEED_WEIGHTS.interest;
+    if (userInterests?.length && post.tags?.length) {
+        const matches = post.tags.filter((t) => userInterests.includes(t));
+        score += matches.length * FEED_WEIGHTS.interest;
     }
+    if (userCollege && post.author?.college === userCollege) score += FEED_WEIGHTS.sameCollege;
+    if (userCommunities.length && post.community && userCommunities.includes(post.community.toLowerCase())) score += FEED_WEIGHTS.community;
+    if (post.author?.isVerified) score += FEED_WEIGHTS.verified;
 
-    // Same college score
-    if (userCollege && post.author?.college === userCollege) {
-        score += FEED_WEIGHTS.sameCollege;
-    }
-
-    // Engagement score
     score += (post.likesCount || 0) * FEED_WEIGHTS.likes;
     score += (post.commentsCount || 0) * FEED_WEIGHTS.comments;
+    score += (post.shareCount || 0) * FEED_WEIGHTS.shares;
+    score += (post.repostsCount || 0) * FEED_WEIGHTS.reposts;
 
-    // Recency decay
-    const now = new Date();
-    const postDate = new Date(post.createdAt);
-    const hoursAgo = (now - postDate) / (1000 * 60 * 60);
-    // Decay score by 5% every hour
+    const hoursAgo = (Date.now() - new Date(post.createdAt)) / (1000 * 60 * 60);
+    // half-life ~14h: 0.95^14 ≈ 0.49
     score *= Math.pow(0.95, hoursAgo);
 
-    // Small random jitter keeps feed fresh while preserving relevance.
-    score += Math.random() * FEED_WEIGHTS.random;
-
+    // tiny jitter — prevents ties, not a lottery
+    score += (Math.random() - 0.5) * FEED_WEIGHTS.random;
     return score;
 }
 
@@ -114,10 +108,10 @@ export async function GET(request) {
             }
 
             if (cursor) {
-                const decodedCursor = Buffer.from(cursor, "base64").toString(
-                    "utf-8",
-                );
-                query._id = { $lt: decodedCursor };
+                try {
+                    const decodedCursor = Buffer.from(cursor, "base64").toString("utf-8");
+                    if (/^[a-f0-9]{24}$/i.test(decodedCursor)) query._id = { $lt: decodedCursor };
+                } catch {}
             }
 
             let posts = [];
@@ -151,9 +145,11 @@ export async function GET(request) {
                 }
             } else {
                 if (mode === "default") {
-                    // Keep cursor pagination contiguous by _id, then rank only within this page.
                     const userInterests = currentUser?.interests || [];
                     const userCollege = currentUser?.college || "";
+                    const userCommunities = currentUser?._id
+                        ? (await Community.find({ members: currentUser._id }).select("name slug").lean()).map((c) => (c.slug || c.name).toLowerCase())
+                        : [];
 
                     const pageWindow = await Post.find(query)
                         .sort({ _id: -1 })
@@ -174,11 +170,7 @@ export async function GET(request) {
                     const rankedWindow = windowResultPosts
                         .map((post) => ({
                             ...post,
-                            _score: calculatePostScore(
-                                post,
-                                userInterests,
-                                userCollege,
-                            ),
+                            _score: calculatePostScore(post, userInterests, userCollege, userCommunities),
                         }))
                         .sort((a, b) => b._score - a._score);
 

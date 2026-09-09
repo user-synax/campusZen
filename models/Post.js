@@ -127,6 +127,10 @@ const postSchema = new mongoose.Schema(
         isFeatured: { type: Boolean, default: false },
         reportCount: { type: Number, default: 0, min: 0 },
         shareCount: { type: Number, default: 0, min: 0 },
+        repostsCount: { type: Number, default: 0, min: 0 },
+        repostedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+        repostOf: { type: mongoose.Schema.Types.ObjectId, ref: "Post", default: null },
+        isRepost: { type: Boolean, default: false },
         source: {
             type: String,
             trim: true,

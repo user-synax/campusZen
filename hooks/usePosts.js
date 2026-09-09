@@ -179,8 +179,29 @@ export function usePosts(queryParams = {}, initialPosts = []) {
                     return;
                 }
             } catch (err) {
-                console.error("fetchPosts error:", err);
-                setError(err.message);
+                const isAtlas = err.message?.includes("Atlas") || err.message?.includes("Internal Server Error");
+                if (isAtlas && attempt < 2) {
+                    // retry with backoff, show cached if available
+                    await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+                    loadingRef.current = false;
+                    return fetchPosts(currentCursor, append, forceRefresh, attempt + 1);
+                }
+                // fallback to cached data if we have it
+                const fallback = clientCache.get(cacheKey);
+                if (fallback?.posts?.length) {
+                    setPosts(fallback.posts);
+                    postsRef.current = fallback.posts;
+                    setHasMore(fallback.hasMore);
+                    setCursor(fallback.cursor);
+                    setError(null);
+                    if (typeof window !== "undefined") {
+                        const { toast } = await import("sonner");
+                        toast.error("Feed is stale — using cached posts. Atlas IP may need whitelisting.");
+                    }
+                } else {
+                    console.error("fetchPosts error:", err);
+                    setError(err.message === "Internal Server Error" ? "Feed unavailable — check DB connection (Atlas whitelist 0.0.0.0/0) or try refresh." : err.message);
+                }
             } finally {
                 setLoading(false);
                 loadingRef.current = false;
