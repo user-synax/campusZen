@@ -77,8 +77,8 @@ export default function RightPanel() {
             <div ref={panelRef} className="t-stagger space-y-2.5">
                 {/* Search — compact */}
                 <div className="t-stagger-line sticky top-0 z-10 bg-background/80 backdrop-blur-xl pt-1 pb-2.5 -mx-1 px-1" style={{ "--i": 0 }}>
-                    <Link href="/search" className="group flex items-center gap-2.5 bg-muted/70 hover:bg-background border border-transparent hover:border-border/60 rounded-full px-3.5 py-2 hover:cursor-pointer transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] focus-within:bg-background focus-within:border-[var(--color-electric-violet)]/30 focus-within:ring-2 focus-within:ring-[var(--color-electric-violet)]/15">
-                        <Search className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-focus-within:text-[var(--color-electric-violet)] transition-colors duration-[var(--duration-fast)] shrink-0" />
+                    <Link href="/search" className="group flex items-center gap-2.5 bg-muted/70 hover:bg-background border border-transparent hover:border-border/60 rounded-full px-3.5 py-2 hover:cursor-pointer transition-all duration-[var(--duration-fast)] focus-within:bg-background focus-within:border-[#4ba9e1]/30 focus-within:ring-2 focus-within:ring-[#4ba9e1]/15">
+                        <Search className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-focus-within:text-[#4ba9e1] transition-colors duration-[var(--duration-fast)] shrink-0" />
                         <span className="text-[13px] text-muted-foreground truncate">Search CampusZen</span>
                     </Link>
                 </div>
@@ -87,7 +87,7 @@ export default function RightPanel() {
                 <SectionCard className="t-stagger-line p-3" style={{ "--i": 1 }}>
                     <h2 className="text-[16px] font-extrabold tracking-tight leading-none">Subscribe to Premium</h2>
                     <p className="text-[12px] text-muted-foreground leading-snug mt-1.5">Unlock custom themes, animated banners, and ad-free violet.</p>
-                    <Button className="mt-2.5 rounded-full bg-[var(--color-electric-violet)] hover:bg-[var(--color-deep-iris)] text-white font-bold px-4 py-2 h-7 text-[12px] hover:cursor-pointer transition-all duration-[var(--duration-fast)] hover:-translate-y-[1px] active:translate-y-0">
+                    <Button className="mt-2.5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-4 py-2 h-7 text-[12px] hover:cursor-pointer transition-all duration-[var(--duration-fast)] hover:-translate-y-[1px] active:translate-y-0">
                         Subscribe
                     </Button>
                 </SectionCard>
@@ -96,7 +96,7 @@ export default function RightPanel() {
                 <SectionCard className="t-stagger-line" style={{ "--i": 2 }}>
                     <div className="p-3 pb-1.5">
                         <h3 className="text-[15px] font-bold tracking-tight flex items-center gap-1.5">
-                            <TrendingUp className="w-4 h-4 text-[var(--color-electric-violet)]" /> What&apos;s happening
+                            <TrendingUp className="w-4 h-4 text-muted-foreground" /> What&apos;s happening
                         </h3>
                     </div>
 
@@ -118,7 +118,7 @@ export default function RightPanel() {
                                 <Link key={item.slug} href={`/community/${item.slug}`} className="group flex items-center justify-between px-2.5 py-2 rounded-[10px] hover:bg-accent/60 hover:cursor-pointer transition-colors duration-[var(--duration-fast)]">
                                     <div className="min-w-0 flex-1">
                                         <p className="text-[11px] text-muted-foreground leading-none">Trending</p>
-                                        <p className="text-[13px] font-semibold truncate group-hover:text-[var(--color-electric-violet)] transition-colors">{item.name}</p>
+                                        <p className="text-[13px] font-semibold truncate group-hover:text-foreground transition-colors">{item.name}</p>
                                         <p className="text-[11px] text-muted-foreground">{formatCount(item.postCount)} posts</p>
                                     </div>
                                     <span className="text-[11px] font-bold text-muted-foreground/30">›</span>
@@ -147,7 +147,7 @@ export default function RightPanel() {
                         ) : (
                             <div className="flex flex-wrap gap-1 px-1">
                                 {trendingHashtags.slice(0, 6).map((ht) => (
-                                    <Link key={ht.tag} href={`/hashtag/${ht.tag}`} className="px-2.5 py-1 rounded-full bg-accent hover:bg-[var(--color-soft-lilac)]/30 border border-transparent hover:border-[var(--color-electric-violet)]/20 text-[11px] font-semibold hover:text-[var(--color-electric-violet)] hover:cursor-pointer transition-all duration-[var(--duration-fast)]">
+                                    <Link key={ht.tag} href={`/hashtag/${ht.tag}`} className="px-2.5 py-1 rounded-full bg-accent hover:bg-accent/80 border border-transparent hover:border-border text-[11px] font-semibold hover:text-foreground hover:cursor-pointer transition-all duration-[var(--duration-fast)]">
                                         #{ht.tag}
                                     </Link>
                                 ))}
@@ -155,7 +155,7 @@ export default function RightPanel() {
                         )}
                     </div>
 
-                    <Link href="/community" className="block px-3 py-2 text-[12px] text-[var(--color-electric-violet)] hover:bg-accent/40 rounded-b-[16px] hover:cursor-pointer transition-colors">
+                    <Link href="/community" className="block px-3 py-2 text-[12px] text-[#4ba9e1] hover:bg-accent/40 rounded-b-[16px] hover:cursor-pointer transition-colors">
                         Show more
                     </Link>
                 </SectionCard>
@@ -164,7 +164,7 @@ export default function RightPanel() {
                 <SectionCard className="t-stagger-line" style={{ "--i": 3 }}>
                     <div className="p-3 pb-1.5">
                         <h3 className="text-[15px] font-bold tracking-tight flex items-center gap-1.5">
-                            <Users2 className="w-4 h-4 text-[var(--color-electric-violet)]" /> Who to follow
+                            <Users2 className="w-4 h-4 text-muted-foreground" /> Who to follow
                         </h3>
                     </div>
                     <div className="px-1.5 pb-1.5 space-y-0.5">
@@ -185,7 +185,7 @@ export default function RightPanel() {
                             suggestions.slice(0, 3).map((u) => (
                                 <div key={u._id} className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-[10px] hover:bg-accent/50 transition-colors group">
                                     <Link href={`/profile/${u.username}`} className="flex items-center gap-2.5 min-w-0 flex-1 hover:cursor-pointer">
-                                        <Avatar className="h-8 w-8 ring-1 ring-border/50 group-hover:ring-[var(--color-electric-violet)]/20 transition-all">
+                                        <Avatar className="h-8 w-8 ring-1 ring-border/50 group-hover:ring-border transition-all">
                                             <AvatarImage src={u.avatar} alt={u.name} />
                                             <AvatarFallback className="text-[11px] font-bold bg-accent">{u.name?.charAt(0)?.toUpperCase()}</AvatarFallback>
                                         </Avatar>
@@ -199,7 +199,7 @@ export default function RightPanel() {
                             ))
                         )}
                     </div>
-                    <Link href="/connect" className="block px-3 py-2 text-[12px] text-[var(--color-electric-violet)] hover:bg-accent/40 rounded-b-[16px] hover:cursor-pointer transition-colors">
+                    <Link href="/connect" className="block px-3 py-2 text-[12px] text-[#4ba9e1] hover:bg-accent/40 rounded-b-[16px] hover:cursor-pointer transition-colors">
                         Show more
                     </Link>
                 </SectionCard>
@@ -223,7 +223,7 @@ export default function RightPanel() {
                         </a>
                     </div>
                     <p className="flex items-center gap-1 text-[11px]">
-                        <Crown className="w-3 h-3 text-[var(--color-electric-violet)]" /> © {new Date().getFullYear()} CampusZen · v1.0.0
+                        <Crown className="w-3 h-3 text-muted-foreground" /> © {new Date().getFullYear()} CampusZen · v1.0.0
                     </p>
                 </div>
             </div>

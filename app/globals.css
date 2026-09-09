@@ -2,7 +2,7 @@
 @import "./transitions.css";
 @import "./transitions-extra.css";
 
-/* transitions-polish motion tokens */
+/* transitions-polish motion tokens + Framer professional palette (no violet gradient) */
 :root {
   --duration-stagger: 40ms;
   --duration-micro: 80ms;
@@ -29,21 +29,23 @@
   --blur-small: 2px;
   --blur-medium: 3px;
   --blur-large: 8px;
-  /* DESIGN.md tokens */
-  --color-electric-violet: #8169ff;
-  --color-deep-iris: #6d4ff0;
-  --color-soft-lilac: #c9bfff;
-  --color-ink-black: #000000;
-  --color-carbon: #181818;
-  --color-graphite: #555555;
-  --color-silver: #999999;
-  --color-paper-white: #ffffff;
-  --gradient-aqua-wash: radial-gradient(47.72% 108.66% at -12.1% 21.18%, rgba(129, 219, 219, 0.25) 24.27%, rgba(160, 232, 232, 0) 100%);
-  --gradient-lilac-bleed: radial-gradient(62.81% 136.54% at 103.92% 77.32%, rgba(227, 222, 255, 0.7) 0%, rgba(201, 191, 255, 0) 100%);
-  --radius-cards: 16px;
-  --radius-buttons: 12px;
+  /* Framer — professional, no purple AI slop */
+  --color-electric-violet: #4ba9e1; /* repurposed as accent-blue for links/focus */
+  --color-deep-iris: #3a8fcc;
+  --color-soft-lilac: #1c1c1c; /* surface-2 */
+  --color-ink-black: #ffffff;
+  --color-carbon: #141414;
+  --color-graphite: #999999;
+  --color-silver: #262626;
+  --color-paper-white: #090909; /* canvas */
+  --gradient-aqua-wash: none;
+  --gradient-lilac-bleed: none;
+  --radius-cards: 20px; /* Framer 20px */
+  --radius-buttons: 100px; /* pill */
   --radius-pills: 9999px;
-  --shadow-md: rgba(0, 0, 0, 0.12) 0px 3px 12px 0px, rgba(0, 0, 0, 0.3) 0px 0px 2px 0px;
+  --shadow-md: rgba(255,255,255,0.10) 0 0 0 0.5px, rgba(0,0,0,0.25) 0 10px 30px 0;
+  --font-gilroy: 'GT Walsheim Medium', Inter, system-ui, sans-serif;
+  --font-inter: 'Inter Variable', Inter, system-ui, sans-serif;
 }
 
 @custom-variant dark (&:is(.dark *));
@@ -82,29 +84,29 @@
 }
 
 @layer base {
-    /* Light theme — DESIGN.md: Paper White canvas + Electric Violet */
+    /* Light theme — professional, still clean white (Framer is dark, but light must not be purple) */
     :root {
         --background: 0 0% 100%;
-        --foreground: 0 0% 0%; /* Ink Black */
+        --foreground: 0 0% 0%;
         --card: 0 0% 100%;
         --card-foreground: 0 0% 0%;
         --popover: 0 0% 100%;
         --popover-foreground: 0 0% 0%;
 
-        --primary: 250 100% 71%; /* #8169ff Electric Violet */
+        --primary: 0 0% 0%; /* black pill on white — Framer button-primary inverse */
         --primary-foreground: 0 0% 100%;
 
-        --secondary: 250 100% 97%; /* soft lilac wash */
-        --secondary-foreground: 250 20% 15%;
-        --muted: 220 14% 96%;
-        --muted-foreground: 220 9% 46%; /* Graphite */
-        --accent: 250 100% 97%;
-        --accent-foreground: 0 0% 0%;
+        --secondary: 0 0% 96%;
+        --secondary-foreground: 0 0% 9%;
+        --muted: 0 0% 96%;
+        --muted-foreground: 0 0% 45%;
+        --accent: 0 0% 96%;
+        --accent-foreground: 0 0% 9%;
         --destructive: 0 84% 60%;
         --destructive-foreground: 0 0% 100%;
-        --border: 220 13% 91%;
-        --input: 220 13% 91%;
-        --ring: 250 100% 71%;
+        --border: 0 0% 90%;
+        --input: 0 0% 90%;
+        --ring: 203 71% 59%; /* #4ba9e1 blue focus */
 
         --radius: 0.5rem;
 
@@ -116,29 +118,29 @@
         --shadow-hard-sm: 2px 2px 0px hsl(var(--shadow-ink) / 0.12);
     }
 
-    /* Dark theme — same violet, deep canvas */
+    /* Dark theme — Framer canvas #090909, surface-1 #141414, surface-2 #1c1c1c, hairline #262626 */
     .dark {
-        --background: 240 10% 4%; /* near Ink */
-        --foreground: 0 0% 98%;
-        --card: 240 10% 6%;
-        --card-foreground: 0 0% 98%;
-        --popover: 240 10% 6%;
-        --popover-foreground: 0 0% 98%;
+        --background: 0 0% 3.5%; /* #090909 */
+        --foreground: 0 0% 100%;
+        --card: 0 0% 8%; /* #141414 */
+        --card-foreground: 0 0% 100%;
+        --popover: 0 0% 8%;
+        --popover-foreground: 0 0% 100%;
 
-        --primary: 250 100% 71%; /* #8169ff */
-        --primary-foreground: 0 0% 100%;
+        --primary: 0 0% 100%; /* white pill — Framer button-primary */
+        --primary-foreground: 0 0% 0%;
 
-        --secondary: 240 6% 14%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 240 6% 14%;
-        --muted-foreground: 240 5% 64%;
-        --accent: 240 6% 14%;
-        --accent-foreground: 0 0% 98%;
+        --secondary: 0 0% 11%; /* #1c1c1c surface-2 */
+        --secondary-foreground: 0 0% 100%;
+        --muted: 0 0% 8%;
+        --muted-foreground: 0 0% 60%; /* #999999 */
+        --accent: 0 0% 8%;
+        --accent-foreground: 0 0% 100%;
         --destructive: 0 62% 50%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 240 6% 14%;
-        --input: 240 6% 16%;
-        --ring: 250 100% 71%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 0 0% 15%; /* #262626 hairline */
+        --input: 0 0% 15%;
+        --ring: 203 71% 59%; /* #4ba9e1 blue */
 
         --radius: 0.5rem;
 

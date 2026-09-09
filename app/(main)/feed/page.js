@@ -171,7 +171,7 @@ export default function FeedPage() {
                             >
                                 <span>{tab.label}</span>
                                 {isActive && (
-                                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-7 h-[2.5px] bg-[var(--color-electric-violet)] rounded-full animate-[tabIn_var(--duration-fast)_var(--ease-smooth-out)]" />
+                                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-7 h-[2.5px] bg-primary rounded-full animate-[tabIn_var(--duration-fast)_var(--ease-smooth-out)]" />
                                 )}
                             </button>
                         );
@@ -184,8 +184,8 @@ export default function FeedPage() {
                         <AvatarFallback className="bg-accent text-[11px] font-bold">{currentUser?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
                     </Avatar>
                     <span className="text-[13px] text-muted-foreground">What&apos;s happening?</span>
-                    <span className="ml-auto text-[11px] font-semibold text-[var(--color-electric-violet)] bg-[var(--color-soft-lilac)]/25 px-2 py-1 rounded-full hidden lg:inline-flex items-center gap-1">
-                        <Flame className="w-3 h-3" /> CampusZen
+                    <span className="ml-auto text-[11px] font-semibold text-foreground bg-accent border border-border/50 px-2.5 py-1 rounded-full hidden lg:inline-flex items-center gap-1">
+                        CampusZen
                     </span>
                 </div>
             </header>
@@ -211,9 +211,9 @@ export default function FeedPage() {
                         </div>
                     ) : posts.length === 0 ? (
                         <div className="pt-6 sm:pt-10 px-3 sm:px-4">
-                            <div className="rounded-[14px] border border-border/40 bg-card p-6 sm:p-8 text-center shadow-sm">
-                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[var(--color-soft-lilac)]/30 flex items-center justify-center mx-auto mb-3">
-                                    <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--color-electric-violet)]" />
+                            <div className="rounded-[14px] border border-border bg-card p-6 sm:p-8 text-center shadow-sm">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-accent border border-border/50 flex items-center justify-center mx-auto mb-3">
+                                    <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground" />
                                 </div>
                                 <EmptyState icon={FileText} title={emptyTitle} description={emptyDescription} />
                             </div>

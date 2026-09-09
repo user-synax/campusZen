@@ -118,28 +118,34 @@ export default function Sidebar() {
             <Link href={item.href} className="group block hover:cursor-pointer" style={{ "--i": index }}>
                 <div
                     className={cn(
-                        "flex items-center gap-3 px-3 py-2 rounded-full transition-all hover:cursor-pointer",
+                        "relative flex items-center gap-3.5 px-3.5 py-2.5 rounded-full transition-all hover:cursor-pointer",
                         "duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)]",
                         "hover:bg-accent/70 hover:translate-x-[1px]",
                         "active:scale-[0.98] active:duration-[var(--duration-quick)]",
-                        isActive ? "font-semibold text-foreground" : "font-normal text-foreground/85 hover:text-foreground",
+                        isActive
+                            ? "bg-accent font-semibold text-foreground shadow-sm border border-border/40"
+                            : "font-normal text-foreground/80 hover:text-foreground hover:bg-accent/40 border border-transparent",
                     )}
                 >
-                    <div className="relative shrink-0">
+                    {/* Active indicator — premium dot, 3px bar */}
+                    {isActive && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-foreground rounded-full animate-[activeBar_var(--duration-fast)_var(--ease-smooth-out)]" />
+                    )}
+                    <div className="relative shrink-0 ml-1">
                         <Icon
                             className={cn(
-                                "w-[15px] h-[15px] transition-colors duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)]",
-                                isActive ? "text-foreground stroke-[2.2]" : "text-foreground/85 group-hover:text-foreground",
+                                "w-[18px] h-[18px] transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)]",
+                                isActive ? "text-foreground scale-[1.04]" : "text-foreground/75 group-hover:text-foreground group-hover:scale-[1.02]",
                             )}
-                            strokeWidth={isActive ? 2.3 : 1.8}
+                            strokeWidth={isActive ? 2.4 : 1.9}
                         />
                         {item.badge > 0 && (
-                            <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] px-1 bg-[var(--color-electric-violet)] text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-background shadow-sm animate-[badgePop_var(--duration-very-slow)_var(--ease-bounce)]">
+                            <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] px-1 bg-[#4ba9e1] text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-background shadow-sm animate-[badgePop_var(--duration-very-slow)_var(--ease-bounce)]">
                                 <AnimatedCount value={item.badge} max={9} />
                             </span>
                         )}
                     </div>
-                    <span className="hidden lg:block text-[14.5px] leading-none tracking-tight pr-2">
+                    <span className="hidden lg:block text-[15px] leading-none tracking-tight pr-2">
                         {item.label}
                     </span>
                 </div>
@@ -197,7 +203,7 @@ export default function Sidebar() {
                     )}
                     <div className="pt-2 px-1.5 lg:hidden">
                         <Link href="/feed" className="flex justify-center hover:cursor-pointer">
-                            <span className="w-10 h-10 rounded-full bg-[var(--color-electric-violet)] hover:bg-[var(--color-deep-iris)] text-white flex items-center justify-center shadow-sm hover:cursor-pointer transition-colors duration-[var(--duration-fast)]">
+                            <span className="w-10 h-10 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center shadow-sm hover:cursor-pointer transition-colors duration-[var(--duration-fast)]">
                                 <Feather className="w-4 h-4" />
                             </span>
                         </Link>
@@ -290,24 +296,24 @@ export default function Sidebar() {
                         {user?.isPro ? (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <button className="h-8 w-8 rounded-full border border-border/60 hover:border-[var(--color-electric-violet)]/30 hover:bg-[var(--color-soft-lilac)]/30 hover:cursor-pointer flex items-center justify-center text-muted-foreground hover:text-[var(--color-electric-violet)] transition-all duration-[var(--duration-fast)]">
+                                    <button className="h-8 w-8 rounded-full border border-border/60 hover:border-primary/30 hover:bg-[var(--color-soft-lilac)]/30 hover:cursor-pointer flex items-center justify-center text-muted-foreground hover:text-[#4ba9e1] transition-all duration-[var(--duration-fast)]">
                                         <Palette className="w-3.5 h-3.5" />
                                     </button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent side="top" align="end" className="w-48 rounded-xl shadow-md border-border/50">
                                     <DropdownMenuLabel className="text-[11px] font-bold tracking-wide">Theme</DropdownMenuLabel>
                                     <DropdownMenuItem onClick={() => setTheme("light")} className="hover:cursor-pointer rounded-full text-xs">
-                                        <span className="w-3 h-3 rounded-full bg-white border border-border shrink-0" /> Light {theme === "light" && <Check className="w-3 h-3 ml-auto text-[var(--color-electric-violet)]" />}
+                                        <span className="w-3 h-3 rounded-full bg-white border border-border shrink-0" /> Light {theme === "light" && <Check className="w-3 h-3 ml-auto text-[#4ba9e1]" />}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => setTheme("dark")} className="hover:cursor-pointer rounded-full text-xs">
-                                        <span className="w-3 h-3 rounded-full bg-[#0a0a0a] border border-border shrink-0" /> Dark {theme === "dark" && <Check className="w-3 h-3 ml-auto text-[var(--color-electric-violet)]" />}
+                                        <span className="w-3 h-3 rounded-full bg-[#0a0a0a] border border-border shrink-0" /> Dark {theme === "dark" && <Check className="w-3 h-3 ml-auto text-[#4ba9e1]" />}
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuLabel className="text-[11px] font-bold tracking-wide">Premium</DropdownMenuLabel>
                                     {PREMIUM_THEMES.map((preset) => (
                                         <DropdownMenuItem key={preset.id} onClick={() => setTheme(preset.id)} className="hover:cursor-pointer rounded-full text-xs">
                                             <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: preset.colors.primary }} /> {preset.name}
-                                            {theme === preset.id && <Check className="w-3 h-3 ml-auto text-[var(--color-electric-violet)]" />}
+                                            {theme === preset.id && <Check className="w-3 h-3 ml-auto text-[#4ba9e1]" />}
                                         </DropdownMenuItem>
                                     ))}
                                 </DropdownMenuContent>
@@ -315,7 +321,7 @@ export default function Sidebar() {
                         ) : (
                             <button
                                 onClick={() => setShowUpgradeModal(true)}
-                                className="h-8 w-8 rounded-full border border-border/60 hover:border-[var(--color-electric-violet)]/30 hover:bg-[var(--color-soft-lilac)]/20 hover:cursor-pointer flex items-center justify-center text-muted-foreground hover:text-[var(--color-electric-violet)] transition-all duration-[var(--duration-fast)] relative"
+                                className="h-8 w-8 rounded-full border border-border/60 hover:border-primary/30 hover:bg-[var(--color-soft-lilac)]/20 hover:cursor-pointer flex items-center justify-center text-muted-foreground hover:text-[#4ba9e1] transition-all duration-[var(--duration-fast)] relative"
                             >
                                 <Palette className="w-3.5 h-3.5" />
                                 <Lock className="w-2 h-2 absolute -bottom-0.5 -right-0.5 bg-background rounded-full p-0.5" />
@@ -339,7 +345,7 @@ export default function Sidebar() {
                     <div className="px-5 pt-5 pb-2">
                         <DialogHeader>
                             <div className="flex items-center gap-2.5">
-                                <div className="w-9 h-9 rounded-full bg-[var(--color-electric-violet)] flex items-center justify-center text-white shadow-sm">
+                                <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-sm">
                                     <Crown className="w-4 h-4" />
                                 </div>
                                 <div className="text-left">
@@ -352,7 +358,7 @@ export default function Sidebar() {
                     <div className="px-5 py-3 grid grid-cols-1 gap-2 max-h-[45vh] overflow-y-auto custom-scrollbar">
                         {proFeatures.map((f) => (
                             <div key={f.title} className="flex gap-2.5 p-2.5 rounded-[12px] border border-border/50 hover:border-[var(--color-soft-lilac)]/60 hover:bg-[var(--color-soft-lilac)]/10 hover:cursor-pointer transition-colors duration-[var(--duration-fast)]">
-                                <f.icon className="w-4 h-4 text-[var(--color-electric-violet)] mt-0.5 shrink-0" />
+                                <f.icon className="w-4 h-4 text-[#4ba9e1] mt-0.5 shrink-0" />
                                 <div>
                                     <p className="text-[13px] font-semibold leading-none">{f.title}</p>
                                     <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{f.description}</p>
@@ -361,8 +367,8 @@ export default function Sidebar() {
                         ))}
                     </div>
                     <div className="p-5 pt-2">
-                        <Button onClick={() => setShowUpgradeModal(false)} className="w-full rounded-full bg-[var(--color-electric-violet)] hover:bg-[var(--color-deep-iris)] text-white font-bold py-5 text-[13px] hover:cursor-pointer transition-colors duration-[var(--duration-fast)]">
-                            Upgrade — Keep violet
+                        <Button onClick={() => setShowUpgradeModal(false)} className="w-full rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-5 text-[13px] hover:cursor-pointer transition-colors duration-[var(--duration-fast)]">
+                            Upgrade
                         </Button>
                     </div>
                 </DialogContent>
@@ -373,6 +379,10 @@ export default function Sidebar() {
                     0% { transform: scale(0.6); filter: blur(var(--blur-small)); }
                     60% { transform: scale(1.08); filter: blur(0); }
                     100% { transform: scale(1); }
+                }
+                @keyframes activeBar {
+                    from { transform: translateY(-50%) scaleY(0.3); opacity: 0; }
+                    to { transform: translateY(-50%) scaleY(1); opacity: 1; }
                 }
             `}</style>
         </>
