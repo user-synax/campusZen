@@ -147,15 +147,11 @@ export default function FeedPage() {
 
     return (
         <div className="flex flex-col min-h-screen bg-background">
-            {/* X-like sticky header — compact, violet, small text */}
             <header className="sticky top-0 z-20 bg-background/85 backdrop-blur-xl border-b border-border/50">
                 <div className="flex items-center justify-between px-3 h-[44px]">
                     <h1 className="text-[16px] font-bold tracking-tight">Home</h1>
                     <div className="flex items-center gap-1">
                         <CommunitySwitcher selectedCommunity={selectedCommunity} onSelect={setSelectedCommunity} />
-                        <Link href="/search" aria-label="Search" className="w-8 h-8 rounded-full hover:bg-accent/80 flex items-center justify-center text-muted-foreground hover:text-foreground hover:cursor-pointer transition-colors duration-[var(--duration-fast)]">
-                            <Search className="w-4 h-4" />
-                        </Link>
                     </div>
                 </div>
 

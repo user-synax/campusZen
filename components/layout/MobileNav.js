@@ -130,6 +130,7 @@ export default function MobileNav() {
 
     const navItems = [
         { href: "/feed", icon: Home, label: "Home" },
+        { href: "/search", icon: Search, label: "Explore" },
         {
             href: "/chats",
             icon: MessageSquare,
@@ -146,59 +147,42 @@ export default function MobileNav() {
 
     return (
         <>
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-lg border-t border-border flex items-center justify-around px-2 z-50">
-                {navItems.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = pathname === item.href;
-
-                    if (item.isAction) {
-                        return (
-                            <CreatePostDialog
-                                key={item.label}
-                                trigger={
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="w-10 h-10 text-primary"
-                                    >
-                                        <Icon className="w-6 h-6" />
-                                    </Button>
-                                }
-                            />
-                        );
-                    }
-
-                    return (
-                        <Link key={item.href} href={item.href}>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className={`w-10 h-10 relative ${isActive ? "text-primary" : "text-muted-foreground"}`}
-                            >
-                                <Icon className="w-6 h-6" />
-                                {item.badge > 0 && (
-                                    <span className="t-badge" data-open="true">
-                                        <span className="t-badge-dot bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border-2 border-background">
-                                            <AnimatedCount value={item.badge} max={99} />
-                                        </span>
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border supports-[backdrop-filter]:bg-background/80">
+                <div className="mx-auto max-w-[500px] px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] flex items-center gap-1">
+                    <div className="flex flex-1 items-center justify-between gap-1 bg-muted/40 rounded-full p-1">
+                        {navItems.map((item) => {
+                            const Icon = item.icon;
+                            const isActive = pathname === item.href || (item.href !== "/feed" && pathname.startsWith(item.href));
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    aria-selected={isActive}
+                                    className={`relative flex-1 flex flex-col items-center justify-center gap-0.5 py-4 rounded-full hover:cursor-pointer transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] ${isActive ? "bg-background text-foreground shadow-sm border border-border/50 font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-background/50"}`}
+                                >
+                                    <span className="relative">
+                                        <Icon className={`w-[20px] h-[20px] transition-transform duration-[var(--duration-fast)] ${isActive ? "scale-[1.02]" : "scale-100"}`} strokeWidth={isActive ? 2.2 : 1.8} />
+                                        {item.badge > 0 && (
+                                            <span className="t-badge" data-open="true">
+                                                <span className="t-badge-dot bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border-2 border-background">
+                                                    <AnimatedCount value={item.badge} max={99} />
+                                                </span>
+                                            </span>
+                                        )}
                                     </span>
-                                )}
-                            </Button>
-                        </Link>
-                    );
-                })}
-
-                <Sheet open={open} onOpenChange={setOpen}>
-                    <SheetTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="w-10 h-10 text-muted-foreground"
-                        >
-                            <Menu className="w-6 h-6" />
-                        </Button>
-                    </SheetTrigger>
-                    <SheetContent
+                                </Link>
+                            );
+                        })}
+                        <Sheet open={open} onOpenChange={setOpen}>
+                            <SheetTrigger asChild>
+                                <button
+                                    aria-label="Menu"
+                                    className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/50 hover:cursor-pointer transition-all duration-[var(--duration-fast)]"
+                                >
+                                    <Menu className="w-[22px] h-[22px]" />
+                                </button>
+                            </SheetTrigger>
+                            <SheetContent
                         side="right"
                         className="w-70 p-0 flex flex-col"
                     >
@@ -251,25 +235,6 @@ export default function MobileNav() {
                                     >
                                         <Search className="w-5 h-5" />
                                         <span className="text-base font-medium">Explore</span>
-                                    </Button>
-                                </Link>
-                                <Link
-                                    href="/search"
-                                    onClick={() => setOpen(false)}
-                                >
-                                    <Button
-                                        variant="ghost"
-                                        className={cn(
-                                            "w-full justify-start gap-4 h-12 px-3",
-                                            pathname === "/search"
-                                                ? "bg-accent text-accent-foreground"
-                                                : "text-muted-foreground",
-                                        )}
-                                    >
-                                        <Search className="w-5 h-5" />
-                                        <span className="text-base font-medium">
-                                            Search
-                                        </span>
                                     </Button>
                                 </Link>
                                 <Link
@@ -509,6 +474,8 @@ export default function MobileNav() {
                         </div>
                     </SheetContent>
                 </Sheet>
+                    </div>
+                </div>
             </nav>
 
             {/* Upgrade Modal */}
