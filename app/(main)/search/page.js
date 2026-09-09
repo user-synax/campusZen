@@ -546,7 +546,7 @@ export default function SearchPage() {
                                         <EmptyState
                                             icon={Search}
                                             title="No results"
-                                            description={`No results for "${debouncedQuery}"`}
+                                            description={`No results for '${debouncedQuery}'`}
                                         />
                                     </div>
                                 ) : (
@@ -579,7 +579,7 @@ export default function SearchPage() {
                                                 <div className="px-4 py-2.5 flex items-center gap-2 border-b border-border/30">
                                                     <Flame className="w-3.5 h-3.5 text-orange-500" />
                                                     <span className="text-xs text-muted-foreground">
-                                                        Top posts for <span className="font-medium text-foreground">"{debouncedQuery}"</span>
+                                                        Top posts for <span className="font-medium text-foreground">&quot;{debouncedQuery}&quot;</span>
                                                     </span>
                                                 </div>
                                                 <div className="divide-y divide-border/60">
@@ -625,12 +625,12 @@ export default function SearchPage() {
                                     </div>
                                 ) : userResults.length === 0 ? (
                                     <div className="pt-16">
-                                        <EmptyState icon={Users} title="No people found" description={`No users matching "${debouncedQuery}"`} />
+                                        <EmptyState icon={Users} title="No people found" description={`No users matching '${debouncedQuery}'`} />
                                     </div>
                                 ) : (
                                     <>
                                         <div className="px-4 py-2.5 text-xs text-muted-foreground border-b border-border/30">
-                                            People matching <span className="font-medium text-foreground">"{debouncedQuery}"</span>
+                                            People matching <span className="font-medium text-foreground">&quot;{debouncedQuery}&quot;</span>
                                         </div>
                                         <div className="p-3 space-y-3">
                                             {userResults.map((u) => (
@@ -658,13 +658,13 @@ export default function SearchPage() {
                                     </div>
                                 ) : mediaPosts.length === 0 ? (
                                     <div className="pt-16">
-                                        <EmptyState icon={ImageIcon} title="No media" description={`No photos or GIFs for "${debouncedQuery}"`} />
+                                        <EmptyState icon={ImageIcon} title="No media" description={`No photos or GIFs for '${debouncedQuery}'`} />
                                     </div>
                                 ) : (
                                     <>
                                         <div className="px-4 py-2.5 flex items-center gap-2 border-b border-border/30">
                                             <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" />
-                                            <span className="text-xs text-muted-foreground">Media posts for "{debouncedQuery}"</span>
+                                            <span className="text-xs text-muted-foreground">Media posts for &quot;{debouncedQuery}&quot;</span>
                                         </div>
                                         <div className="divide-y divide-border/60">
                                             {mediaPosts.map((post) => (
