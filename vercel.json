@@ -1,8 +1,1 @@
-{
-    "crons": [
-        {
-            "path": "/api/reddit-import",
-            "schedule": "0 12 * * *"
-        }
-    ]
-}
+{ }
