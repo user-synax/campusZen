@@ -14,7 +14,6 @@ import MessageBubble from "@/components/chat/MessageBubble";
 import MessageInput from "@/components/chat/MessageInput";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 import GroupInfoSheet from "@/components/chat/GroupInfoSheet";
-import BubbleThemePicker from "@/components/chat/BubbleThemePicker";
 
 export default function ChatRoomPage({ params: paramsPromise }) {
     const params = use(paramsPromise);
@@ -34,28 +33,35 @@ export default function ChatRoomPage({ params: paramsPromise }) {
 
     const parseInfo = useCallback((data) => data, []);
 
-    // Send over the Socket.IO backend. The server acks with { ok, message },
-    // wrapped here to match useChatRoom's expected fetch-like Response shape.
+    // Send via Socket.IO when available, otherwise HTTP fallback (same as DM)
     const sendMessage = useCallback(
         async (body) => {
             try {
                 const socket = await ensureChatSocket();
-                const ack = await new Promise((resolve) => {
-                    const t = setTimeout(
-                        () => resolve({ ok: false, error: "timeout" }),
-                        10000,
-                    );
-                    socket.emit(
-                        "message:send",
-                        { kind: "group", id: groupId, ...body },
-                        (resp) => {
+                if (socket?.connected) {
+                    const ack = await new Promise((resolve) => {
+                        const t = setTimeout(() => resolve({ ok: false, error: "timeout" }), 6000);
+                        socket.emit("message:send", { kind: "group", id: groupId, ...body }, (resp) => {
                             clearTimeout(t);
                             resolve(resp || { ok: false });
-                        },
-                    );
-                });
-                return { ok: !!ack?.ok, json: async () => ack || {} };
+                        });
+                    });
+                    if (ack?.ok) return { ok: true, json: async () => ack };
+                }
             } catch (err) {
+                if (err?.code !== "CHAT_BACKEND_NOT_CONFIGURED") {
+                    console.debug("[group send] socket path failed, falling back to HTTP", err?.message);
+                }
+            }
+            try {
+                const res = await fetch(`/api/groups/${groupId}/messages`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body),
+                });
+                const data = await res.json().catch(() => ({}));
+                return { ok: res.ok, json: async () => (res.ok ? { ...data, ok: true } : data) };
+            } catch {
                 return { ok: false, json: async () => ({ message: "Network error" }) };
             }
         },
@@ -93,20 +99,28 @@ export default function ChatRoomPage({ params: paramsPromise }) {
         });
     }, []);
 
+    const [groupReadAt, setGroupReadAt] = useState(null);
+
     const onMessageDeleted = useCallback(({ messageId }) => {
         room.setMessages((prev) =>
             prev.map((m) =>
-                m._id === messageId
-                    ? { ...m, isDeleted: true, content: "", imageUrl: "" }
-                    : m,
+                m._id === messageId ? { ...m, isDeleted: true, content: "", imageUrl: "" } : m,
             ),
         );
     }, []);
 
-    const onReaction = useCallback(({ messageId, reactions }) => {
+    const onMessageEdited = useCallback(({ messageId, content, isEdited, editedAt }) => {
         room.setMessages((prev) =>
-            prev.map((m) => (m._id === messageId ? { ...m, reactions } : m)),
+            prev.map((m) => (m._id === messageId ? { ...m, content, isEdited: true, editedAt } : m)),
         );
+    }, []);
+
+    const onReadReceipt = useCallback(({ userId }) => {
+        if (userId !== currentUser?._id) setGroupReadAt(new Date());
+    }, [currentUser?._id]);
+
+    const onReaction = useCallback(({ messageId, reactions }) => {
+        room.setMessages((prev) => prev.map((m) => (m._id === messageId ? { ...m, reactions } : m)));
     }, []);
 
     const onGroupDeleted = useCallback(() => {
@@ -194,9 +208,11 @@ export default function ChatRoomPage({ params: paramsPromise }) {
     const { onlineMembers } = useGroupChat(groupId, {
         onNewMessage,
         onMessageDeleted,
+        onMessageEdited,
         onTypingStart,
         onTypingStop,
         onReaction,
+        onReadReceipt,
         onGroupDeleted,
         onGroupUpdated,
         onMemberRemoved,
@@ -252,14 +268,42 @@ export default function ChatRoomPage({ params: paramsPromise }) {
     const handleDeleteMessage = useCallback(
         async (messageId) => {
             try {
-                const res = await fetch(
-                    `/api/groups/${groupId}/messages/${messageId}`,
-                    { method: "DELETE" },
-                );
+                const res = await fetch(`/api/groups/${groupId}/messages/${messageId}`, { method: "DELETE" });
                 if (!res.ok) toast.error("Failed to delete message");
             } catch (error) {
                 toast.error("Error deleting message");
             }
+        },
+        [groupId],
+    );
+
+    const handleEditMessage = useCallback(
+        async (messageId, content) => {
+            try {
+                const socket = await ensureChatSocket();
+                const ack = await new Promise((resolve) => {
+                    const t = setTimeout(() => resolve({ ok: false }), 8000);
+                    socket.emit("message:edit", { kind: "group", id: groupId, messageId, content }, (resp) => {
+                        clearTimeout(t);
+                        resolve(resp || { ok: false });
+                    });
+                });
+                if (ack?.ok) {
+                    room.setMessages((prev) => prev.map((m) => (m._id === messageId ? { ...m, content, isEdited: true, editedAt: new Date().toISOString() } : m)));
+                    return;
+                }
+            } catch {}
+            const res = await fetch(`/api/groups/${groupId}/messages/${messageId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content }),
+            });
+            if (!res.ok) {
+                const d = await res.json().catch(() => ({}));
+                throw new Error(d.message || "Edit failed");
+            }
+            const data = await res.json();
+            room.setMessages((prev) => prev.map((m) => (m._id === messageId ? { ...m, content: data.content, isEdited: true, editedAt: data.editedAt } : m)));
         },
         [groupId],
     );
@@ -311,18 +355,9 @@ export default function ChatRoomPage({ params: paramsPromise }) {
                         <ArrowLeft className="w-5 h-5" />
                     </Button>
 
-                    <div
-                        className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500/30 to-blue-500/30 
-                          border border-border flex items-center justify-center font-bold flex-shrink-0 overflow-hidden relative"
-                    >
+                    <div className="w-9 h-9 rounded-full bg-card border border-border/60 flex items-center justify-center font-bold flex-shrink-0 overflow-hidden relative text-foreground">
                         {group?.avatar ? (
-                            <Image
-                                src={group.avatar}
-                                alt={group.name}
-                                width={36}
-                                height={36}
-                                className="object-cover w-full h-full"
-                            />
+                            <Image src={group.avatar} alt={group.name} width={36} height={36} className="object-cover w-full h-full" />
                         ) : (
                             group?.name?.charAt(0)?.toUpperCase()
                         )}
@@ -346,28 +381,6 @@ export default function ChatRoomPage({ params: paramsPromise }) {
                     </div>
 
                     <div className="flex items-center gap-1">
-                        <BubbleThemePicker
-                            onThemeChange={(themeId) => {
-                                // Update all own messages in-place so the chat
-                                // reflects the new theme without a full reload.
-                                room.setMessages((prev) =>
-                                    prev.map((m) =>
-                                        m.sender?._id === currentUser?._id
-                                            ? {
-                                                  ...m,
-                                                  sender: {
-                                                      ...m.sender,
-                                                      bubbleTheme:
-                                                          themeId === "default"
-                                                              ? null
-                                                              : themeId,
-                                                  },
-                                              }
-                                            : m,
-                                    ),
-                                );
-                            }}
-                        />
                         <Button
                             variant="ghost"
                             size="icon"
@@ -442,18 +455,14 @@ export default function ChatRoomPage({ params: paramsPromise }) {
                             >
                                 <MessageBubble
                                     message={message}
-                                    isOwn={
-                                        message.sender?._id === currentUser?._id
-                                    }
-                                    showAvatar={
-                                        i === 0 ||
-                                        room.messages[i - 1]?.sender?._id !==
-                                            message.sender?._id
-                                    }
+                                    isOwn={message.sender?._id === currentUser?._id}
+                                    showAvatar={i === 0 || room.messages[i - 1]?.sender?._id !== message.sender?._id}
                                     currentUserId={currentUser?._id}
                                     onDelete={handleDeleteMessage}
                                     onReact={handleReact}
                                     onReply={room.setReplyingTo}
+                                    onEdit={handleEditMessage}
+                                    isRead={message.sender?._id === currentUser?._id && groupReadAt && new Date(message.createdAt) < groupReadAt}
                                 />
                             </div>
                         );

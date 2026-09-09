@@ -89,6 +89,18 @@ export default function FeedPage() {
             },
             [activeTab, currentUser?._id, prependPost],
         ),
+        "post:like": useCallback(
+            (data) => {
+                setPosts((prev) =>
+                    prev.map((p) =>
+                        p._id === data.postId
+                            ? { ...p, likesCount: data.likesCount }
+                            : p,
+                    ),
+                );
+            },
+            [setPosts],
+        ),
     });
 
 

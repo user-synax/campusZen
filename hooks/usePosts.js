@@ -320,6 +320,7 @@ export function usePosts(queryParams = {}, initialPosts = []) {
 
     return {
         posts,
+        setPosts,
         loading,
         error,
         hasMore,

@@ -53,7 +53,7 @@ export default function MessageInput({ onSend, onTyping, sending, groupId }) {
   }, [])
 
   return (
-    <div className="border-t border-border bg-background px-3 py-3 w-full"> 
+    <div className="border-t border-border/60 bg-card/60 backdrop-blur-md px-3 py-3 w-full">
       <div className="flex items-end gap-2 max-w-4xl mx-auto w-full"> 
         {/* GIF Picker Button */}
         <div className="mb-0.5">
@@ -65,10 +65,10 @@ export default function MessageInput({ onSend, onTyping, sending, groupId }) {
               <button
                 type="button"
                 disabled={sending}
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all backdrop-blur-sm border shadow-sm ${
                   sending 
-                    ? 'opacity-50 cursor-not-allowed' 
-                    : 'bg-accent text-muted-foreground hover:text-foreground active:scale-95'
+                    ? 'opacity-50 cursor-not-allowed bg-card border-border/60' 
+                    : 'bg-card/70 border-border/60 text-muted-foreground hover:text-foreground hover:bg-card active:scale-95'
                 }`}
                 title="Share GIF"
               >
@@ -78,7 +78,7 @@ export default function MessageInput({ onSend, onTyping, sending, groupId }) {
           />
         </div>
     
-        {/* Text input */} 
+        {/* Text input — transparent Like style */}
         <textarea 
           ref={textareaRef} 
           value={content} 
@@ -92,9 +92,9 @@ export default function MessageInput({ onSend, onTyping, sending, groupId }) {
           placeholder="Message..." 
           rows={1} 
           maxLength={2000} 
-          className="flex-1 bg-accent border border-border rounded-2xl px-4 py-2 
-                     text-sm resize-none outline-none focus:ring-1 focus:ring-primary/20 
-                     min-h-[40px] max-h-[120px] overflow-y-auto transition-all" 
+          className="flex-1 bg-card/70 backdrop-blur-md border border-border/60 rounded-2xl px-4 py-2 
+                     text-sm resize-none outline-none focus:ring-1 focus:ring-primary/20 shadow-sm
+                     min-h-[40px] max-h-[120px] overflow-y-auto transition-all placeholder:text-muted-foreground/60" 
           style={{ height: 'auto' }} 
         /> 
     
@@ -102,10 +102,10 @@ export default function MessageInput({ onSend, onTyping, sending, groupId }) {
         <button 
           onClick={handleSend} 
           disabled={!content.trim() || sending} 
-          className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center mb-0.5 
+          className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center mb-0.5 border shadow-sm backdrop-blur-sm
                       transition-all ${content.trim() && !sending 
-                        ? 'bg-primary text-primary-foreground hover:opacity-90 active:scale-95 shadow-lg shadow-primary/20' 
-                        : 'bg-accent text-muted-foreground cursor-not-allowed' 
+                        ? 'bg-primary text-primary-foreground border-transparent hover:bg-primary/90 active:scale-95 shadow-md' 
+                        : 'bg-card/60 border-border/60 text-muted-foreground cursor-not-allowed' 
                       }`} 
         > 
           {sending 

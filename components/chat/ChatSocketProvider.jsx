@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import useUser from "@/hooks/useUser";
-import { ensureChatSocket, disconnectChatSocket } from "@/lib/chat-socket";
+import { ensureChatSocket, disconnectChatSocket, isChatBackendConfigured } from "@/lib/chat-socket";
 
 /**
  * Establishes the chat Socket.IO connection at the app level (inside the
@@ -17,7 +17,19 @@ export default function ChatSocketProvider() {
 
     useEffect(() => {
         if (user) {
-            ensureChatSocket().catch(() => {});
+            if (!isChatBackendConfigured()) {
+                // No backend configured (e.g. production without env) — remain in
+                // HTTP fallback mode. The chat pages will POST via Next.js API
+                // (app/api/dms|groups) and poll history; no socket is needed.
+                return;
+            }
+            ensureChatSocket().catch((err) => {
+                // CHAT_BACKEND_NOT_CONFIGURED is expected in mis-configured env;
+                // network errors are already warned once inside chat-socket.js
+                if (err?.code !== "CHAT_BACKEND_NOT_CONFIGURED") {
+                    // Silent — socket will auto-retry and pages fallback to HTTP
+                }
+            });
         } else {
             disconnectChatSocket();
         }

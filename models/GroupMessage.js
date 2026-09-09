@@ -44,7 +44,9 @@ const groupMessageSchema = new mongoose.Schema({
     type: Boolean, 
     default: false  // soft delete — shows "Message deleted" 
   }, 
-  deletedAt: { type: Date, default: null } 
+  deletedAt: { type: Date, default: null },
+  isEdited: { type: Boolean, default: false },
+  editedAt: { type: Date, default: null }
  
 }, { timestamps: true }) 
  

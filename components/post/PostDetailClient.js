@@ -19,6 +19,7 @@ import FormattedTime from "@/components/shared/FormattedTime";
 import MarkdownRenderer from "@/components/shared/MarkdownRenderer";
 import { containsMarkdown } from "@/utils/markdown";
 import useUser from "@/hooks/useUser";
+import { useRealtime } from "@/hooks/useRealtime";
 import clientCache from "@/lib/client-cache";
 import PostOptionsMenu from "./PostOptionsMenu";
 import FollowButton from "@/components/user/FollowButton";
@@ -90,6 +91,17 @@ export default function PostDetailClient({ postId }) {
             throw err;
         }
     };
+
+    useRealtime({
+        "post:like": useCallback(
+            (data) => {
+                if (data.postId === postId) {
+                    setLikesCount(data.likesCount);
+                }
+            },
+            [postId],
+        ),
+    });
 
     const handleShare = () => {
         if (typeof window === "undefined") return;

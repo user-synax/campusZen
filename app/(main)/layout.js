@@ -46,6 +46,15 @@ export default function MainLayout({ children }) {
     const invalidateDMCache = useCallback(() => {
         clientCache.delete(JSON.stringify(["tab", "chats-dms"]));
     }, []);
+    const isViewingMessage = useCallback(
+        (msg) => {
+            if (!msg) return false;
+            const id = msg.conversationId || msg.groupId;
+            if (!id) return false;
+            return pathname === `/chats/${id}` || pathname === `/chats/dm/${id}` || pathname.startsWith(`/chats/${id}/`) || pathname.startsWith(`/chats/dm/${id}/`);
+        },
+        [pathname],
+    );
     useRealtime({
         "group:created": invalidateGroupCache,
         "group:joined": invalidateGroupCache,
@@ -55,12 +64,30 @@ export default function MainLayout({ children }) {
                 router.push("/chats");
             }
         }, [invalidateGroupCache, pathname, router]),
-        "message:new": useCallback(() => {
-            invalidateGroupCache();
-            invalidateDMCache();
-            window.dispatchEvent(new CustomEvent("chat-inbox-invalidate", { detail: { tab: "groups" } }));
-            window.dispatchEvent(new CustomEvent("chat-inbox-invalidate", { detail: { tab: "dms" } }));
-        }, [invalidateGroupCache, invalidateDMCache]),
+        "message:new": useCallback(
+            (msg) => {
+                invalidateGroupCache();
+                invalidateDMCache();
+                window.dispatchEvent(new CustomEvent("chat-inbox-invalidate", { detail: { tab: "groups" } }));
+                window.dispatchEvent(new CustomEvent("chat-inbox-invalidate", { detail: { tab: "dms" } }));
+                // Immediate in-app clue when recipient is NOT viewing the chat
+                // (covers the case where notification:new is suppressed / backend
+                // secret mis-configured - user still sees a toast + unread badge).
+                if (msg && !isViewingMessage(msg) && msg.sender?.name) {
+                    const preview = msg.type === "image" ? "📷 Image" : (msg.content || "").slice(0, 60);
+                    const target = msg.conversationId ? `/chats/dm/${msg.conversationId}` : msg.groupId ? `/chats/${msg.groupId}` : "/chats";
+                    toast(`💬 ${msg.sender.name}`, {
+                        description: preview || "New message",
+                        action: {
+                            label: "Open",
+                            onClick: () => router.push(target),
+                        },
+                        duration: 4000,
+                    });
+                }
+            },
+            [invalidateGroupCache, invalidateDMCache, isViewingMessage, router, pathname],
+        ),
         "vc:started": useCallback(({ groupId, startedBy }) => {
             const name = startedBy?.name || "Someone";
             toast(`${name} started a voice chat`, {

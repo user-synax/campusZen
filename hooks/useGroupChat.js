@@ -85,6 +85,11 @@ export function useGroupChat(groupId, handlers = {}) {
                         handlersRef.current.onMessageDeleted(data);
                     }
                 };
+                const onMessageEdited = (data) => {
+                    if (data.groupId === groupId && handlersRef.current.onMessageEdited) {
+                        handlersRef.current.onMessageEdited(data);
+                    }
+                };
                 const onMessageReaction = (data) => {
                     if (handlersRef.current.onReaction) {
                         handlersRef.current.onReaction(data);
@@ -124,6 +129,7 @@ export function useGroupChat(groupId, handlers = {}) {
                 // Socket-native events (via group room)
                 s.on("message:new", onNewMessage);
                 s.on("message:deleted", onMessageDeleted);
+                s.on("message:edited", onMessageEdited);
                 s.on("message:reaction", onMessageReaction);
                 s.on("typing:start", onTypingStart);
                 s.on("typing:stop", onTypingStop);
@@ -141,6 +147,7 @@ export function useGroupChat(groupId, handlers = {}) {
                 cleanup = () => {
                     s.off("message:new", onNewMessage);
                     s.off("message:deleted", onMessageDeleted);
+                    s.off("message:edited", onMessageEdited);
                     s.off("message:reaction", onMessageReaction);
                     s.off("typing:start", onTypingStart);
                     s.off("typing:stop", onTypingStop);

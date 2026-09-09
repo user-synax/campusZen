@@ -46,17 +46,33 @@ export default function useChatRoom({
         overscan: 10,
     });
 
+    const fallbackMessagesUrl = type === "dm" ? `/api/dms/${id}/messages` : `/api/groups/${id}/messages`;
+
     // ━━━ Fetching ━━━
     const fetchInitialData = useCallback(async () => {
         try {
             setLoading(true);
-            const [infoRes, messagesRes] = await Promise.all([
+            const [infoRes, primaryMessagesRes] = await Promise.all([
                 fetch(endpoints.fetchInfo),
                 fetch(`${endpoints.fetchMessages}?limit=30`),
             ]);
 
-            const infoData = await infoRes.json();
-            const messagesData = await messagesRes.json();
+            const infoData = await infoRes.json().catch(() => ({}));
+
+            // If chat-backend proxy fails (backend down / CORS), fall back to
+            // Next.js direct API so history still loads.
+            let messagesRes = primaryMessagesRes;
+            let messagesData = await primaryMessagesRes.json().catch(() => ({}));
+            if (!primaryMessagesRes.ok) {
+                try {
+                    const fallbackRes = await fetch(`${fallbackMessagesUrl}?limit=30`);
+                    const fallbackData = await fallbackRes.json().catch(() => ({}));
+                    if (fallbackRes.ok) {
+                        messagesRes = fallbackRes;
+                        messagesData = fallbackData;
+                    }
+                } catch {}
+            }
 
             if (infoRes.ok) setInfo(parseInfo(infoData));
             if (messagesRes.ok) {
@@ -75,7 +91,7 @@ export default function useChatRoom({
         } finally {
             setLoading(false);
         }
-    }, [id, endpoints, parseInfo]);
+    }, [id, endpoints, parseInfo, fallbackMessagesUrl]);
 
     useEffect(() => {
         if (id) fetchInitialData();
@@ -111,20 +127,24 @@ export default function useChatRoom({
         const savedScrollHeight = messagesContainerRef.current.scrollHeight;
         setLoadingOlder(true);
         try {
-            const res = await fetch(
-                `${endpoints.fetchMessages}?cursor=${cursor}&limit=30`,
-            );
-            const data = await res.json();
+            let res = await fetch(`${endpoints.fetchMessages}?cursor=${cursor}&limit=30`);
+            let data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                const fb = await fetch(`${fallbackMessagesUrl}?cursor=${cursor}&limit=30`);
+                const fbData = await fb.json().catch(() => ({}));
+                if (fb.ok) {
+                    res = fb;
+                    data = fbData;
+                }
+            }
             if (res.ok) {
                 setMessages((prev) => [...data.messages, ...prev]);
                 setCursor(data.nextCursor);
                 setHasMore(data.hasMore);
                 requestAnimationFrame(() => {
                     if (messagesContainerRef.current) {
-                        const newScrollHeight =
-                            messagesContainerRef.current.scrollHeight;
-                        messagesContainerRef.current.scrollTop =
-                            newScrollHeight - savedScrollHeight;
+                        const newScrollHeight = messagesContainerRef.current.scrollHeight;
+                        messagesContainerRef.current.scrollTop = newScrollHeight - savedScrollHeight;
                     }
                 });
             }
@@ -133,13 +153,21 @@ export default function useChatRoom({
         } finally {
             setLoadingOlder(false);
         }
-    }, [id, cursor, loadingOlder, endpoints.fetchMessages]);
+    }, [id, cursor, loadingOlder, endpoints.fetchMessages, fallbackMessagesUrl]);
 
     // ━━━ Refetch latest (recovery) ━━━
     const refetchLatestMessages = useCallback(async () => {
         try {
-            const res = await fetch(`${endpoints.fetchMessages}?limit=30`);
-            const data = await res.json();
+            let res = await fetch(`${endpoints.fetchMessages}?limit=30`);
+            let data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                const fb = await fetch(`${fallbackMessagesUrl}?limit=30`);
+                const fbData = await fb.json().catch(() => ({}));
+                if (fb.ok) {
+                    res = fb;
+                    data = fbData;
+                }
+            }
             if (res.ok) {
                 setMessages(data.messages);
                 setHasMore(data.hasMore);
@@ -148,7 +176,7 @@ export default function useChatRoom({
         } catch (err) {
             // Silent — will be retried by next optimistic timeout or user refresh
         }
-    }, [id, endpoints.fetchMessages]);
+    }, [id, endpoints.fetchMessages, fallbackMessagesUrl]);
 
     // ━━━ Real-time: new message (with optimistic replace) ━━━
     const onNewMessage = useCallback(
@@ -198,16 +226,6 @@ export default function useChatRoom({
             const replyTarget = replyingToRef.current;
             setReplyingTo(null);
 
-            // Resolve sender's equipped bubble theme from user's shop inventory
-            let senderBubbleTheme = null;
-            const equippedBubbleItemId = currentUser.equippedShopItems?.chat_bubble;
-            if (equippedBubbleItemId) {
-                const ownedBubble = (currentUser.ownedShopItems || []).find(
-                    (o) => o.itemId?.toString() === equippedBubbleItemId.toString(),
-                );
-                if (ownedBubble?.slug) senderBubbleTheme = ownedBubble.slug;
-            }
-
             const optimisticMsg = {
                 _id: clientId,
                 clientId,
@@ -219,7 +237,6 @@ export default function useChatRoom({
                     name: currentUser.name,
                     avatar: currentUser.avatar,
                     username: currentUser.username,
-                    bubbleTheme: senderBubbleTheme,
                 },
                 replyTo: replyTarget
                     ? {
@@ -248,12 +265,52 @@ export default function useChatRoom({
                 });
 
                 if (res.ok) {
-                    // Start recovery timeout — if socket confirmation doesn't arrive in 7s, refetch
+                    // If the transport returned the real message (HTTP fallback
+                    // when socket is offline, or socket ack with message), replace
+                    // the optimistic entry immediately so the UI doesn't stay
+                    // in `sending…` for 7s when the backend is down.
+                    try {
+                        const data = await res.json().catch(() => ({}));
+                        const real = data?.message || data;
+                        // HTTP fallback: data is the full message with real _id but
+                        // still carries the original clientId for correlation.
+                        if (real && real._id && real.clientId === clientId) {
+                            setMessages((prev) => {
+                                const idx = prev.findIndex((m) => m.clientId === clientId);
+                                if (idx !== -1) {
+                                    const next = [...prev];
+                                    next[idx] = { ...real, isOptimistic: false };
+                                    return next;
+                                }
+                                return prev;
+                            });
+                            // No recovery timeout needed — we already have the server id
+                            return;
+                        }
+                        // Socket ack case: ack = {ok:true, message:{...}} also has
+                        // clientId, but the live `message:new` broadcast will
+                        // replace it via onNewMessage within milliseconds. Keep the
+                        // timeout as a safety net for that path.
+                        if (real && real._id && real._id !== clientId && data?.ok) {
+                            // Socket ack with real message but different _id — also replace
+                            setMessages((prev) => {
+                                const idx = prev.findIndex((m) => m.clientId === clientId);
+                                if (idx !== -1) {
+                                    const next = [...prev];
+                                    next[idx] = { ...real, clientId, isOptimistic: false };
+                                    return next;
+                                }
+                                return prev;
+                            });
+                            return;
+                        }
+                    } catch {}
+                    // Fallback: start recovery timeout — if socket confirmation
+                    // doesn't arrive in 7s, refetch (covers pure socket path)
                     pendingTimeoutsRef.current[clientId] = setTimeout(() => {
                         setMessages((prev) => {
                             const stuck = prev.some(
-                                (m) =>
-                                    m.clientId === clientId && m.isOptimistic,
+                                (m) => m.clientId === clientId && m.isOptimistic,
                             );
                             if (stuck) refetchLatestMessages();
                             return prev;

@@ -36,6 +36,8 @@ const dmMessageSchema = new mongoose.Schema(
         },
         isDeleted: { type: Boolean, default: false },
         deletedAt: { type: Date, default: null },
+        isEdited: { type: Boolean, default: false },
+        editedAt: { type: Date, default: null },
     },
     { timestamps: true },
 );

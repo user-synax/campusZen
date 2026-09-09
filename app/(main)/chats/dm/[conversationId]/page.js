@@ -14,7 +14,6 @@ import MessageBubble from "@/components/chat/MessageBubble";
 import MessageInput from "@/components/chat/MessageInput";
 import UserAvatar from "@/components/user/UserAvatar";
 import TypingIndicator from "@/components/chat/TypingIndicator";
-import BubbleThemePicker from "@/components/chat/BubbleThemePicker";
 
 export default function DMChatRoomPage({ params: paramsPromise }) {
     const params = use(paramsPromise);
@@ -23,6 +22,7 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
     const { user: currentUser } = useUser();
 
     const [typingUser, setTypingUser] = useState(null);
+    const [otherReadAt, setOtherReadAt] = useState(null);
 
     // ━━━ Shared chat room logic ━━━
     const endpoints = useMemo(() => ({
@@ -33,27 +33,43 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
 
     const parseInfo = useCallback((data) => data.conversation, []);
 
-    // Send over the Socket.IO backend (see group page for the ack->Response wrap).
+    // Send via Socket.IO when available, otherwise HTTP fallback (Next.js API).
+    // This keeps messaging working when `ws://localhost:4000` is down (e.g.
+    // backend not running in dev, or NEXT_PUBLIC_CHAT_BACKEND_URL missing in
+    // production) and eliminates the `Failed to send message` dead-end.
     const sendMessage = useCallback(
         async (body) => {
+            // 1) Try socket (fast path, gives presence/typing/read)
             try {
                 const socket = await ensureChatSocket();
-                const ack = await new Promise((resolve) => {
-                    const t = setTimeout(
-                        () => resolve({ ok: false, error: "timeout" }),
-                        10000,
-                    );
-                    socket.emit(
-                        "message:send",
-                        { kind: "dm", id: conversationId, ...body },
-                        (resp) => {
+                if (socket?.connected) {
+                    const ack = await new Promise((resolve) => {
+                        const t = setTimeout(() => resolve({ ok: false, error: "timeout" }), 6000);
+                        socket.emit("message:send", { kind: "dm", id: conversationId, ...body }, (resp) => {
                             clearTimeout(t);
                             resolve(resp || { ok: false });
-                        },
-                    );
-                });
-                return { ok: !!ack?.ok, json: async () => ack || {} };
+                        });
+                    });
+                    if (ack?.ok) return { ok: true, json: async () => ack };
+                    // Socket replied ok:false — fall through to HTTP
+                }
             } catch (err) {
+                if (err?.code === "CHAT_BACKEND_NOT_CONFIGURED") {
+                    // Expected when env missing — silently use HTTP
+                } else {
+                    console.debug("[DM send] socket path failed, falling back to HTTP", err?.message);
+                }
+            }
+            // 2) HTTP fallback — Next.js route (works without chat backend)
+            try {
+                const res = await fetch(`/api/dms/${conversationId}/messages`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body),
+                });
+                const data = await res.json().catch(() => ({}));
+                return { ok: res.ok, json: async () => (res.ok ? { ...data, ok: true } : data) };
+            } catch {
                 return { ok: false, json: async () => ({ message: "Network error" }) };
             }
         },
@@ -100,6 +116,16 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
         );
     }, []);
 
+    const onMessageEdited = useCallback(({ messageId, content, isEdited, editedAt }) => {
+        room.setMessages((prev) =>
+            prev.map((m) => (m._id === messageId ? { ...m, content, isEdited: true, editedAt } : m)),
+        );
+    }, []);
+
+    const onReadReceipt = useCallback(({ userId }) => {
+        if (userId !== currentUser?._id) setOtherReadAt(new Date());
+    }, [currentUser?._id]);
+
     // Emit a read receipt over the socket when this user views the conversation.
     const markReadSocket = useCallback(async () => {
         try {
@@ -123,7 +149,9 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
         onTypingStart,
         onTypingStop,
         onMessageDeleted,
+        onMessageEdited,
         onReaction,
+        onReadReceipt,
     });
 
     // Invalidate the cached DM inbox so the unread badge reflects reads made in
@@ -164,6 +192,48 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
             } catch (error) {
                 toast.error("Error deleting message");
             }
+        },
+        [conversationId],
+    );
+
+    const handleEditMessage = useCallback(
+        async (messageId, content) => {
+            // Try socket first for instant realtime, fallback to HTTP PATCH
+            try {
+                const socket = await ensureChatSocket();
+                const ack = await new Promise((resolve) => {
+                    const t = setTimeout(() => resolve({ ok: false }), 8000);
+                    socket.emit(
+                        "message:edit",
+                        { kind: "dm", id: conversationId, messageId, content },
+                        (resp) => {
+                            clearTimeout(t);
+                            resolve(resp || { ok: false });
+                        },
+                    );
+                });
+                if (ack?.ok) {
+                    // Optimistic local update (socket will also broadcast back)
+                    room.setMessages((prev) =>
+                        prev.map((m) => (m._id === messageId ? { ...m, content, isEdited: true, editedAt: new Date().toISOString() } : m)),
+                    );
+                    return;
+                }
+            } catch {}
+            // Fallback HTTP
+            const res = await fetch(`/api/dms/${conversationId}/messages/${messageId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content }),
+            });
+            if (!res.ok) {
+                const d = await res.json().catch(() => ({}));
+                throw new Error(d.message || "Edit failed");
+            }
+            const data = await res.json();
+            room.setMessages((prev) =>
+                prev.map((m) => (m._id === messageId ? { ...m, content: data.content, isEdited: true, editedAt: data.editedAt } : m)),
+            );
         },
         [conversationId],
     );
@@ -224,32 +294,21 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
                         <p className="font-semibold text-sm truncate">
                             {otherUser?.name || otherUser?.username}
                         </p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            {online ? (
+                                <>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> Online
+                                </>
+                            ) : (
+                                "Offline"
+                            )}
+                        </p>
                     </div>
-                    <BubbleThemePicker
-                        onThemeChange={(themeId) => {
-                            room.setMessages((prev) =>
-                                prev.map((m) =>
-                                    m.sender?._id === currentUser?._id
-                                        ? {
-                                              ...m,
-                                              sender: {
-                                                  ...m.sender,
-                                                  bubbleTheme:
-                                                      themeId === "default"
-                                                          ? null
-                                                          : themeId,
-                                              },
-                                          }
-                                        : m,
-                                ),
-                            );
-                        }}
-                    />
                 </div>
             </div>
 
-            {/* ━━━ Privacy Banner ━━━ */}
-            <div className="text-xs text-muted-foreground truncate border text-center border-gray-200 px-4 py-2 mx-4 rounded-xl mt-1 bg-gray-50">
+            {/* ━━━ Privacy Banner — contrast-aware: bg-card text-muted-foreground works in dark & light */} 
+            <div className="text-xs text-muted-foreground truncate border text-center border-border/60 px-4 py-2 mx-4 rounded-xl mt-1 bg-card/60 backdrop-blur-sm">
                 Do not share sensitive information. Messages are not
                 end-to-end encrypted.
             </div>
@@ -304,18 +363,20 @@ export default function DMChatRoomPage({ params: paramsPromise }) {
                             >
                                 <MessageBubble
                                     message={message}
-                                    isOwn={
-                                        message.sender?._id === currentUser?._id
-                                    }
+                                    isOwn={message.sender?._id === currentUser?._id}
                                     showAvatar={
-                                        i === 0 ||
-                                        room.messages[i - 1]?.sender?._id !==
-                                            message.sender?._id
+                                        i === 0 || room.messages[i - 1]?.sender?._id !== message.sender?._id
                                     }
                                     currentUserId={currentUser?._id}
                                     onDelete={handleDeleteMessage}
                                     onReact={handleReact}
                                     onReply={room.setReplyingTo}
+                                    onEdit={handleEditMessage}
+                                    isRead={
+                                        message.sender?._id === currentUser?._id &&
+                                        otherReadAt &&
+                                        new Date(message.createdAt) < otherReadAt
+                                    }
                                 />
                             </div>
                         );

@@ -5,7 +5,7 @@ import {
     getAppwriteAdminStorage,
     getFileViewUrlString,
     getUserMediaBucketId,
-    fileToBuffer,
+    toInputFile,
 } from "@/lib/appwrite";
 import { ID, Permission, Role } from "appwrite";
 import { verifyIdCardBlob } from "@/lib/file-validation";
@@ -94,11 +94,11 @@ export async function POST(request) {
             Permission.read(Role.admin()), // Admins should see this
             Permission.delete(Role.user(user._id)),
         ];
-        const fileBuffer = await fileToBuffer(file)
+        const inputFile = await toInputFile(file)
         const uploadedFile = await storage.createFile(
             bucketId,
             fileId,
-            fileBuffer,
+            inputFile,
             permissions,
         );
         const collegeIdUrl = getFileViewUrlString(uploadedFile.$id, bucketId);

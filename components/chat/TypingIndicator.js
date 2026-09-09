@@ -14,7 +14,7 @@ export default function TypingIndicator({ users }) {
         ))} 
       </div> 
  
-      <div className="flex items-center gap-1 bg-card border border-border 
+      <div className="flex items-center gap-1 bg-card/80 backdrop-blur-md border border-border/60 shadow-sm
                       rounded-2xl rounded-bl-sm px-3 py-2"> 
         {/* Animated dots */} 
         <div className="flex gap-1"> 

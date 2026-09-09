@@ -12,6 +12,7 @@ import {
     messageSendSchema,
     typingSchema,
     readSchema,
+    messageEditSchema,
 } from "../validation/chat.js";
 
 // ━━━ User info cache with 5-minute TTL ━━━
@@ -280,13 +281,63 @@ async function handleRead(io, socket, payload) {
             },
         );
     }
-    const room = payload.type === "dm" ? `dm:${payload.id}` : `group:${payload.id}`;
+    const room = payload.kind === "dm" ? `dm:${payload.id}` : `group:${payload.id}`;
     socket.to(room).emit("read:receipt", {
         userId: socket.userId,
-        ...(payload.type === "dm"
+        ...(payload.kind === "dm"
             ? { conversationId: payload.id }
             : { groupId: payload.id }),
     });
+}
+
+async function handleEdit(io, socket, payload, ack) {
+    const { kind, id, messageId, content } = payload;
+    try {
+        if (kind === "dm") {
+            const conv = await DMConversation.findOne({
+                _id: id,
+                "participants.userId": socket.userId,
+                isActive: true,
+            });
+            if (!conv) return ack?.({ ok: false, error: "Conversation not found" });
+            const msg = await DMMessage.findOne({ _id: messageId, conversationId: id });
+            if (!msg) return ack?.({ ok: false, error: "Message not found" });
+            if (msg.sender.toString() !== socket.userId) return ack?.({ ok: false, error: "Not your message" });
+            if (msg.isDeleted) return ack?.({ ok: false, error: "Cannot edit deleted message" });
+            if (msg.type !== "text") return ack?.({ ok: false, error: "Only text messages can be edited" });
+            msg.content = content.trim();
+            msg.isEdited = true;
+            msg.editedAt = new Date();
+            await msg.save();
+            const out = { messageId: String(msg._id), conversationId: id, content: msg.content, isEdited: true, editedAt: msg.editedAt };
+            // Emit to dm room and to participants personal rooms for inbox sync
+            for (const p of conv.participants) {
+                io.in(`user:${String(p.userId)}`).socketsJoin(`dm:${id}`);
+            }
+            io.to(`dm:${id}`).emit("message:edited", out);
+            ack?.({ ok: true, ...out });
+        } else {
+            const group = await GroupChat.findOne({ _id: id, "members.userId": socket.userId, isActive: true });
+            if (!group) return ack?.({ ok: false, error: "Group not found" });
+            const msg = await GroupMessage.findOne({ _id: messageId, groupId: id });
+            if (!msg) return ack?.({ ok: false, error: "Message not found" });
+            if (msg.sender.toString() !== socket.userId) return ack?.({ ok: false, error: "Not your message" });
+            if (msg.isDeleted) return ack?.({ ok: false, error: "Cannot edit deleted message" });
+            if (msg.type !== "text") return ack?.({ ok: false, error: "Only text messages can be edited" });
+            msg.content = content.trim();
+            msg.isEdited = true;
+            msg.editedAt = new Date();
+            await msg.save();
+            const out = { messageId: String(msg._id), groupId: id, content: msg.content, isEdited: true, editedAt: msg.editedAt };
+            for (const m of group.members) {
+                io.in(`user:${String(m.userId)}`).socketsJoin(`group:${id}`);
+            }
+            io.to(`group:${id}`).emit("message:edited", out);
+            ack?.({ ok: true, ...out });
+        }
+    } catch (err) {
+        ack?.({ ok: false, error: err.message || "Edit failed" });
+    }
 }
 
 export function registerSocket(io) {
@@ -349,6 +400,20 @@ export function registerSocket(io) {
             if (parsed.success) {
                 handleRead(io, socket, parsed.data).catch(() => {});
             }
+        });
+
+        socket.on("message:edit", (payload, ack) => {
+            if (!socketLimits.messageSend(userId)) {
+                return ack?.({ ok: false, error: "Too fast — slow down" });
+            }
+            const parsed = messageEditSchema.safeParse(payload);
+            if (!parsed.success) {
+                const msg = parsed.error.errors?.[0]?.message || "Invalid edit";
+                return ack?.({ ok: false, error: msg });
+            }
+            handleEdit(io, socket, parsed.data, ack).catch((err) =>
+                ack?.({ ok: false, error: err?.message || "Edit failed" }),
+            );
         });
 
         // Client (e.g. the DM/Group list) can ask for a fresh presence snapshot

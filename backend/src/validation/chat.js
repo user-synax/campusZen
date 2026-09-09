@@ -48,6 +48,13 @@ export const readSchema = z.object({
     id: ObjectIdSchema,
 });
 
+export const messageEditSchema = z.object({
+    kind: z.enum(["dm", "group"]),
+    id: ObjectIdSchema,
+    messageId: ObjectIdSchema,
+    content: z.string().trim().min(1).max(2000),
+});
+
 export const historyQuerySchema = z.object({
     cursor: ObjectIdSchema.optional(),
     limit: z.coerce.number().int().min(1).max(50).optional().default(30),

@@ -49,7 +49,7 @@ const DEFAULT_PARTICLE_COLORS = [
 ]
 
 const SIZES = {
-  sm: { button: "h-8 gap-1.5 px-3 text-xs", icon: 14 },
+  sm: { button: "h-8 gap-1.5 px-3 text-xs", icon: 18 },
   md: { button: "h-10 gap-2 px-4 text-sm", icon: 17 },
   lg: { button: "h-12 gap-2.5 px-5 text-base", icon: 20 }
 }

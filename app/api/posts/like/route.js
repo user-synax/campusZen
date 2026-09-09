@@ -7,6 +7,7 @@ import { createNotification, deleteNotification } from "@/lib/notifications";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { sanitizeMongoInput } from "@/lib/sanitize";
 import { cacheSet, cacheDel } from "@/lib/redis-cache";
+import { emitToUsers } from "@/lib/realtime";
 
 export async function POST(request) {
     try {
@@ -104,6 +105,15 @@ export async function POST(request) {
         const likeCacheKey = `likes:${postId}`;
         await cacheDel(likeCacheKey); // Delete old cache
         await cacheSet(likeCacheKey, updatedPost.likesCount, 300); // Cache for 5 minutes
+
+        // Emit real-time like update to the post author
+        if (postAuthor && postAuthor.toString() !== currentUserIdStr) {
+            emitToUsers(
+                [postAuthor.toString(), currentUserIdStr],
+                "post:like",
+                { postId, likesCount: updatedPost.likesCount },
+            ).catch(() => {});
+        }
 
         return NextResponse.json({
             success: true,

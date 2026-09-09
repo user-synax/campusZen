@@ -223,7 +223,7 @@ export default function RightPanel() {
                         </a>
                     </div>
                     <p className="flex items-center gap-1 text-[11px]">
-                        <Crown className="w-3 h-3 text-muted-foreground" /> © {new Date().getFullYear()} CampusZen · v1.0.0
+                        <Crown className="w-3 h-3 text-muted-foreground" /> © {new Date().getFullYear()} CampusZen · v2.0
                     </p>
                 </div>
             </div>
