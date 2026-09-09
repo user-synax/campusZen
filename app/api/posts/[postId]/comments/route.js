@@ -5,7 +5,6 @@ import Comment from "@/models/Comment";
 import { getCurrentUser } from "@/lib/auth";
 import { validateObjectId } from "@/utils/validators";
 import { createNotification } from "@/lib/notifications";
-import { awardXP } from "@/lib/gamification";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/sanitize";
 import { cacheWithFallback, cacheDelPattern } from "@/lib/redis-cache";
@@ -183,11 +182,6 @@ export async function POST(request, { params }) {
                 },
             }).catch((err) => console.error("Operation failed:", err));
         }
-
-        // Award XP for commenting (background)
-        awardXP(currentUser._id, "comment").catch((err) =>
-            console.error("XP award error:", err),
-        );
 
         return NextResponse.json(populated, { status: 201 });
     } catch (error) {

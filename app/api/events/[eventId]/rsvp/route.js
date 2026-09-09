@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Event from '@/models/Event';
 import { getCurrentUser } from '@/lib/auth';
-import { awardXP } from '@/lib/gamification';
 import { validateObjectId } from '@/utils/validators';
 import { sanitizeMongoInput } from '@/lib/sanitize';
 
@@ -58,9 +57,6 @@ export async function POST(request, { params }) {
         { $push: { rsvps: currentUser._id } },
         { new: true }
       );
-
-      // Award XP for RSVP (background)
-      awardXP(currentUser._id, 'event_rsvp').catch(err => console.error('XP award error:', err));
 
       return NextResponse.json({ 
         rsvped: true, 

@@ -5,9 +5,6 @@ import {
     Bell,
     Link2,
     Bookmark,
-    Trophy,
-    CircleStar,
-    Video,
     BookOpen,
     Calendar,
     BookText,
@@ -34,13 +31,7 @@ export const primaryNavItems = [
     { label: "Bookmarks", href: "/bookmarks", icon: Bookmark },
 ];
 
-export const gamificationItems = [
-    { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
-    { label: "Ranks", href: "/ranks", icon: CircleStar },
-];
-
 export const moreItems = [
-    { label: "Clips", href: "/clips", icon: Video },
     { label: "Resources", href: "/resources", icon: BookOpen },
     { label: "Events", href: "/events", icon: Calendar },
 ];

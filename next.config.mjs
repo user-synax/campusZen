@@ -118,10 +118,6 @@ const nextConfig = {
                 source: "/api/users/:username/follow-counts",
                 headers: [{ key: "Cache-Control", value: "public, max-age=30, stale-while-revalidate=120" }],
             },
-            {
-                source: "/api/clips/:clipId/comments",
-                headers: [{ key: "Cache-Control", value: "public, s-maxage=30, stale-while-revalidate=60" }],
-            },
         ];
     },
     async rewrites() {

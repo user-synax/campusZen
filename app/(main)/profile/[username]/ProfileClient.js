@@ -9,21 +9,17 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import UserAvatar from "@/components/user/UserAvatar";
 import VerifiedBadge from "@/components/shared/VerifiedBadge";
-import RankBadge from "@/components/user/RankBadge";
 import FollowButton from "@/components/user/FollowButton";
 import PostCard from "@/components/post/PostCard";
 import PostSkeleton from "@/components/post/PostSkeleton";
 import EmptyState from "@/components/shared/EmptyState";
 import {
     FileText,
-    Zap,
-    Trophy,
     MessageSquare,
     Lock,
     Share2,
     Heart,
 } from "lucide-react";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import useUser from "@/hooks/useUser";
 import { usePosts } from "@/hooks/usePosts";
@@ -37,7 +33,6 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { CrownIcon } from "lucide-react";
 import Image from "next/image";
-import { getLevelProgress, getRankForLevel } from "@/lib/ranks";
 import { cn } from "@/lib/utils";
 
 const FollowListModal = dynamic(
@@ -46,10 +41,6 @@ const FollowListModal = dynamic(
 );
 const EditProfileDrawer = dynamic(
     () => import("@/components/user/EditProfileDrawer"),
-    { ssr: false },
-);
-const ActivityHeatmap = dynamic(
-    () => import("@/components/profile/ActivityHeatmap"),
     { ssr: false },
 );
 const ProfileCardExportModal = dynamic(
@@ -77,63 +68,12 @@ export default function ProfileClient({ username: initialUsername }) {
         updatePostLike,
     } = usePosts({ username });
     const [sendingDm, setSendingDm] = useState(false);
-    const [activeTab, setActiveTab] = useState("posts"); // "posts" or "clips"
-    const [clips, setClips] = useState([]);
-    const [clipsLoading, setClipsLoading] = useState(false);
-    const [clipsCursor, setClipsCursor] = useState(null);
-    const [hasMoreClips, setHasMoreClips] = useState(false);
-    const clipsSentinelRef = useRef(null);
 
     const { sentinelRef } = useInfiniteScroll({
         fetchMore: loadMorePosts,
         hasMore: hasMorePosts,
         loading: postsLoading,
     });
-
-    // Fetch clips for the profile
-    const fetchClips = async (nextCursor = null) => {
-        if (clipsLoading || (!nextCursor && clips.length > 0)) return;
-        setClipsLoading(true);
-        try {
-            let url = `/api/clips/feed?username=${username}&limit=12`;
-            if (nextCursor) url += `&cursor=${nextCursor}`;
-            const res = await fetch(url);
-            const data = await res.json();
-            if (data.success) {
-                setClips(nextCursor ? [...clips, ...data.clips] : data.clips);
-                setClipsCursor(data.pagination.nextCursor);
-                setHasMoreClips(data.pagination.hasNextPage);
-            }
-        } catch (error) {
-            console.error("Fetch clips error:", error);
-        } finally {
-            setClipsLoading(false);
-        }
-    };
-
-    // Observer for clips infinite scroll
-    useEffect(() => {
-        if (!clipsSentinelRef.current || !hasMoreClips || clipsLoading) return;
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting) {
-                    fetchClips(clipsCursor);
-                }
-            },
-            { threshold: 0.1 },
-        );
-
-        observer.observe(clipsSentinelRef.current);
-        return () => observer.disconnect();
-    }, [hasMoreClips, clipsCursor, clipsLoading]);
-
-    // Fetch clips when tab switches to clips
-    useEffect(() => {
-        if (activeTab === "clips" && clips.length === 0) {
-            fetchClips();
-        }
-    }, [activeTab]);
 
     const handleDeletePost = useCallback(
         (postId) => {
@@ -668,93 +608,6 @@ export default function ProfileClient({ username: initialUsername }) {
                         </div>
                     )}
 
-                    {/* Gamification Stats */}
-                    {isCompactLayout ? (
-                        // Compact layout variant (shop cosmetic): inline row,
-                        // same data, no card chrome — purely cosmetic reorder.
-                        <div className="flex items-center justify-around mt-5 py-3 rounded-2xl bg-accent/20 card-chunky">
-                            <div className="flex flex-col items-center">
-                                <RankBadge
-                                    level={profileUser.level || 1}
-                                    size="md"
-                                />
-                                <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide mt-1 text-center leading-tight">
-                                    {(() => {
-                                        const rank = getRankForLevel(
-                                            profileUser.level || 1,
-                                        );
-                                        return rank.name;
-                                    })()}
-                                </span>
-                            </div>
-                            <div className="w-px h-8 bg-border/60" />
-                            <div className="flex flex-col items-center">
-                                <span className="text-base font-black">
-                                    {profileUser.totalXP || profileUser.xp || 0}
-                                </span>
-                                <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
-                                    Total XP
-                                </span>
-                            </div>
-                            <div className="w-px h-8 bg-border/60" />
-                            <div className="flex flex-col items-center">
-                                <span className="text-base font-black">
-                                    Lvl {profileUser.level || 1}
-                                </span>
-                                <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
-                                    Level
-                                </span>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-3 gap-2.5 sm:gap-3 mt-6">
-                            <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 rounded-2xl flex flex-col items-center justify-center text-center card-chunky card-chunky-interactive">
-                                <RankBadge
-                                    level={profileUser.level || 1}
-                                    size="lg"
-                                />
-                                <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide mt-1.5 text-center leading-tight">
-                                    {(() => {
-                                        const rank = getRankForLevel(
-                                            profileUser.level || 1,
-                                        );
-                                        return rank.name;
-                                    })()}
-                                </span>
-                            </Card>
-
-                            <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 rounded-2xl flex flex-col items-center justify-center text-center card-chunky card-chunky-interactive">
-                                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center mb-1.5">
-                                    <Zap className="w-4 h-4 text-primary fill-primary" />
-                                </div>
-                                <span className="text-lg sm:text-xl font-black">
-                                    {profileUser.totalXP || profileUser.xp || 0}
-                                </span>
-                                <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
-                                    Total XP
-                                </span>
-                            </Card>
-
-                            <Card className="p-3 sm:p-4 bg-accent/30 dark:bg-zinc-900/40 rounded-2xl flex flex-col items-center justify-center text-center card-chunky card-chunky-interactive">
-                                <div className="w-9 h-9 rounded-full bg-yellow-500/10 flex items-center justify-center mb-1.5">
-                                    <Trophy className="w-4 h-4 text-yellow-500" />
-                                </div>
-                                <span className="text-lg sm:text-xl font-black">
-                                    Lvl {profileUser.level || 1}
-                                </span>
-                                <span className="text-[10px] uppercase text-muted-foreground font-bold tracking-wide">
-                                    {(() => {
-                                        const progress = getLevelProgress(
-                                            profileUser.xp || 0,
-                                            profileUser.level || 1,
-                                        );
-                                        return `${progress.remainingXP} XP to next`;
-                                    })()}
-                                </span>
-                            </Card>
-                        </div>
-                    )}
-
                     <div className="flex gap-6 mt-6 pb-3 border-b border-border/50">
                         <button
                             onClick={() => {
@@ -807,48 +660,14 @@ export default function ProfileClient({ username: initialUsername }) {
                 </div>
             </div>
 
-            {/* Activity Heatmap */}
-            {profileUser && (
-                <div className="relative z-10 max-w-3xl w-full mx-auto px-4 sm:px-6 pb-2 mt-1">
-                    <ActivityHeatmap username={username} />
-                </div>
-            )}
-
-            {/* Tabs */}
+            {/* Posts header — X style */}
             <div className="sticky top-0 z-20 flex border-b border-border mt-2 bg-background/80 backdrop-blur-md max-w-3xl w-full mx-auto sm:border-x sm:border-border/40">
-                <button
-                    onClick={() => setActiveTab("posts")}
-                    className={`flex-1 sm:flex-none px-6 py-3.5 font-bold text-sm transition-colors relative ${
-                        activeTab === "posts"
-                            ? "text-foreground"
-                            : "text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                    Posts
-                    {activeTab === "posts" && (
-                        <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-primary rounded-full" />
-                    )}
-                </button>
-                <button
-                    onClick={() => setActiveTab("clips")}
-                    className={`flex-1 sm:flex-none px-6 py-3.5 font-bold text-sm transition-colors relative ${
-                        activeTab === "clips"
-                            ? "text-foreground"
-                            : "text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                    Clips
-                    {activeTab === "clips" && (
-                        <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-primary rounded-full" />
-                    )}
-                </button>
+                <div className="px-6 py-3.5 font-bold text-sm text-foreground">Posts</div>
             </div>
 
             {/* Content Section */}
             <div className="relative z-10 flex-1 max-w-3xl w-full mx-auto sm:border-x sm:border-border/40">
-                {activeTab === "posts" ? (
-                    <>
-                        {postsLoading && posts.length === 0 ? (
+                {postsLoading && posts.length === 0 ? (
                             [1, 2, 3].map((i) => <PostSkeleton key={i} />)
                         ) : posts.length === 0 ? (
                             <EmptyState
@@ -919,68 +738,6 @@ export default function ProfileClient({ username: initialUsername }) {
                                 </div>
                             </>
                         )}
-                    </>
-                ) : (
-                    // Clips Tab
-                    <>
-                        {clipsLoading && clips.length === 0 ? (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-4">
-                                {[1, 2, 3, 4, 5, 6].map((i) => (
-                                    <div
-                                        key={i}
-                                        className="aspect-9/16 bg-accent/30 rounded-2xl animate-pulse"
-                                    />
-                                ))}
-                            </div>
-                        ) : clips.length === 0 ? (
-                            <EmptyState
-                                icon={FileText}
-                                title="No clips yet"
-                                description={
-                                    isOwnProfile
-                                        ? "You haven't uploaded any clips yet."
-                                        : `@${profileUser.username} hasn't uploaded any clips yet.`
-                                }
-                            />
-                        ) : (
-                            <>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-4">
-                                    {clips.map((clip) => (
-                                        <div
-                                            key={clip._id}
-                                            className="aspect-9/16 relative rounded-2xl overflow-hidden cursor-pointer group shadow-sm hover:shadow-lg transition-shadow duration-300 bg-accent/20"
-                                            onClick={() => {
-                                                // TODO: Navigate to specific clip view
-                                                // For now, navigate to clips feed
-                                                router.push("/clips");
-                                            }}
-                                        >
-                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                                            <div className="absolute inset-x-0 bottom-0 h-14 bg-linear-to-t from-black/60 to-transparent pointer-events-none" />
-                                            <div className="absolute bottom-2 left-2.5 flex items-center gap-1 text-white text-xs font-semibold">
-                                                <Heart className="w-4 h-4 fill-white" />
-                                                {clip.likesCount}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {hasMoreClips && (
-                                    <div
-                                        ref={clipsSentinelRef}
-                                        className="flex justify-center py-8"
-                                    >
-                                        {clipsLoading && (
-                                            <div className="animate-pulse text-muted-foreground">
-                                                Loading more clips...
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </>
-                )}
             </div>
 
             {/* Edit Profile Drawer */}

@@ -20,11 +20,6 @@ const PUBLIC_ENDPOINTS = [
     },
     {
         method: "GET",
-        path: "/api/leaderboard",
-        description: "Top contributors by reputation (public).",
-    },
-    {
-        method: "GET",
         path: "/api/events",
         description: "Upcoming campus events (public).",
     },

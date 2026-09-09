@@ -5,7 +5,6 @@ import { getCurrentUser } from "@/lib/auth";
 import { sanitizeString } from "@/utils/validators";
 import { extractHashtags } from "@/utils/hashtags";
 import { indexHashtags } from "@/lib/hashtag-utils";
-import { awardXP } from "@/lib/gamification";
 import { deleteCachePattern } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/sanitize";
@@ -131,19 +130,7 @@ export async function POST(request) {
             console.error("Background hashtag indexing error:", err),
         );
 
-        // Award XP for posting
-        const xpResult = await awardXP(currentUser._id, "post");
-
-        return NextResponse.json(
-            {
-                ...post.toObject(),
-                xpAwarded: xpResult.xpAwarded,
-                newXP: xpResult.newXP,
-                newLevel: xpResult.newLevel,
-                leveledUp: xpResult.leveledUp,
-            },
-            { status: 201 },
-        );
+        return NextResponse.json(post.toObject(), { status: 201 });
     } catch (error) {
         console.error("Post creation error:", error);
         return NextResponse.json(

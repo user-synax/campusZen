@@ -4,7 +4,6 @@ import { getMarkdownContent, getMdTwinContent } from "@/lib/markdown-content";
 const protectedRoutes = [
     "/feed",
     "/search",
-    "/leaderboard",
     "/notifications",
     "/communities",
     "/resources",
@@ -12,7 +11,6 @@ const protectedRoutes = [
     "/bookmarks",
     "/chats",
     "/events",
-    "/clips",
     "/connect",
 ];
 
@@ -65,7 +63,6 @@ function agentView() {
             "communities",
             "posts",
             "events",
-            "leaderboard",
             "resources",
             "mcp",
         ],
@@ -80,7 +77,6 @@ function agentView() {
             communities: "GET /api/communities",
             stats: "GET /api/public/stats",
             events: "GET /api/events",
-            leaderboard: "GET /api/leaderboard",
             health: "GET /api/health",
             createPost: "POST /api/posts/create",
             openapi: "https://campuszen.tech/openapi.json",

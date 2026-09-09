@@ -6,7 +6,6 @@ import { sanitizeMongoInput } from "@/lib/sanitize";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { validateObjectId } from "@/utils/validators";
 import { createNotification } from "@/lib/notifications";
-import { awardXP } from "@/lib/gamification";
 import { findOrCreateDMConversation } from "@/lib/dms";
 
 export async function POST(request) {
@@ -135,17 +134,10 @@ export async function POST(request) {
             console.error("Connect notification error:", err),
         );
 
-        // Award XP (mirror /api/follow amounts: 100 XP)
-        const xpResult = await awardXP(currentUser._id, "follow");
-
         return NextResponse.json({
             success: true,
             conversationId: conversation._id,
             alreadyConnected: false,
-            xpAwarded: xpResult.xpAwarded,
-            newXP: xpResult.newXP,
-            newLevel: xpResult.newLevel,
-            leveledUp: xpResult.leveledUp,
         });
     } catch (error) {
         console.error("Connect toggle error:", error);

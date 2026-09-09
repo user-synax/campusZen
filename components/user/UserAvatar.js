@@ -5,7 +5,6 @@ import Image from "next/image";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/context/ThemeContext";
-import { getRankForLevel } from "@/lib/ranks";
 
 // Simple ring configurations - easy to adjust!
 const RING_CONFIGS = {
@@ -92,9 +91,8 @@ const UserAvatar = memo(function UserAvatar({
         activeRing = RING_CONFIGS.founder;
     } else if (user?.isPro) {
         activeRing = RING_CONFIGS.pro;
-    } else if (user?.level !== undefined) {
-        const rank = getRankForLevel(user.level);
-        activeRing = RING_CONFIGS[rank.name.toLowerCase()];
+    } else {
+        activeRing = RING_CONFIGS.rookie;
     }
 
     // Calculate appropriate sizes based on the size prop

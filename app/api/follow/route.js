@@ -4,7 +4,6 @@ import User from '@/models/User';
 import { getCurrentUser } from '@/lib/auth';
 import { validateObjectId } from '@/utils/validators';
 import { createNotification, deleteNotification } from '@/lib/notifications';
-import { awardXP } from '@/lib/gamification';
 
 import { applyRateLimit } from '@/lib/rate-limit';
 import { sanitizeMongoInput } from '@/lib/sanitize';
@@ -72,25 +71,17 @@ export async function POST(request) {
 
     await Promise.all([currentUser.save(), targetUser.save()]);
 
-    let xpResult = { xpAwarded: false };
     if (nowFollowing) {
       createNotification({
         recipient: targetUserId,
         sender: currentUser._id,
         type: 'follow'
       }).catch(err => console.error('Operation failed:', err));
-
-      // Award XP for following someone
-      xpResult = await awardXP(currentUser._id, 'follow');
     }
 
     return NextResponse.json({
       following: nowFollowing,
       followersCount: targetUser.followers.length,
-      xpAwarded: xpResult.xpAwarded,
-      newXP: xpResult.newXP,
-      newLevel: xpResult.newLevel,
-      leveledUp: xpResult.leveledUp
     });
   } catch (error) {
     console.error('Follow toggle error:', error);

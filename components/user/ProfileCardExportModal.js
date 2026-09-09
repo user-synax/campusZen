@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { getBannerUrl } from "@/utils/defaultBanner";
-import { getRankForLevel } from "@/lib/ranks";
+function getRankForLevel() { return { name: "Member", badge: "" }; }
 
 const THEMES = [
     // Free Themes

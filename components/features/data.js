@@ -9,8 +9,6 @@ import {
     MessageSquare,
     Network,
     Sparkles,
-    Trophy,
-    Video,
 } from "lucide-react";
 
 /**
@@ -29,7 +27,6 @@ export const CATEGORIES = [
     { id: "all", label: "Everything" },
     { id: "social", label: "Social" },
     { id: "learn", label: "Learn" },
-    { id: "rewards", label: "Rewards" },
 ];
 
 export const PRODUCT_FEATURES = [
@@ -59,18 +56,6 @@ export const PRODUCT_FEATURES = [
         ],
     },
     {
-        id: "leaderboard",
-        icon: Trophy,
-        category: "rewards",
-        title: "Leaderboard & Reputation",
-        body: "Earn reputation for contributing. Climb global, weekly, and college leaderboards, unlock ranks, and show off your standing in the community.",
-        detail: [
-            "Global, weekly and college boards",
-            "Reputation for contributing",
-            "Unlockable ranks",
-        ],
-    },
-    {
         id: "events",
         icon: Calendar,
         category: "learn",
@@ -93,14 +78,6 @@ export const PRODUCT_FEATURES = [
             "Approved materials only",
             "Shared by your classmates",
         ],
-    },
-    {
-        id: "clips",
-        icon: Video,
-        category: "social",
-        title: "Clips",
-        body: "Short campus video clips to share moments, notes, and highlights with your network.",
-        detail: ["Short-form campus video", "Moments, notes and highlights"],
     },
     {
         id: "connect",
@@ -252,11 +229,6 @@ export const FAQ = [
         id: "pro",
         q: "What does Pro add?",
         a: "Extras on top of the free feed, such as creating polls. Pricing is the source of truth for the current list, so check there rather than trusting a summary.",
-    },
-    {
-        id: "reputation",
-        q: "How do I climb the leaderboard?",
-        a: "By contributing. Reputation accrues from what you post and share, and it feeds the global, weekly, and college-specific boards.",
     },
     {
         id: "agents",

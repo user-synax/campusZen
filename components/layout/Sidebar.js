@@ -26,7 +26,6 @@ import {
     Star,
     Rocket,
     ShieldCheck,
-    Video,
     ChevronDown,
     ChevronRight,
     Link2,
@@ -37,7 +36,6 @@ import { useTheme } from "@/context/ThemeContext";
 import { useChatUnreadCount } from "@/context/ChatUnreadContext";
 import AnimatedCount from "@/components/ui/AnimatedCount";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Logo from "@/components/shared/Logo";
 import useUser from "@/hooks/useUser";
@@ -50,7 +48,6 @@ import { useCat } from "@/context/CatContext";
 import clientCache from "@/lib/client-cache";
 import {
     primaryNavItems as basePrimaryNavItems,
-    gamificationItems,
     moreItems,
     bottomNavItems,
     adminItems as baseAdminItems,
@@ -71,8 +68,6 @@ import {
     DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { PREMIUM_THEMES } from "@/context/ThemeContext";
-import { getLevelProgress } from "@/lib/ranks";
-import { CircleStar } from "lucide-react";
 
 // ─── localStorage helpers ─────────────────────────────────────────────────────
 function readLocalBool(key, defaultValue) {
@@ -216,10 +211,6 @@ export default function Sidebar() {
                   : item,
           )
         : [];
-
-    const progress = user
-        ? getLevelProgress(user.xp || 0, user.level || 1)
-        : null;
 
     const proFeatures = [
         {
@@ -374,24 +365,6 @@ export default function Sidebar() {
 
                     <div className="hidden lg:block">
                         <CollapsibleSection
-                            label="Gamification"
-                            storageKey="cx_sidebar_gamification_open"
-                            defaultOpen={false}
-                        >
-                            {gamificationItems.map((item) => renderNavItem(item))}
-                        </CollapsibleSection>
-                    </div>
-                    <div className="lg:hidden mt-2">
-                        <CollapsibleSectionIconOnly
-                            storageKey="cx_sidebar_gamification_open"
-                            defaultOpen={false}
-                        >
-                            {gamificationItems.map((item) => renderNavItem(item))}
-                        </CollapsibleSectionIconOnly>
-                    </div>
-
-                    <div className="hidden lg:block">
-                        <CollapsibleSection
                             label="More"
                             storageKey="cx_sidebar_more_open"
                             defaultOpen={false}
@@ -468,27 +441,10 @@ export default function Sidebar() {
                     )}
                 </nav>
 
-                {/* Bottom: XP + profile + actions */}
+                {/* Bottom: profile + actions */}
                 <div className="shrink-0 border-t border-border/40 p-2 space-y-1.5">
                     {!loading && user && user.username && (
                         <>
-                            {/* XP progress card */}
-                            <div className="card-chunky hidden lg:block px-3 py-2.5 bg-accent/40 space-y-2">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wide">
-                                        Level {user.level || 1}
-                                    </span>
-                                    <span className="text-[10px] text-muted-foreground/60 tabular-nums">
-                                        {progress?.xpInCurrentLevel || 0} /{" "}
-                                        {progress?.xpNeededForNext || 0} XP
-                                    </span>
-                                </div>
-                                <Progress
-                                    value={progress?.progressPercentage || 0}
-                                    className="h-1"
-                                />
-                            </div>
-
                             {/* User profile card */}
                             <Link href={`/profile/${user.username}`}>
                                 <div

@@ -27,7 +27,6 @@ import {
     Star,
     Rocket,
     ShieldCheck,
-    Video,
     Link2,
     Check,
     ChevronDown,
@@ -132,7 +131,6 @@ export default function MobileNav() {
 
     const navItems = [
         { href: "/feed", icon: Home, label: "Home" },
-        { href: "/clips", icon: Video, label: "Clips" },
         {
             href: "/chats",
             icon: MessageSquare,
@@ -370,25 +368,6 @@ export default function MobileNav() {
                                         <GraduationCap className="w-5 h-5" />
                                         <span className="text-base font-medium">
                                             Communities
-                                        </span>
-                                    </Button>
-                                </Link>
-                                <Link
-                                    href="/leaderboard"
-                                    onClick={() => setOpen(false)}
-                                >
-                                    <Button
-                                        variant="ghost"
-                                        className={cn(
-                                            "w-full justify-start gap-4 h-12 px-3",
-                                            pathname === "/leaderboard"
-                                                ? "bg-accent text-accent-foreground"
-                                                : "text-muted-foreground",
-                                        )}
-                                    >
-                                        <BarChart2 className="w-5 h-5" />
-                                        <span className="text-base font-medium">
-                                            Leaderboard
                                         </span>
                                     </Button>
                                 </Link>

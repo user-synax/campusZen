@@ -29,7 +29,6 @@ import {
 } from "@/components/ui/dialog";
 import {
     primaryNavItems as basePrimaryNavItems,
-    gamificationItems,
     moreItems,
     bottomNavItems,
     adminItems as baseAdminItems,
@@ -57,7 +56,6 @@ export default function Dock() {
     );
 
     const moreNavItems = [
-        ...gamificationItems,
         ...moreItems,
         ...bottomNavItems,
         ...(isAdminUser ? baseAdminItems : []),
