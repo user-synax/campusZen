@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -39,6 +39,7 @@ import {
     SheetHeader,
     SheetTitle,
     SheetTrigger,
+    SheetClose,
 } from "@/components/ui/sheet";
 import {
     Dialog,
@@ -68,6 +69,8 @@ export default function MobileNav() {
     const [open, setOpen] = useState(false);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [themeOpen, setThemeOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
 
     const handleLogout = async () => {
         try {
@@ -147,22 +150,22 @@ export default function MobileNav() {
 
     return (
         <>
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border supports-[backdrop-filter]:bg-background/80">
+            <nav suppressHydrationWarning className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-xl border-t border-border supports-[backdrop-filter]:bg-background/80">
                 <div className="mx-auto max-w-[500px] px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] flex items-center gap-1">
                     <div className="flex flex-1 items-center justify-between gap-1 bg-muted/40 rounded-full p-1">
                         {navItems.map((item) => {
                             const Icon = item.icon;
-                            const isActive = pathname === item.href || (item.href !== "/feed" && pathname.startsWith(item.href));
+                            const isActive = mounted && (pathname === item.href || (item.href !== "/feed" && pathname.startsWith(item.href)));
                             return (
                                 <Link
                                     key={item.href}
                                     href={item.href}
                                     aria-selected={isActive}
-                                    className={`relative flex-1 flex flex-col items-center justify-center gap-0.5 py-4 rounded-full hover:cursor-pointer transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] ${isActive ? "bg-background text-foreground shadow-sm border border-border/50 font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-background/50"}`}
+                                    className={`relative flex-1 flex flex-col items-center justify-center gap-0.5 py-3 rounded-full hover:cursor-pointer transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] ${isActive ? "bg-background text-foreground shadow-sm border border-border/50 font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-background/50"}`}
                                 >
                                     <span className="relative">
-                                        <Icon className={`w-[20px] h-[20px] transition-transform duration-[var(--duration-fast)] ${isActive ? "scale-[1.02]" : "scale-100"}`} strokeWidth={isActive ? 2.2 : 1.8} />
-                                        {item.badge > 0 && (
+                                        <Icon className={`w-[22px] h-[22px] transition-transform duration-[var(--duration-fast)] ${isActive ? "scale-[1.02]" : "scale-100"}`} strokeWidth={isActive ? 2.2 : 1.8} />
+                                        {item.badge > 0 && mounted && (
                                             <span className="t-badge" data-open="true">
                                                 <span className="t-badge-dot bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border-2 border-background">
                                                     <AnimatedCount value={item.badge} max={99} />
@@ -184,293 +187,136 @@ export default function MobileNav() {
                             </SheetTrigger>
                             <SheetContent
                         side="right"
-                        className="w-70 p-0 flex flex-col"
+                        className="w-[78vw] max-w-[300px] p-0 flex flex-col bg-[#090909] border-l border-[#262626] overflow-hidden rounded-l-[20px]"
                     >
-                        <SheetHeader className="p-6 border-b text-left">
-                            <SheetTitle>
+                        <SheetHeader className="shrink-0 flex flex-row items-center justify-between px-4 pt-6 pb-4 border-b border-[#262626] bg-[#090909] text-left space-y-0">
+                            <SheetTitle className="flex items-center">
                                 <Logo size="sm" />
                             </SheetTitle>
                         </SheetHeader>
 
-                        <div className="flex flex-col flex-1 overflow-y-auto">
-                            <div className="p-4 border-b">
-                                {!loading && user && (
-                                    <Link
-                                        href={`/profile/${user?.username}`}
-                                        onClick={() => setOpen(false)}
-                                        className="flex items-center gap-3 hover:bg-accent/50 p-2 rounded-lg transition-colors"
-                                    >
-                                        <Avatar className="w-10 h-10 border border-border">
-                                            <AvatarImage
-                                                src={user.avatar}
-                                                alt={user.name}
-                                            />
-                                            <AvatarFallback className="bg-secondary">
-                                                {user.name?.[0]}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold truncate">
-                                                {user.name}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground truncate">
-                                                @{user.username}
-                                            </p>
-                                        </div>
-                                    </Link>
+                        <div className="flex flex-col flex-1 overflow-y-auto custom-scrollbar">
+                            <div className="p-3 border-b border-[#1c1c1c]">
+                                {mounted && !loading && user && (
+                                    <SheetClose asChild>
+                                        <Link
+                                            href={`/profile/${user?.username}`}
+                                            className="flex items-center gap-3 p-2.5 rounded-[12px] bg-[#141414] border border-[#262626] hover:bg-[#1c1c1c] hover:border-[#2a2a2a] hover:cursor-pointer transition-all duration-[var(--duration-fast)] group"
+                                        >
+                                            <Avatar className="w-9 h-9 border border-[#262626] group-hover:border-[#333] transition-colors">
+                                                <AvatarImage src={user.avatar} alt={user.name} />
+                                                <AvatarFallback className="bg-[#1c1c1c] text-white text-xs font-bold">
+                                                    {user.name?.[0]}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[13px] font-semibold truncate text-white leading-none">
+                                                    {user.name}
+                                                </p>
+                                                <p className="text-[12px] text-[#999] truncate">
+                                                    @{user.username}
+                                                </p>
+                                            </div>
+                                            <ChevronRight className="w-4 h-4 text-[#666] group-hover:text-white transition-colors" />
+                                        </Link>
+                                    </SheetClose>
                                 )}
-
                             </div>
 
-                            <nav className="p-2 space-y-1">
-                                <Link href="/search" onClick={() => setOpen(false)}>
-                                    <Button
-                                        variant="ghost"
-                                        className={cn(
-                                            "w-full justify-start gap-4 h-12 px-3",
-                                            pathname === "/search"
-                                                ? "bg-accent text-accent-foreground font-bold"
-                                                : "text-muted-foreground",
-                                        )}
-                                    >
-                                        <Search className="w-5 h-5" />
-                                        <span className="text-base font-medium">Explore</span>
-                                    </Button>
-                                </Link>
-                                <Link
-                                    href="/bookmarks"
-                                    onClick={() => setOpen(false)}
-                                >
-                                    <Button
-                                        variant="ghost"
-                                        className={cn(
-                                            "w-full justify-start gap-4 h-12 px-3",
-                                            pathname === "/bookmarks"
-                                                ? "bg-accent text-accent-foreground"
-                                                : "text-muted-foreground",
-                                        )}
-                                    >
-                                        <Bookmark className="w-5 h-5" />
-                                        <span className="text-base font-medium">
-                                            Bookmarks
-                                        </span>
-                                    </Button>
-                                </Link>
-                                <Link
-                                    href="/connect"
-                                    onClick={() => setOpen(false)}
-                                >
-                                    <Button
-                                        variant="ghost"
-                                        className={cn(
-                                            "w-full justify-start gap-4 h-12 px-3",
-                                            pathname === "/connect"
-                                                ? "bg-accent text-accent-foreground"
-                                                : "text-muted-foreground",
-                                        )}
-                                    >
-                                        <Link2 className="w-5 h-5" />
-                                        <span className="text-base font-medium">
-                                            Connect
-                                        </span>
-                                    </Button>
-                                </Link>
-                                <Link
-                                    href="/community"
-                                    onClick={() => setOpen(false)}
-                                >
-                                    <Button
-                                        variant="ghost"
-                                        className={cn(
-                                            "w-full justify-start gap-4 h-12 px-3",
-                                            pathname === "/community"
-                                                ? "bg-accent text-accent-foreground"
-                                                : "text-muted-foreground",
-                                        )}
-                                    >
-                                        <GraduationCap className="w-5 h-5" />
-                                        <span className="text-base font-medium">
-                                            Communities
-                                        </span>
-                                    </Button>
-                                </Link>
-
-
-
-
-                                {/* Theme Picker */}
-                                {user?.isPro ? (
-                                    <>
-                                        <Button
-                                            variant="ghost"
-                                            onClick={() => setThemeOpen(!themeOpen)}
-                                            className={cn(
-                                                "w-full justify-start gap-4 h-12 px-3",
-                                                themeOpen ? "bg-accent text-accent-foreground" : "text-muted-foreground",
-                                            )}
-                                        >
-                                            <Palette className="w-5 h-5" />
-                                            <span className="text-base font-medium flex-1 text-left">
-                                                Customize
-                                            </span>
-                                            {themeOpen ? (
-                                                <ChevronDown className="w-4 h-4 shrink-0" />
-                                            ) : (
-                                                <ChevronRight className="w-4 h-4 shrink-0" />
-                                            )}
-                                        </Button>
-                                        {themeOpen && (
-                                            <div className="pl-12 pr-3 py-2 space-y-1">
-                                                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 px-2 mb-1">Standard</p>
-                                                <button
-                                                    onClick={() => { setTheme("light"); setThemeOpen(false); setOpen(false); }}
-                                                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all hover:bg-accent"
+                            <nav suppressHydrationWarning className="p-2 space-y-3">
+                                <div className="space-y-0.5">
+                                    <p className="px-3 py-1 text-[11px] font-semibold tracking-widest uppercase text-[#666]">Discover</p>
+                                    {[
+                                        { href: "/search", icon: Search, label: "Explore", active: mounted && pathname === "/search" },
+                                        { href: "/bookmarks", icon: Bookmark, label: "Bookmarks", active: mounted && pathname === "/bookmarks" },
+                                        { href: "/connect", icon: Link2, label: "Connect", active: mounted && pathname === "/connect" },
+                                        { href: "/community", icon: GraduationCap, label: "Communities", active: mounted && pathname === "/community" },
+                                    ].map((item) => (
+                                        <SheetClose key={item.href} asChild>
+                                            <Link href={item.href} className="block">
+                                                <span
+                                                    className={cn(
+                                                        "flex items-center gap-3 px-3 py-2.5 rounded-full text-[13px] font-medium transition-all duration-[var(--duration-fast)] hover:cursor-pointer",
+                                                        item.active
+                                                            ? "bg-white text-black font-semibold shadow-sm"
+                                                            : "text-[#999] hover:text-white hover:bg-[#141414] border border-transparent hover:border-[#262626]",
+                                                    )}
                                                 >
-                                                    <span className="w-4 h-4 rounded-full bg-[#ffffff] border border-border shrink-0" />
-                                                    Light
-                                                    {theme === "light" && <Check className="w-4 h-4 ml-auto text-primary" />}
-                                                </button>
-                                                <button
-                                                    onClick={() => { setTheme("dark"); setThemeOpen(false); setOpen(false); }}
-                                                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all hover:bg-accent"
-                                                >
-                                                    <span className="w-4 h-4 rounded-full bg-[#0a0a0a] border border-border shrink-0" />
-                                                    Dark
-                                                    {theme === "dark" && <Check className="w-4 h-4 ml-auto text-primary" />}
-                                                </button>
-                                                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 px-2 mt-2 mb-1">Premium</p>
-                                                {PREMIUM_THEMES.map((preset) => (
-                                                    <button
-                                                        key={preset.id}
-                                                        onClick={() => { setTheme(preset.id); setThemeOpen(false); setOpen(false); }}
-                                                        className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all hover:bg-accent"
-                                                    >
-                                                        <span
-                                                            className="w-4 h-4 rounded-full shrink-0"
-                                                            style={{ backgroundColor: preset.colors.primary }}
-                                                        />
-                                                        {preset.name}
-                                                        {theme === preset.id && <Check className="w-4 h-4 ml-auto text-primary" />}
-                                                    </button>
-                                                ))}
+                                                    <item.icon className="w-[18px] h-[18px] shrink-0" />
+                                                    {item.label}
+                                                </span>
+                                            </Link>
+                                        </SheetClose>
+                                    ))}
+                                </div>
+
+
+
+
+                                <div className="space-y-3">
+                                    <p className="px-3 py-1 text-[11px] font-semibold tracking-widest uppercase text-[#666]">Personalize</p>
+                                    {user?.isPro ? (
+                                        <div className="t-acc" data-open={themeOpen}>
+                                            <button
+                                                onClick={() => setThemeOpen(!themeOpen)}
+                                                className="flex items-center justify-between w-full px-3 py-2.5 rounded-full text-[13px] font-medium bg-[#141414] border border-[#262626] hover:bg-[#1c1c1c] hover:cursor-pointer transition-all duration-[var(--duration-fast)] text-white"
+                                            >
+                                                <span className="flex items-center gap-2.5"><Palette className="w-4 h-4" /> Customize</span>
+                                                <span className="t-acc-chevron inline-flex"><ChevronDown className="w-3.5 h-3.5" /></span>
+                                            </button>
+                                            <div className="t-acc-panel">
+                                                <div className="t-acc-panel-inner">
+                                                    <div className="pl-2 pr-1 py-2 space-y-1">
+                                                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#666] px-2 mb-1">Standard</p>
+                                                        <button onClick={() => { setTheme("light"); setThemeOpen(false); setOpen(false); }} className="flex items-center gap-2.5 w-full px-3 py-2 rounded-full text-[13px] font-medium hover:bg-[#141414] border border-transparent hover:border-[#262626] hover:cursor-pointer transition-colors text-white">
+                                                            <span className="w-3.5 h-3.5 rounded-full bg-white border border-[#262626] shrink-0" /> Light {theme === "light" && <Check className="w-3.5 h-3.5 ml-auto" />}
+                                                        </button>
+                                                        <button onClick={() => { setTheme("dark"); setThemeOpen(false); setOpen(false); }} className="flex items-center gap-2.5 w-full px-3 py-2 rounded-full text-[13px] font-medium hover:bg-[#141414] border border-transparent hover:border-[#262626] hover:cursor-pointer transition-colors text-white">
+                                                            <span className="w-3.5 h-3.5 rounded-full bg-[#090909] border border-[#262626] shrink-0" /> Dark {theme === "dark" && <Check className="w-3.5 h-3.5 ml-auto" />}
+                                                        </button>
+                                                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#666] px-2 mt-2 mb-1">Premium</p>
+                                                        {PREMIUM_THEMES.map((preset) => (
+                                                            <button key={preset.id} onClick={() => { setTheme(preset.id); setThemeOpen(false); setOpen(false); }} className="flex items-center gap-2.5 w-full px-3 py-2 rounded-full text-[13px] font-medium hover:bg-[#141414] border border-transparent hover:border-[#262626] hover:cursor-pointer transition-colors text-white">
+                                                                <span className="w-3.5 h-3.5 rounded-full shrink-0 border border-[#262626]" style={{ backgroundColor: preset.colors.primary }} /> {preset.name} {theme === preset.id && <Check className="w-3.5 h-3.5 ml-auto" />}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
                                             </div>
-                                        )}
-                                    </>
-                                ) : (
-                                    <Button
-                                        variant="ghost"
-                                        onClick={() => {
-                                            setOpen(false);
-                                            setShowUpgradeModal(true);
-                                        }}
-                                        className={cn(
-                                            "w-full justify-start gap-4 h-12 px-3 text-muted-foreground",
-                                        )}
-                                    >
-                                        <div className="relative">
-                                            <Palette className="w-5 h-5" />
-                                            <Lock className="w-3 h-3 absolute -bottom-0.5 -right-0.5 text-muted-foreground" />
                                         </div>
-                                        <span className="text-base font-medium">
-                                            Customize
-                                        </span>
-                                    </Button>
-                                )}
+                                    ) : (
+                                        <button onClick={() => { setOpen(false); setShowUpgradeModal(true); }} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-full text-[13px] font-medium bg-[#141414] border border-[#262626] hover:bg-[#1c1c1c] hover:cursor-pointer transition-colors text-white">
+                                            <span className="relative"><Palette className="w-4 h-4" /><Lock className="w-2.5 h-2.5 absolute -bottom-1 -right-1 bg-[#141414] rounded-full p-0.5" /></span> Customize
+                                        </button>
+                                    )}
+                                </div>
 
-                                {user && isAdmin(user) && (
-                                    <Link
-                                        href="/admin"
-                                        onClick={() => setOpen(false)}
-                                    >
-                                        <Button
-                                            variant="ghost"
-                                            className={cn(
-                                                "w-full justify-start gap-4 h-12 px-3 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10",
-                                                pathname === "/admin"
-                                                    ? "bg-emerald-500/10 font-bold"
-                                                    : "",
-                                            )}
-                                        >
-                                            <Shield className="w-5 h-5" />
-                                            <span className="text-base font-medium">
-                                                Admin Dashboard
-                                            </span>
-                                        </Button>
-                                    </Link>
-                                )}
-
-                                <Link
-                                    href={`/profile/${user?.username}`}
-                                    onClick={() => setOpen(false)}
-                                >
-                                    <Button
-                                        variant="ghost"
-                                        className={cn(
-                                            "w-full justify-start gap-4 h-12 px-3",
-                                            pathname ===
-                                                `/profile/${user?.username}`
-                                                ? "bg-accent text-accent-foreground"
-                                                : "text-muted-foreground",
-                                        )}
-                                    >
-                                        <User className="w-5 h-5" />
-                                        <span className="text-base font-medium">
-                                            Profile
-                                        </span>
-                                    </Button>
-                                </Link>
-                                <Link
-                                    href="/settings"
-                                    onClick={() => setOpen(false)}
-                                >
-                                    <Button
-                                        variant="ghost"
-                                        className={cn(
-                                            "w-full justify-start gap-4 h-12 px-3",
-                                            pathname === "/settings"
-                                                ? "bg-accent text-accent-foreground"
-                                                : "text-muted-foreground",
-                                        )}
-                                    >
-                                        <Settings className="w-5 h-5" />
-                                        <span className="text-base font-medium">
-                                            Settings
-                                        </span>
-                                    </Button>
-                                </Link>
-                                <Link
-                                    href="/docs"
-                                    onClick={() => setOpen(false)}
-                                >
-                                    <Button
-                                        variant="ghost"
-                                        className={cn(
-                                            "w-full justify-start gap-4 h-12 px-3",
-                                            pathname === "/docs"
-                                                ? "bg-accent text-accent-foreground"
-                                                : "text-muted-foreground",
-                                        )}
-                                    >
-                                        <BookText className="w-5 h-5" />
-                                        <span className="text-base font-medium">
-                                            Docs
-                                        </span>
-                                    </Button>
-                                </Link>
+                                <div className="space-y-3">
+                                    <p className="px-3 py-1 text-[11px] font-semibold tracking-widest uppercase text-[#666]">Account</p>
+                                    {[
+                                        { href: `/profile/${user?.username}`, icon: User, label: "Profile", active: mounted && pathname === `/profile/${user?.username}` },
+                                        { href: "/settings", icon: Settings, label: "Settings", active: mounted && pathname === "/settings" },
+                                        { href: "/docs", icon: BookText, label: "Docs", active: mounted && pathname === "/docs" },
+                                        ...(user && isAdmin(user) ? [{ href: "/admin", icon: Shield, label: "Admin Dashboard", active: mounted && pathname === "/admin", tone: "text-emerald-400" }] : []),
+                                    ].map((item) => (
+                                        <SheetClose key={item.href} asChild>
+                                            <Link href={item.href} className="block">
+                                                <span className={cn("flex items-center gap-3 px-3 py-2.5 rounded-full text-[13px] font-medium border transition-all duration-[var(--duration-fast)] hover:cursor-pointer", item.active ? "bg-white text-black border-white font-semibold shadow-sm" : "bg-[#141414] border-[#262626] text-white hover:bg-[#1c1c1c] hover:border-[#2a2a2a]", item.tone)}>
+                                                    <item.icon className="w-4 h-4 shrink-0" /> {item.label}
+                                                </span>
+                                            </Link>
+                                        </SheetClose>
+                                    ))}
+                                </div>
                             </nav>
                         </div>
 
-                        <div className="p-4 border-t mt-auto space-y-2">
-                            <Button
-                                variant="ghost"
-                                onClick={handleLogout}
-                                className="w-full justify-start gap-4 h-12 px-3 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            >
-                                <LogOut className="w-5 h-5" />
-                                <span className="text-base font-medium">
-                                    Log out
-                                </span>
-                            </Button>
+                        <div className="p-3 pb-6 border-t border-[#1c1c1c] mt-auto bg-[#090909]">
+                            <SheetClose asChild>
+                                <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-full bg-[#141414] border border-[#262626] hover:bg-red-500/10 hover:border-red-500/20 hover:text-red-400 text-white text-[13px] font-medium hover:cursor-pointer transition-all duration-[var(--duration-fast)]">
+                                    <LogOut className="w-4 h-4" /> Log out
+                                </button>
+                            </SheetClose>
                         </div>
                     </SheetContent>
                 </Sheet>
