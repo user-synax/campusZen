@@ -34,45 +34,30 @@ export default function PostContent({
         [content, isMarkdown],
     );
 
-    // For markdown content, use MarkdownRenderer
     if (isMarkdown) {
         return (
             <div>
-                <MarkdownRenderer
-                    content={displayContent}
-                    className="text-[15px] leading-relaxed"
-                />
+                <MarkdownRenderer content={displayContent} className="text-[15px] leading-relaxed" />
                 {!expanded && shouldTruncate && "..."}
-
                 {shouldTruncate && (
                     <button
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setExpanded(!expanded);
-                        }}
-                        className="chip-chunky hover:cursor-pointer inline-block text-primary text-xs mt-1.5 px-2.5 py-1 font-semibold"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpanded(!expanded); }}
+                        className="inline text-[13px] text-[#4ba9e1] hover:underline font-medium ml-1 hover:cursor-pointer"
                     >
-                        {expanded ? "Show less" : "Read more"}
+                        {expanded ? "Show less" : "Show more"}
                     </button>
                 )}
             </div>
         );
     }
 
-    // For plain text, use original rendering with mentions/hashtags
     return (
         <div>
-            <div className="whitespace-pre-wrap break-words text-[15px] leading-relaxed text-foreground">
+            <div className="whitespace-pre-wrap break-words text-[15px] leading-[1.45] text-foreground">
                 {renderContentWithMentions(displayContent).map((segment, i) => {
                     if (segment.type === "hashtag") {
                         return (
-                            <Link
-                                key={i}
-                                href={`/hashtag/${segment.value}`}
-                                className="text-blue-400 hover:text-blue-300 hover:underline"
-                                onClick={(e) => e.stopPropagation()}
-                            >
+                            <Link key={i} href={`/hashtag/${segment.value}`} className="text-[#4ba9e1] hover:underline" onClick={(e) => e.stopPropagation()}>
                                 #{segment.value}
                             </Link>
                         );
@@ -80,14 +65,7 @@ export default function PostContent({
                         return <UserMention key={i} username={segment.value} />;
                     } else if (segment.type === "url") {
                         return (
-                            <a
-                                key={i}
-                                href={segment.value}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary hover:underline"
-                                onClick={(e) => e.stopPropagation()}
-                            >
+                            <a key={i} href={segment.value} target="_blank" rel="noopener noreferrer" className="text-[#4ba9e1] hover:underline break-all" onClick={(e) => e.stopPropagation()}>
                                 {segment.value}
                             </a>
                         );
@@ -97,8 +75,6 @@ export default function PostContent({
                 })}
                 {!expanded && shouldTruncate && "..."}
             </div>
-
-            {/* Show link previews if any URLs exist */}
             {urls.length > 0 && (
                 <div className="mt-2 space-y-2">
                     {urls.map((url, i) => (
@@ -106,17 +82,9 @@ export default function PostContent({
                     ))}
                 </div>
             )}
-
             {shouldTruncate && (
-                <button
-                    onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setExpanded(!expanded);
-                    }}
-                    className="chip-chunky hover:cursor-pointer inline-block text-primary text-xs mt-1.5 px-2.5 py-1 font-semibold"
-                >
-                    {expanded ? "Show less" : "Read more"}
+                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpanded(!expanded); }} className="inline text-[13px] text-[#4ba9e1] hover:underline font-medium ml-1 hover:cursor-pointer">
+                    {expanded ? "Show less" : "Show more"}
                 </button>
             )}
         </div>

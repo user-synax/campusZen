@@ -19,48 +19,29 @@ export default function PostImageGrid({ images }) {
 
     if (capped.length === 1) {
         return (
-            <div className="mt-2 rounded-xl overflow-hidden">
-                <ImageCell
-                    url={capped[0]}
-                    ratio="16/9"
-                    onClick={() => openImage(capped[0])}
-                />
+            <div className="mt-3 rounded-[12px] sm:rounded-[15px] overflow-hidden border border-border">
+                <ImageCell url={capped[0]} ratio="16/9" onClick={() => openImage(capped[0])} />
             </div>
         );
     }
 
     if (capped.length === 2) {
         return (
-            <div className="mt-2 grid grid-cols-2 gap-0.5 rounded-xl overflow-hidden">
+            <div className="mt-3 grid grid-cols-2 gap-0.5 rounded-[12px] sm:rounded-[15px] overflow-hidden border border-border">
                 {capped.map((url, i) => (
-                    <ImageCell
-                        key={i}
-                        url={url}
-                        ratio="1/1"
-                        onClick={() => openImage(url)}
-                    />
+                    <ImageCell key={i} url={url} ratio="1/1" onClick={() => openImage(url)} />
                 ))}
             </div>
         );
     }
 
-    // 3–6 images: first full-width, rest in 2-col grid
     const [first, ...rest] = capped;
     return (
-        <div className="mt-2 rounded-xl overflow-hidden flex flex-col gap-0.5">
-            <ImageCell
-                url={first}
-                ratio="16/9"
-                onClick={() => openImage(first)}
-            />
+        <div className="mt-3 rounded-[12px] sm:rounded-[15px] overflow-hidden border border-border flex flex-col gap-0.5">
+            <ImageCell url={first} ratio="16/9" onClick={() => openImage(first)} />
             <div className="grid grid-cols-2 gap-0.5">
                 {rest.map((url, i) => (
-                    <ImageCell
-                        key={i}
-                        url={url}
-                        ratio="1/1"
-                        onClick={() => openImage(url)}
-                    />
+                    <ImageCell key={i} url={url} ratio="1/1" onClick={() => openImage(url)} />
                 ))}
             </div>
         </div>
@@ -69,12 +50,11 @@ export default function PostImageGrid({ images }) {
 
 function ImageCell({ url, ratio, onClick }) {
     const paddingMap = { "16/9": "pb-[56.25%]", "1/1": "pb-[100%]" };
-
     return (
         <button
             type="button"
             onClick={onClick}
-            className={`relative w-full ${paddingMap[ratio]} block overflow-hidden bg-accent/20 hover:opacity-90 transition-opacity`}
+            className={`relative w-full ${paddingMap[ratio]} block overflow-hidden bg-accent/10 hover:opacity-[0.96] hover:cursor-pointer transition-opacity duration-[var(--duration-fast)]`}
             aria-label="View image"
         >
             <Image

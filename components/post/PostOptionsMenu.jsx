@@ -10,23 +10,21 @@ import {
   VolumeX, 
   Ban, 
   Flag, 
-  AlertTriangle,
   Copy
 } from 'lucide-react'
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger,
-  DropdownMenuLabel
-} from '@/components/ui/dropdown-menu'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { isAdmin, isFounder } from '@/lib/admin'
 import ReportModal from './ReportModal'
 import EditPostModal from './EditPostModal'
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuLabel,
+} from '@/components/motion/context-menu'
 
 export default function PostOptionsMenu({ 
   post, 
@@ -51,7 +49,7 @@ export default function PostOptionsMenu({
     const url = `${window.location.origin}/post/${post._id}`
     try {
       await navigator.clipboard.writeText(url)
-      toast.success('Link copied to clipboard!')
+      toast.success('Link copied')
     } catch (err) {
       toast.error('Failed to copy link')
     }
@@ -60,7 +58,7 @@ export default function PostOptionsMenu({
   const handleCopyText = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(post.content || '')
-      toast.success('Text copied! 📋')
+      toast.success('Text copied')
     } catch (err) {
       toast.error('Failed to copy text')
     }
@@ -106,11 +104,9 @@ export default function PostOptionsMenu({
   }, [post.author, isBlocking])
 
   const handleDelete = useCallback(async () => {
-    if (!window.confirm('Are you sure you want to delete this post?')) return
+    if (!window.confirm('Delete this post?')) return
     try {
-      const res = await fetch(`/api/posts/${post._id}`, {
-        method: 'DELETE'
-      })
+      const res = await fetch(`/api/posts/${post._id}`, { method: 'DELETE' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message)
       toast.success('Post deleted')
@@ -122,12 +118,10 @@ export default function PostOptionsMenu({
 
   const handlePin = useCallback(async () => {
     try {
-      const res = await fetch(`/api/posts/${post._id}/pin`, {
-        method: 'PATCH'
-      })
+      const res = await fetch(`/api/posts/${post._id}/pin`, { method: 'PATCH' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message)
-      toast.success(data.isPinned ? 'Post pinned to profile' : 'Post unpinned')
+      toast.success(data.isPinned ? 'Pinned to profile' : 'Unpinned')
       if (onPostUpdated) onPostUpdated({ ...post, isPinned: data.isPinned })
     } catch (error) {
       toast.error(error.message || 'Failed to pin post')
@@ -135,180 +129,96 @@ export default function PostOptionsMenu({
   }, [post._id, post, onPostUpdated])
 
   const handleAdminDelete = useCallback(async () => {
-    if (!window.confirm('Are you sure you want to remove this post? This cannot be undone.')) return
+    if (!window.confirm('Remove this post as admin?')) return
     try {
-      const res = await fetch(`/api/admin/posts/${post._id}`, {
-        method: 'DELETE'
-      })
+      const res = await fetch(`/api/admin/posts/${post._id}`, { method: 'DELETE' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message)
-      toast.success('Post removed by admin')
+      toast.success('Post removed')
       if (onPostDeleted) onPostDeleted(post._id)
     } catch (error) {
       toast.error(error.message || 'Failed to remove post')
     }
   }, [post._id, onPostDeleted])
 
-  const handleAdminBan = useCallback(async () => {
-    if (!window.confirm(`Ban @${post.author?.username}? They will no longer be able to access the platform.`)) return
-    try {
-      const res = await fetch(`/api/admin/users/ban`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: post.author?._id || post.author })
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message)
-      toast.success(`Banned @${post.author?.username}`)
-    } catch (error) {
-      toast.error(error.message || 'Failed to ban user')
-    }
-  }, [post.author])
-
-  const handleReportSuccess = useCallback(() => {
-    setShowReportModal(false)
-    toast.success('Report submitted. We\'ll review it shortly 🙏')
-  }, [])
-
-  const handleEditSuccess = useCallback((updatedPost) => {
-    setShowEditModal(false)
-    toast.success('Post updated successfully')
-    if (onPostUpdated) onPostUpdated(updatedPost)
-  }, [onPostUpdated])
+  const handleTriggerClick = (e) => {
+    e.stopPropagation()
+    e.preventDefault()
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = rect.left + rect.width / 2
+    const y = rect.bottom + 8
+    const evt = new MouseEvent('contextmenu', { clientX: x, clientY: y, bubbles: true })
+    e.currentTarget.dispatchEvent(evt)
+  }
 
   return (
     <>
-      <div onClick={(e) => e.stopPropagation()}>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 hover:bg-accent text-muted-foreground hover:text-foreground"
-            >
-              <MoreHorizontal className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          
-          <DropdownMenuContent align="end" className="w-56">
-            {/* Copy Text - for all users */}
-            <DropdownMenuItem onClick={handleCopyText}>
-              <Copy className="w-4 h-4 mr-2" />
-              Copy Text
-            </DropdownMenuItem>
+      <ContextMenu>
+        <ContextMenuTrigger>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground hover:cursor-pointer transition-colors duration-[var(--duration-fast)]"
+            onClick={handleTriggerClick}
+          >
+            <MoreHorizontal className="w-4 h-4" />
+          </Button>
+        </ContextMenuTrigger>
+        <ContextMenuContent className="w-56">
+          <ContextMenuItem onSelect={handleCopyText}>
+            <Copy className="w-4 h-4" /> Copy text
+          </ContextMenuItem>
+          <ContextMenuItem onSelect={handleCopyLink}>
+            <Link2 className="w-4 h-4" /> Copy link
+          </ContextMenuItem>
 
-            {/* Owner options */}
-            {isOwner && (
-              <>
-                <DropdownMenuItem onClick={() => setShowEditModal(true)}>
-                  <Pencil className="w-4 h-4 mr-2" />
-                  Edit Post
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handlePin}>
-                  <Pin className="w-4 h-4 mr-2" />
-                  {post.isPinned ? 'Unpin from profile' : 'Pin to Profile'}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleDelete} className="text-destructive">
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Post
-                </DropdownMenuItem>
-              </>
-            )}
+          {isOwner ? (
+            <>
+              <ContextMenuSeparator />
+              <ContextMenuItem onSelect={() => setShowEditModal(true)}>
+                <Pencil className="w-4 h-4" /> Edit post
+              </ContextMenuItem>
+              <ContextMenuItem onSelect={handlePin}>
+                <Pin className="w-4 h-4" /> {post.isPinned ? 'Unpin' : 'Pin to profile'}
+              </ContextMenuItem>
+              <ContextMenuSeparator />
+              <ContextMenuItem tone="destructive" onSelect={handleDelete}>
+                <Trash2 className="w-4 h-4" /> Delete post
+              </ContextMenuItem>
+            </>
+          ) : (
+            <>
+              <ContextMenuSeparator />
+              <ContextMenuItem onSelect={handleMute} disabled={isMuting}>
+                <VolumeX className="w-4 h-4" /> Mute @{post.author?.username}
+              </ContextMenuItem>
+              <ContextMenuItem tone="destructive" onSelect={handleBlock}>
+                <Ban className="w-4 h-4" /> Block @{post.author?.username}
+              </ContextMenuItem>
+              <ContextMenuSeparator />
+              <ContextMenuItem onSelect={() => setShowReportModal(true)}>
+                <Flag className="w-4 h-4" /> Report post
+              </ContextMenuItem>
+            </>
+          )}
 
-            {/* Non-owner options */}
-            {!isOwner && (
-              <>
-                <DropdownMenuItem onClick={handleCopyLink}>
-                  <Link2 className="w-4 h-4 mr-2" />
-                  Copy Link
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleMute} disabled={isMuting}>
-                  <VolumeX className="w-4 h-4 mr-2" />
-                  Mute @{post.author?.username}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowBlockConfirm(true)}>
-                  <Ban className="w-4 h-4 mr-2" />
-                  Block @{post.author?.username}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setShowReportModal(true)} className="text-amber-500">
-                  <Flag className="w-4 h-4 mr-2" />
-                  Report Post
-                </DropdownMenuItem>
-              </>
-            )}
+          {isAdminUser && !isOwner && (
+            <>
+              <ContextMenuSeparator />
+              <ContextMenuLabel>Admin</ContextMenuLabel>
+              <ContextMenuItem tone="destructive" onSelect={handleAdminDelete}>
+                <Trash2 className="w-4 h-4" /> Remove post
+              </ContextMenuItem>
+            </>
+          )}
+        </ContextMenuContent>
+      </ContextMenu>
 
-            {/* Admin options - show for everyone including owner */}
-            {isAdminUser && !isOwner && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  Admin Actions
-                </DropdownMenuLabel>
-                <DropdownMenuItem onClick={handleAdminDelete} className="text-destructive">
-                  <AlertTriangle className="w-4 h-4 mr-2" />
-                  Remove Post
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleAdminBan} className="text-destructive">
-                  <Ban className="w-4 h-4 mr-2" />
-                  Ban User
-                </DropdownMenuItem>
-              </>
-            )}
-
-            {/* Admin can also remove own posts but with different flow */}
-            {isAdminUser && isOwner && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleAdminDelete} className="text-destructive">
-                  <AlertTriangle className="w-4 h-4 mr-2" />
-                  Remove Post (Admin)
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      {/* Block confirmation AlertDialog */}
-      <AlertDialog open={showBlockConfirm} onOpenChange={setShowBlockConfirm}>
-        <AlertDialogContent className="bg-background/95 backdrop-blur-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Block @{post.author?.username}?</AlertDialogTitle>
-          </AlertDialogHeader>
-          <p className="text-sm text-muted-foreground">
-            They will not be able to follow you, message you, or see your posts.
-          </p>
-          <AlertDialogFooter>
-            <AlertDialogCancel asChild>
-              <Button variant="ghost" onClick={() => setShowBlockConfirm(false)}>Cancel</Button>
-            </AlertDialogCancel>
-            <AlertDialogAction asChild>
-              <Button variant="destructive" onClick={handleBlock} disabled={isBlocking}>
-                {isBlocking ? 'Blocking...' : 'Block'}
-              </Button>
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Report Modal */}
       {showReportModal && (
-        <ReportModal
-          post={post}
-          onClose={() => setShowReportModal(false)}
-          onSuccess={handleReportSuccess}
-        />
+        <ReportModal post={post} onClose={() => setShowReportModal(false)} onSuccess={() => { setShowReportModal(false); toast.success('Report submitted') }} />
       )}
-
-      {/* Edit Modal */}
       {showEditModal && (
-        <EditPostModal
-          post={post}
-          onClose={() => setShowEditModal(false)}
-          onSuccess={handleEditSuccess}
-        />
+        <EditPostModal post={post} onClose={() => setShowEditModal(false)} onSuccess={(p) => { setShowEditModal(false); if (onPostUpdated) onPostUpdated(p); toast.success('Post updated') }} />
       )}
     </>
   )

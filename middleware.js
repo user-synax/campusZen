@@ -20,10 +20,7 @@ export default function middleware(request) {
         return response;
     }
 
-    const legacySession = request.cookies.get("campusx_token")?.value;
-    const appwriteSessionCookieName = `a_session_${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`;
-    const appwriteSession = request.cookies.get(appwriteSessionCookieName)?.value;
-    const hasSession = !!legacySession || !!appwriteSession;
+    const hasSession = !!request.cookies.get("campusx_token")?.value;
 
     if (hasSession && (pathname === "/login" || pathname === "/signup")) {
         const response = NextResponse.redirect(new URL("/feed", request.url));

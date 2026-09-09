@@ -141,176 +141,32 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+    // JWT-only — supports both direct {email,name} and legacy Appwrite {appwriteUser} payloads
     try {
         const body = await request.json();
-        let appwriteUser = body.appwriteUser;
-        const secret = body.secret;
-
-        // SECURITY: we only ever derive identity from Appwrite's own session for
-        // the current request. A client-supplied `userId` must NEVER be trusted to
-        // mint a session (that was an account-takeover vector). Identity is taken
-        // from a real Appwrite session secret or the session cookie below.
-
-        if ((!appwriteUser || !appwriteUser.$id) && secret) {
-            try {
-                const { Client, Account } = await import("node-appwrite");
-                const client = new Client()
-                    .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT)
-                    .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID)
-                    .setSession(secret);
-                const account = new Account(client);
-                appwriteUser = await account.get();
-                console.log("[Google Callback API] Fetched user via session secret:", appwriteUser?.$id);
-            } catch (err) {
-                console.warn(
-                    "[Google Callback API] Failed to fetch user via session secret:",
-                    err?.message || err,
-                );
-            }
-        }
-
-        if (!appwriteUser || !appwriteUser.$id) {
-            try {
-                const { getServerSession } = await import("@/lib/appwrite/server");
-                appwriteUser = await getServerSession();
-                if (appwriteUser) {
-                    console.log("[Google Callback API] Fetched user via getServerSession cookie:", appwriteUser.$id);
-                }
-            } catch (err) {
-                console.warn(
-                    "[Google Callback API] Failed to fetch user via getServerSession:",
-                    err?.message || err,
-                );
-            }
-        }
-
-        if (!appwriteUser || !appwriteUser.$id) {
-            console.error(
-                "[Google Callback API] Invalid appwriteUser provided",
-            );
-            return NextResponse.json(
-                { error: "Invalid appwriteUser" },
-                { status: 401 },
-            );
-        }
-
+        const appwriteUser = body.appwriteUser;
+        const emailRaw = body.email || appwriteUser?.email;
+        const email = emailRaw?.toLowerCase?.();
+        const name = body.name || body.displayName || appwriteUser?.name || email?.split("@")[0] || "User";
+        const avatar = body.avatar || body.picture || appwriteUser?.picture || "";
+        if (!email) return NextResponse.json({ error: "Email required" }, { status: 400 });
         await connectDB();
-
-        // Find existing user by Appwrite ID or email
-        let user = await User.findOne({
-            $or: [
-                { appwriteUserId: appwriteUser.$id },
-                { email: appwriteUser.email.toLowerCase() },
-            ],
-        });
-
-        if (user) {
-            // If user exists but doesn't have appwriteUserId, link it
-            if (!user.appwriteUserId) {
-                user.appwriteUserId = appwriteUser.$id;
-                user.authMigrated = true;
-                user.emailVerified = appwriteUser.emailVerification;
-                await user.save();
-            } else if (user.emailVerified !== appwriteUser.emailVerification) {
-                // Sync email verification status
-                user.emailVerified = appwriteUser.emailVerification;
-                await user.save();
-            }
-        } else {
-            // Create new user
-            // Generate unique username
-            const username = await generateUniqueUsername(
-                appwriteUser.name || appwriteUser.email.split("@")[0],
-            );
-
-            // Create MongoDB user
+        let user = await User.findOne({ email });
+        if (!user) {
+            const username = await generateUniqueUsername(name);
             user = await User.create({
-                name: appwriteUser.name || "User",
-                username,
-                email: appwriteUser.email.toLowerCase(),
-                // Generate random password (won't be used for OAuth)
-                password: await (
-                    await import("bcryptjs")
-                ).default.hash(Math.random().toString(36), 12),
-                avatar: "",
-                appwriteUserId: appwriteUser.$id,
-                authMigrated: true,
-                authProvider: "google",
-                emailVerified: appwriteUser.emailVerification,
-                isVerified: false,
-                verificationStatus: "none",
-                gender: "unspecified",
+                name, username, email,
+                password: await (await import("bcryptjs")).default.hash(Math.random().toString(36), 12),
+                avatar, authProvider: "google", emailVerified: true, isVerified: false, verificationStatus: "none", gender: "unspecified",
             });
-
-            // Auto-follow founder
-            try {
-                const { FOUNDER_USERNAME } = await import("@/lib/founder");
-                if (FOUNDER_USERNAME) {
-                    const founderUser = await User.findOne({
-                        username: FOUNDER_USERNAME,
-                    }).lean();
-                    if (
-                        founderUser &&
-                        founderUser._id.toString() !== user._id.toString()
-                    ) {
-                        await User.findByIdAndUpdate(user._id, {
-                            $addToSet: { following: founderUser._id },
-                        });
-                        await User.findByIdAndUpdate(founderUser._id, {
-                            $addToSet: { followers: user._id },
-                        });
-                    }
-                }
-            } catch (err) {
-                console.error(
-                    "[Google Callback API] Auto-follow founder failed:",
-                    err.message,
-                );
-            }
-
-            // Send admin notification
-            notifyAdminNewUser(user).catch((err) =>
-                console.error(
-                    "[Google Callback API] Admin notify failed:",
-                    err,
-                ),
-            );
-
-            import("@/lib/globalGroup")
-                .then(({ autoJoinGlobalGroup }) => {
-                    autoJoinGlobalGroup(user._id).catch((err) =>
-                        console.error(
-                            "[Google Callback API] Global group join failed:",
-                            err,
-                        ),
-                    );
-                })
-                .catch((err) =>
-                    console.error(
-                        "[Google Callback API] Global group import failed:",
-                        err,
-                    ),
-                );
+            notifyAdminNewUser(user).catch(() => {});
         }
-
-        // Set legacy JWT cookie for compatibility
-        const token = await signToken({
-            userId: user._id.toString(),
-            username: user.username,
-        });
-
-        // Determine redirect URL
-        const redirectTo = "/feed";
-
-        const response = NextResponse.json({ redirectTo });
+        const token = await signToken({ userId: user._id.toString(), username: user.username });
+        const response = NextResponse.json({ redirectTo: "/feed" });
         await setAuthCookie(response, token);
-
         return response;
     } catch (error) {
-        console.error("[Google Callback API] Error:", error);
-        return NextResponse.json(
-            { error: "Internal server error" },
-            { status: 500 },
-        );
+        console.error("[Google Callback API POST] Error:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

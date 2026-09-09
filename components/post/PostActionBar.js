@@ -1,16 +1,11 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { MessageCircle, Bookmark } from "lucide-react";
+import { MessageCircle, Bookmark, Share2 } from "lucide-react";
 import { LikeButton } from "@/components/spectrumui/like-button";
 import ShareButton from "./ShareButton";
-import PostOptionsMenu from "./PostOptionsMenu";
 import { cn } from "@/lib/utils";
 
-/**
- * Client island for post interactions — like, comment toggle, bookmark, share,
- * overflow menu. Rendered inside the server-component PostCard shell.
- */
 export default function PostActionBar({
     post,
     currentUser,
@@ -21,80 +16,86 @@ export default function PostActionBar({
     onToggleComments,
     showComments,
 }) {
-    const [localBookmarked, setLocalBookmarked] = useState(
-        post._isBookmarked || false,
-    );
+    const [localBookmarked, setLocalBookmarked] = useState(post._isBookmarked || false);
 
-    const handleBookmark = useCallback(
-        async (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            await onBookmark?.(post._id);
-            setLocalBookmarked((prev) => !prev);
-        },
-        [onBookmark, post._id],
+    const handleBookmark = useCallback(async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        await onBookmark?.(post._id);
+        setLocalBookmarked((prev) => !prev);
+    }, [onBookmark, post._id]);
+
+    const replyCount = commentsCount ?? post.commentsCount ?? 0;
+    const bookmarkActive = localBookmarked;
+
+    const Item = ({ icon: Icon, count, active, hover, onClick, label }) => (
+        <button
+            onClick={onClick}
+            aria-label={label}
+            className={cn(
+                "group flex items-center gap-1 sm:gap-1.5 text-[13px] hover:cursor-pointer transition-colors duration-[var(--duration-fast)]",
+                active ? "text-[#f91880]" : "text-muted-foreground",
+                hover === "blue" && "hover:text-[#4ba9e1]",
+                hover === "green" && "hover:text-[#00ba7c]",
+                hover === "pink" && "hover:text-[#f91880]",
+            )}
+        >
+            <span className={cn(
+                "w-8 h-8 rounded-full flex items-center justify-center -ml-1 sm:-ml-2 transition-colors duration-[var(--duration-fast)]",
+                hover === "blue" && "group-hover:bg-[#4ba9e1]/10",
+                hover === "green" && "group-hover:bg-[#00ba7c]/10",
+                hover === "pink" && (active ? "bg-[#f91880]/10" : "group-hover:bg-[#f91880]/10"),
+            )}>
+                <Icon className={cn("w-[18px] h-[18px]", active && "fill-current")} />
+            </span>
+            <span className="min-w-[12px] text-left tabular-nums text-[13px]">{count > 0 ? (count > 999 ? `${(count/1000).toFixed(1)}k` : count) : ""}</span>
+        </button>
     );
 
     return (
-        <div className="flex items-center justify-between mt-3 text-muted-foreground">
-            <div className="flex items-center gap-4 sm:gap-6">
+        <div className="flex items-center justify-between mt-2 w-full gap-0 text-muted-foreground overflow-hidden select-none">
+            {/* Like */}
+            <div className="flex-1 flex justify-center">
                 <LikeButton
                     liked={post._isLiked}
-                    count={Math.max(
-                        0,
-                        (post.likesCount || 0) - (post._isLiked ? 1 : 0),
-                    )}
+                    count={Math.max(0, (post.likesCount || 0) - (post._isLiked ? 1 : 0))}
                     onLikedChange={() => onLike?.(post._id)}
                     size="sm"
+                    className="!bg-transparent !border-0 !shadow-none hover:!bg-transparent dark:!bg-transparent dark:!border-0 !px-2 !gap-1 !h-8"
                 />
+            </div>
 
+            {/* Comment */}
+            <div className="flex-1 flex justify-center">
+                <Item icon={MessageCircle} count={replyCount} hover="blue" label="Comment" onClick={(e) => { e.stopPropagation(); onToggleComments?.(); }} />
+            </div>
+
+            {/* Share */}
+            <div className="flex-1 flex justify-center">
+                <div onClick={(e) => e.stopPropagation()} className="hidden sm:flex justify-center">
+                    <ShareButton post={post} />
+                </div>
                 <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onToggleComments?.();
-                    }}
-                    className="icon-chunky hover:cursor-pointer flex items-center gap-1.5 text-xs hover:text-blue-400 transition-colors group/comment px-1"
+                    onClick={(e) => { e.stopPropagation(); if (navigator.share) navigator.share({ title: 'CampusZen', url: `${location.origin}/post/${post._id}` }).catch(()=>{}); else { navigator.clipboard.writeText(`${location.origin}/post/${post._id}`); } }}
+                    className="sm:hidden w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#4ba9e1]/10 hover:text-[#4ba9e1] hover:cursor-pointer transition-colors"
+                    aria-label="Share"
                 >
-                    <div className="p-2 rounded-full group-hover/comment:bg-blue-400/10">
-                        <MessageCircle className="w-4 h-4" />
-                    </div>
-                    <span className="font-medium text-[10px] sm:text-xs pr-1">
-                        {commentsCount}
-                    </span>
+                    <Share2 className="w-[18px] h-[18px]" />
                 </button>
             </div>
 
-            <div className="flex items-center gap-1 sm:gap-2">
+            {/* Save */}
+            <div className="flex-1 flex justify-center">
                 <button
                     onClick={handleBookmark}
                     className={cn(
-                        "p-2 rounded-full border-2 border-transparent transition-all duration-150 hover:cursor-pointer",
-                        localBookmarked
-                            ? "text-yellow-400 bg-yellow-400/10 border-yellow-400/20"
-                            : "hover:text-yellow-400 hover:bg-yellow-400/10 hover:border-border hover:shadow-[var(--shadow-hard-sm)]",
+                        "w-8 h-8 rounded-full flex items-center justify-center hover:cursor-pointer transition-colors duration-[var(--duration-fast)]",
+                        bookmarkActive ? "text-[#4ba9e1] bg-[#4ba9e1]/10" : "text-muted-foreground hover:text-[#4ba9e1] hover:bg-[#4ba9e1]/10"
                     )}
-                    title={localBookmarked ? "Remove bookmark" : "Save post"}
+                    aria-label={bookmarkActive ? "Remove bookmark" : "Save"}
                 >
-                    <Bookmark
-                        className={cn(
-                            "w-4 h-4",
-                            localBookmarked && "fill-current",
-                        )}
-                    />
+                    <Bookmark className={cn("w-[18px] h-[18px]", bookmarkActive && "fill-current")} />
                 </button>
-
-                <ShareButton post={post} />
-
-                <div onClick={(e) => e.stopPropagation()}>
-                    <PostOptionsMenu
-                        post={post}
-                        currentUser={currentUser}
-                        onPostDeleted={onDelete}
-                        onPostUpdated={(updatedPost) => {
-                            post.content = updatedPost.content;
-                        }}
-                    />
-                </div>
             </div>
         </div>
     );

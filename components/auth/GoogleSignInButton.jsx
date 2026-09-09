@@ -1,29 +1,12 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import {
-    createAppwriteClient,
-    getAppwriteAccount,
-} from "@/lib/appwrite/client";
 
 export default function GoogleSignInButton({
     className,
     text = "Continue with Google",
 }) {
     const handleSignIn = async () => {
-        try {
-            const client = createAppwriteClient();
-            const account = getAppwriteAccount(client);
-
-            // Use createOAuth2Token so Appwrite appends userId and secret query params to callback URL
-            await account.createOAuth2Token(
-                "google",
-                `${window.location.origin}/auth/callback`,
-                `${window.location.origin}/login?error=oauth_failed`,
-            );
-        } catch (error) {
-            console.warn("Appwrite Google sign in error, redirecting to direct Google OAuth:", error);
-            window.location.href = "/api/auth/google";
-        }
+        window.location.href = "/api/auth/google";
     };
 
     return (
