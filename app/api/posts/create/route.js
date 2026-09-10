@@ -6,14 +6,14 @@ import { sanitizeString } from "@/utils/validators";
 import { extractHashtags } from "@/utils/hashtags";
 import { indexHashtags } from "@/lib/hashtag-utils";
 import { deleteCachePattern } from "@/lib/cache";
-import { applyRateLimit } from "@/lib/rate-limit";
+import { applyRateLimit } from "@/lib/redis-rate-limit";
 import { sanitizeText } from "@/lib/sanitize";
 import Community from "@/models/Community";
 
 export async function POST(request) {
     try {
         // Rate limit post creation - 10 posts per hour per IP
-        const { blocked, response: rateLimitResponse } = applyRateLimit(
+        const { blocked, response: rateLimitResponse } = await applyRateLimit(
             request,
             "post_create",
             10,

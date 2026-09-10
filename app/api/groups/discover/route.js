@@ -3,14 +3,14 @@ import connectDB from '@/lib/db'
 import GroupChat from '@/models/GroupChat'
 import { getCurrentUser } from '@/lib/auth'
 import { sanitizeMongoInput } from '@/lib/sanitize'
-import { applyRateLimit } from '@/lib/rate-limit'
+import { applyRateLimit } from '@/lib/redis-rate-limit'
 
 /**
  * GET /api/groups/discover - Discover public groups
  */
 export async function GET(request) {
   try {
-    const { blocked, response: rateLimitResponse } = applyRateLimit(
+    const { blocked, response: rateLimitResponse } = await applyRateLimit(
       request,
       'group_discover_api',
       20,

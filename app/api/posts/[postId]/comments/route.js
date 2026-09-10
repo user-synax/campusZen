@@ -5,7 +5,7 @@ import Comment from "@/models/Comment";
 import { getCurrentUser } from "@/lib/auth";
 import { validateObjectId } from "@/utils/validators";
 import { createNotification } from "@/lib/notifications";
-import { applyRateLimit } from "@/lib/rate-limit";
+import { applyRateLimit } from "@/lib/redis-rate-limit";
 import { sanitizeText } from "@/lib/sanitize";
 import { cacheWithFallback, cacheDelPattern } from "@/lib/redis-cache";
 
@@ -90,7 +90,7 @@ export async function POST(request, { params }) {
         }
 
         // Rate limit comments - 20 comments per 10 minutes per IP
-        const { blocked, response: rateLimitResponse } = applyRateLimit(
+        const { blocked, response: rateLimitResponse } = await applyRateLimit(
             request,
             "post_comment",
             20,

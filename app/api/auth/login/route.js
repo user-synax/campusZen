@@ -3,7 +3,7 @@ import connectDB from "@/lib/db";
 import User from "@/models/User";
 import LoginHistory from "@/models/LoginHistory";
 import { signToken, setAuthCookie } from "@/lib/auth";
-import { applyRateLimit, rateLimit } from "@/lib/rate-limit";
+import { applyRateLimit, rateLimit } from "@/lib/redis-rate-limit";
 import { sanitizeUser } from "@/lib/sanitize";
 import { sendSuspiciousLoginEmail } from "@/lib/email-templates";
 import { loginSchema, validateRequest } from "@/utils/schemas";
@@ -25,7 +25,7 @@ function getClientIp(request) {
 
 export async function POST(request) {
     try {
-        const { blocked, response: rateLimitResponse } = applyRateLimit(request, "auth_login_ip", 10, 15 * 60 * 1000);
+        const { blocked, response: rateLimitResponse } = await applyRateLimit(request, "auth_login_ip", 10, 15 * 60 * 1000);
         if (blocked) return rateLimitResponse;
 
         const validation = await validateRequest(loginSchema)(request);
@@ -35,7 +35,7 @@ export async function POST(request) {
 
         const { email, password } = validation.data;
         const emailKey = `login_email_${email?.toString().toLowerCase()}`;
-        const emailResult = rateLimit(emailKey, 5, 15 * 60 * 1000);
+        const emailResult = await rateLimit(emailKey, 5, 15 * 60 * 1000);
         if (!emailResult.allowed) {
             return NextResponse.json({ message: `Too many login attempts for this account. Try again in ${emailResult.retryAfter} seconds.` }, { status: 429, headers: { "Retry-After": String(emailResult.retryAfter) } });
         }

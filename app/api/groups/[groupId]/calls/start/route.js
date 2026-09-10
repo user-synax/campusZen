@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import GroupChat from "@/models/GroupChat";
 import { getCurrentUser } from "@/lib/auth";
-import { applyRateLimit } from "@/lib/rate-limit";
+import { applyRateLimit } from "@/lib/redis-rate-limit";
 import { emitToGroup, emitToUsers } from "@/lib/realtime";
 import { validateObjectId } from "@/utils/validators";
 import { getRoomService, createCallToken, callRoomName } from "@/lib/livekit";
@@ -27,7 +27,7 @@ export async function POST(request, { params }) {
         }
 
         // Rate limit: 5 starts per user per 10 minutes
-        const { blocked, response: rateLimitResponse } = applyRateLimit(
+        const { blocked, response: rateLimitResponse } = await applyRateLimit(
             request,
             `callstart_${currentUser._id}`,
             5,

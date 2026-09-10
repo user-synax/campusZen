@@ -5,7 +5,7 @@ import GroupMessage from '@/models/GroupMessage'
 import User from '@/models/User'
 import { getCurrentUser } from '@/lib/auth'
 import { sanitizeMongoInput } from '@/lib/sanitize'
-import { applyRateLimit } from '@/lib/rate-limit'
+import { applyRateLimit } from '@/lib/redis-rate-limit'
 import { emitToGroup, emitToUser } from '@/lib/realtime'
 import { validateObjectId } from '@/utils/validators'
 import { createNotification } from '@/lib/notifications'
@@ -20,7 +20,7 @@ export async function POST(request, { params }) {
       return NextResponse.json({ message: 'Invalid Group ID' }, { status: 400 })
     }
 
-    const { blocked, response: rateLimitResponse } = applyRateLimit(
+    const { blocked, response: rateLimitResponse } = await applyRateLimit(
       request,
       'group_member_add_api',
       10,
@@ -156,7 +156,7 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ message: 'Invalid Group ID' }, { status: 400 })
     }
 
-    const { blocked, response: rateLimitResponse } = applyRateLimit(
+    const { blocked, response: rateLimitResponse } = await applyRateLimit(
       request,
       'group_member_remove_api',
       10,

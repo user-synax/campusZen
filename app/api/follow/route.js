@@ -5,14 +5,14 @@ import { getCurrentUser } from '@/lib/auth';
 import { validateObjectId } from '@/utils/validators';
 import { createNotification, deleteNotification } from '@/lib/notifications';
 
-import { applyRateLimit } from '@/lib/rate-limit';
+import { applyRateLimit } from '@/lib/redis-rate-limit';
 import { sanitizeMongoInput } from '@/lib/sanitize';
 import { followSchema, validateRequest } from '@/utils/schemas';
 
 export async function POST(request) {
   try {
     // Rate limit follows - 30 follows per hour per IP
-    const { blocked, response: rateLimitResponse } = applyRateLimit(
+    const { blocked, response: rateLimitResponse } = await applyRateLimit(
       request,
       'user_follow',
       30,

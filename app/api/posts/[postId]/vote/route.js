@@ -3,7 +3,7 @@ import connectDB from '@/lib/db';
 import Post from '@/models/Post';
 import { getCurrentUser } from '@/lib/auth';
 import { validateObjectId } from '@/utils/validators';
-import { applyRateLimit } from '@/lib/rate-limit';
+import { applyRateLimit } from '@/lib/redis-rate-limit';
 import { sanitizeMongoInput } from '@/lib/sanitize';
 import { createNotification } from '@/lib/notifications';
 
@@ -11,7 +11,7 @@ import { createNotification } from '@/lib/notifications';
 export async function POST(request, { params }) {
   try {
     // Rate limit poll voting - 20 per hour per IP
-    const { blocked, response: rateLimitResponse } = applyRateLimit(
+    const { blocked, response: rateLimitResponse } = await applyRateLimit(
       request,
       'poll_vote',
       20,

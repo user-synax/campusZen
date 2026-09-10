@@ -3,7 +3,7 @@ import connectDB from "@/lib/db";
 import User from "@/models/User";
 import { getCurrentUser } from "@/lib/auth";
 import { sanitizeMongoInput } from "@/lib/sanitize";
-import { applyRateLimit } from "@/lib/rate-limit";
+import { applyRateLimit } from "@/lib/redis-rate-limit";
 import { validateObjectId } from "@/utils/validators";
 import { createNotification } from "@/lib/notifications";
 import { findOrCreateDMConversation } from "@/lib/dms";
@@ -11,7 +11,7 @@ import { findOrCreateDMConversation } from "@/lib/dms";
 export async function POST(request) {
     try {
         // Rate limit — 30 connects per hour per IP
-        const { blocked, response: rateLimitResponse } = applyRateLimit(
+        const { blocked, response: rateLimitResponse } = await applyRateLimit(
             request,
             "user_connect",
             30,

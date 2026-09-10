@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import User from '@/models/User';
 import Post from '@/models/Post';
-import { applyRateLimit } from '@/lib/rate-limit';
+import { applyRateLimit } from '@/lib/redis-rate-limit';
 import { withErrorHandler, APIError } from '@/lib/api-response';
 
 export const GET = withErrorHandler(async (request) => {
   try {
     // Rate limit: 60 requests/minute for stats
-    const { blocked, response: rateLimitResponse } = applyRateLimit(request, 'public_stats', 60, 60000);
+    const { blocked, response: rateLimitResponse } = await applyRateLimit(request, 'public_stats', 60, 60000);
     if (blocked) return rateLimitResponse;
 
     await connectDB();

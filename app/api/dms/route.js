@@ -4,7 +4,7 @@ import User from "@/models/User";
 import DMConversation from "@/models/DMConversation";
 import { getCurrentUser } from "@/lib/auth";
 import { sanitizeMongoInput } from "@/lib/sanitize";
-import { applyRateLimit } from "@/lib/rate-limit";
+import { applyRateLimit } from "@/lib/redis-rate-limit";
 import { validateObjectId } from "@/utils/validators";
 import { findOrCreateDMConversation } from "@/lib/dms";
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import DMConversation from "@/models/DMConversation";
 import { getCurrentUser } from "@/lib/auth";
-import { applyRateLimit } from "@/lib/rate-limit";
+import { applyRateLimit } from "@/lib/redis-rate-limit";
 // Typing is now handled by the Socket.IO backend (typing:start / typing:stop).
 // This HTTP route is kept for backward compatibility but is a no-op for emits.
 import { validateObjectId } from "@/utils/validators";
@@ -30,7 +30,7 @@ export async function POST(request, { params }) {
         }
 
         // Rate limit: 10 requests per 5 seconds
-        const { blocked, response: rateLimitResponse } = applyRateLimit(
+        const { blocked, response: rateLimitResponse } = await applyRateLimit(
             request,
             `typing_${currentUser._id}_${conversationId}`,
             10,

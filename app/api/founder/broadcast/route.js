@@ -4,7 +4,7 @@ import User from '@/models/User'
 import { FOUNDER_USERNAME, isFounder } from '@/lib/founder'
 import { getCurrentUser } from '@/lib/auth'
 import { sanitizeText } from '@/lib/sanitize'
-import { applyRateLimit } from '@/lib/rate-limit'
+import { applyRateLimit } from '@/lib/redis-rate-limit'
 
 export async function GET() {
   try {
@@ -41,7 +41,7 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const { blocked, response: rateLimitResponse } = applyRateLimit(
+    const { blocked, response: rateLimitResponse } = await applyRateLimit(
       request,
       'founder_broadcast',
       5,

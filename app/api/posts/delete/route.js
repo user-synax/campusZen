@@ -7,13 +7,13 @@ import { getCurrentUser } from '@/lib/auth';
 import { validateObjectId } from '@/utils/validators';
 import { removeHashtags } from '@/lib/hashtag-utils';
 import { deletePostNotifications } from '@/lib/notifications';
-import { applyRateLimit } from '@/lib/rate-limit';
+import { applyRateLimit } from '@/lib/redis-rate-limit';
 import { sanitizeMongoInput } from '@/lib/sanitize';
 
 export async function DELETE(request) {
   try {
     // Rate limit post deletion - 10 per hour per IP
-    const { blocked, response: rateLimitResponse } = applyRateLimit(
+    const { blocked, response: rateLimitResponse } = await applyRateLimit(
       request,
       'post_delete',
       10,

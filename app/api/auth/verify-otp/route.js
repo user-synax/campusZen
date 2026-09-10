@@ -5,7 +5,7 @@ import {
   errorResponse,
   BadRequestError,
 } from '@/lib/api-response'
-import { rateLimit } from '@/lib/rate-limit'
+import { rateLimit } from '@/lib/redis-rate-limit'
 
 const MAX_VERIFY_ATTEMPTS = 5
 
@@ -40,7 +40,7 @@ export async function POST(request) {
     }
 
     // ── Rate limit verification attempts: 10 per email per 15 min ──
-    const rateLimitResult = rateLimit(
+    const rateLimitResult = await rateLimit(
       `otp_verify_${normalizedEmail}`,
       10,
       15 * 60 * 1000

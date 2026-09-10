@@ -4,7 +4,7 @@ import GroupChat from '@/models/GroupChat'
 import GroupMessage from '@/models/GroupMessage'
 import { getCurrentUser } from '@/lib/auth'
 import { sanitizeText, sanitizeMongoInput } from '@/lib/sanitize'
-import { applyRateLimit } from '@/lib/rate-limit'
+import { applyRateLimit } from '@/lib/redis-rate-limit'
 import { emitToGroup } from '@/lib/realtime'
 import { validateObjectId } from '@/utils/validators'
 
@@ -62,7 +62,7 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ message: 'Invalid Group ID' }, { status: 400 })
     }
 
-    const { blocked, response: rateLimitResponse } = applyRateLimit(
+    const { blocked, response: rateLimitResponse } = await applyRateLimit(
       request,
       'group_patch_api',
       10,
@@ -147,7 +147,7 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ message: 'Invalid Group ID' }, { status: 400 })
     }
 
-    const { blocked, response: rateLimitResponse } = applyRateLimit(
+    const { blocked, response: rateLimitResponse } = await applyRateLimit(
       request,
       'group_delete_api',
       5,

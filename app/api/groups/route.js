@@ -6,7 +6,7 @@ import User from '@/models/User'
 import { getCurrentUser } from '@/lib/auth'
 import { isAdmin } from '@/lib/admin'
 import { sanitizeText, sanitizeMongoInput } from '@/lib/sanitize'
-import { applyRateLimit } from '@/lib/rate-limit'
+import { applyRateLimit } from '@/lib/redis-rate-limit'
 import { emitToUsers } from '@/lib/realtime'
 import { validateObjectId } from '@/utils/validators'
 
@@ -57,7 +57,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     // Standard rate limit - 5 requests per 10 minutes
-    const { blocked, response: rateLimitResponse } = applyRateLimit(
+    const { blocked, response: rateLimitResponse } = await applyRateLimit(
       request,
       'group_create_api',
       5,

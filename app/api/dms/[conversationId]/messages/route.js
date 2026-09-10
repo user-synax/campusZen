@@ -5,7 +5,7 @@ import DMConversation from "@/models/DMConversation";
 import DMMessage from "@/models/DMMessage";
 import { getCurrentUser } from "@/lib/auth";
 import { sanitizeText, sanitizeMongoInput } from "@/lib/sanitize";
-import { applyRateLimit } from "@/lib/rate-limit";
+import { applyRateLimit } from "@/lib/redis-rate-limit";
 import { emitToUser } from "@/lib/realtime";
 import { createNotification } from "@/lib/notifications";
 import { validateObjectId } from "@/utils/validators";
@@ -119,7 +119,7 @@ export async function POST(request, { params }) {
         }
 
         // Rate limit: 30 messages per minute per conversation
-        const { blocked, response: rateLimitResponse } = applyRateLimit(
+        const { blocked, response: rateLimitResponse } = await applyRateLimit(
             request,
             `dm_${currentUser._id}_${conversationId}`,
             30,

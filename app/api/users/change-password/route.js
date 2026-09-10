@@ -9,12 +9,12 @@ import {
   BadRequestError, 
   UnauthorizedError 
 } from '@/lib/api-response';
-import { applyRateLimit } from '@/lib/rate-limit';
+import { applyRateLimit } from '@/lib/redis-rate-limit';
 
 export async function POST(request) {
   try {
     // Rate limit password changes - 3 attempts per hour per user
-    const { blocked, response: rateLimitResponse } = applyRateLimit(
+    const { blocked, response: rateLimitResponse } = await applyRateLimit(
       request,
       'change_password',
       3,

@@ -3,7 +3,7 @@ import connectDB from '@/lib/db'
 import Otp from '@/models/Otp'
 import User from '@/models/User'
 import { generateOTP, sendOtpEmail } from '@/lib/otp-mailer'
-import { rateLimit } from '@/lib/rate-limit'
+import { rateLimit } from '@/lib/redis-rate-limit'
 import {
   successResponse,
   errorResponse,
@@ -53,7 +53,7 @@ export async function POST(request) {
     }
 
     // ── Rate limit: max 3 OTP requests per email per hour ──
-    const rateLimitResult = rateLimit(
+    const rateLimitResult = await rateLimit(
       `otp_send_${normalizedEmail}`,
       3,
       60 * 60 * 1000 // 1 hour

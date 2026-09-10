@@ -3,7 +3,7 @@ import mongoose from 'mongoose'
 import connectDB from '@/lib/db'
 import GroupChat from '@/models/GroupChat'
 import { getCurrentUser } from '@/lib/auth'
-import { applyRateLimit } from '@/lib/rate-limit'
+import { applyRateLimit } from '@/lib/redis-rate-limit'
 import { validateObjectId } from '@/utils/validators'
 
 /**
@@ -16,7 +16,7 @@ export async function POST(request, { params }) {
       return NextResponse.json({ message: 'Invalid Group ID' }, { status: 400 })
     }
 
-    const { blocked, response: rateLimitResponse } = applyRateLimit(
+    const { blocked, response: rateLimitResponse } = await applyRateLimit(
       request,
       'group_read_api',
       60,

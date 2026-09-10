@@ -3,13 +3,13 @@ import connectDB from "@/lib/db";
 import User from "@/models/User";
 import { getCurrentUser } from "@/lib/auth";
 import { isAdmin } from "@/lib/admin";
-import { applyRateLimit } from "@/lib/rate-limit";
+import { applyRateLimit } from "@/lib/redis-rate-limit";
 import { sanitizeMongoInput, sanitizeUser } from "@/lib/sanitize";
 
 export async function GET(request) {
     try {
         // Rate limit search - 30 searches per minute per IP
-        const { blocked, response: rateLimitResponse } = applyRateLimit(
+        const { blocked, response: rateLimitResponse } = await applyRateLimit(
             request,
             "search_users",
             30,

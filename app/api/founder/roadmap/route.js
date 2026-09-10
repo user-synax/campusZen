@@ -5,7 +5,7 @@ import { FOUNDER_USERNAME, isFounder } from '@/lib/founder'
 import { getTokenFromRequest, verifyToken } from '@/lib/auth'
 import { withCache, deleteCache } from '@/lib/cache'
 import { sanitizeText, sanitizeMongoInput } from '@/lib/sanitize'
-import { applyRateLimit } from '@/lib/rate-limit'
+import { applyRateLimit } from '@/lib/redis-rate-limit'
 
 export async function GET() {
   try {
@@ -37,7 +37,7 @@ export async function GET() {
 export async function PATCH(request) {
   try {
     // Rate limit founder roadmap - 5 per hour per IP
-    const { blocked, response: rateLimitResponse } = applyRateLimit(
+    const { blocked, response: rateLimitResponse } = await applyRateLimit(
       request,
       'founder_roadmap',
       5,

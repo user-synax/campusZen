@@ -5,7 +5,7 @@ import GroupChat from '@/models/GroupChat'
 import GroupMessage from '@/models/GroupMessage'
 import { getCurrentUser } from '@/lib/auth'
 import { sanitizeText, sanitizeMongoInput } from '@/lib/sanitize'
-import { applyRateLimit } from '@/lib/rate-limit'
+import { applyRateLimit } from '@/lib/redis-rate-limit'
 import { emitToGroup, emitToUsers } from '@/lib/realtime'
 import { createNotification } from '@/lib/notifications'
 import { validateObjectId } from '@/utils/validators'
@@ -95,7 +95,7 @@ export async function POST(request, { params }) {
     }
 
     // 1. Rate limit: 30 messages per minute
-    const { blocked, response: rateLimitResponse } = applyRateLimit(
+    const { blocked, response: rateLimitResponse } = await applyRateLimit(
       request,
       `msg_${currentUser._id}_${groupId}`,
       30,

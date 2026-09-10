@@ -4,7 +4,7 @@ import Post from "@/models/Post";
 import { getCurrentUser } from "@/lib/auth";
 import { validateObjectId } from "@/utils/validators";
 import { createNotification, deleteNotification } from "@/lib/notifications";
-import { applyRateLimit } from "@/lib/rate-limit";
+import { applyRateLimit } from "@/lib/redis-rate-limit";
 import { sanitizeMongoInput } from "@/lib/sanitize";
 import { cacheSet, cacheDel } from "@/lib/redis-cache";
 import { emitToUsers } from "@/lib/realtime";
@@ -12,7 +12,7 @@ import { emitToUsers } from "@/lib/realtime";
 export async function POST(request) {
     try {
         // Rate limit likes - 60 likes per minute per IP
-        const { blocked, response: rateLimitResponse } = applyRateLimit(
+        const { blocked, response: rateLimitResponse } = await applyRateLimit(
             request,
             "post_like",
             60,
