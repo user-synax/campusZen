@@ -217,6 +217,26 @@ export async function GET(request) {
 
                     const decoded = cursor ? decodeScoreCursor(cursor) : null;
                     const now = new Date();
+                    const hasCommunities = userCommunities.length > 0;
+                    const communityBoostExpr = hasCommunities
+                        ? {
+                              $cond: [
+                                  {
+                                      $and: [
+                                          { $ne: ["$community", ""] },
+                                          {
+                                              $in: [
+                                                  { $toLower: { $ifNull: ["$community", ""] } },
+                                                  userCommunities,
+                                              ],
+                                          },
+                                      ],
+                                  },
+                                  FEED_WEIGHTS.community,
+                                  0,
+                              ],
+                          }
+                        : 0;
 
                     // Candidate pool size: larger for verifiedOnly (verified posts are sparser)
                     const candidatePoolSize = verifiedOnly ? 2000 : 800;
@@ -310,24 +330,7 @@ export async function GET(request) {
                                         0,
                                     ],
                                 },
-                                communityBoost: {
-                                    $cond: [
-                                        {
-                                            $and: [
-                                                { $gt: [{ $size: userCommunities }, 0] },
-                                                { $ne: ["$community", ""] },
-                                                {
-                                                    $in: [
-                                                        { $toLower: { $ifNull: ["$community", ""] } },
-                                                        userCommunities,
-                                                    ],
-                                                },
-                                            ],
-                                        },
-                                        FEED_WEIGHTS.community,
-                                        0,
-                                    ],
-                                },
+                                communityBoost: communityBoostExpr,
                             },
                         },
                         {
