@@ -4,8 +4,12 @@ import withBundleAnalyzer from "@next/bundle-analyzer";
 const nextConfig = {
     /* config options here */
     reactCompiler: true,
-    api: {
-        bodySizeLimit: "10mb",
+    // Next 16 App Router — `api.bodySizeLimit` is Pages Router only (invalid).
+    // Use Server Actions limit + per-route segment config instead.
+    experimental: {
+        serverActions: {
+            bodySizeLimit: "10mb",
+        },
     },
     images: {
         dangerouslyAllowSVG: true,

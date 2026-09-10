@@ -1,10 +1,13 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  // Tailwind 4 + @tailwindcss/postcss — keep config minimal; most tokens in CSS @theme (app/globals.css)
+  // content still used for purge; `pages` removed (App Router only)
   content: [
-    './pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
-  ], 
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './lib/**/*.{js,ts,jsx,tsx}',
+    './hooks/**/*.{js,ts,jsx,tsx}',
+  ],
   theme: {
     extend: {
       screens: {

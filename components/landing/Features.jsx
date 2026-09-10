@@ -3,7 +3,7 @@
 import React from "react";
 import { BentoGrid, BentoGridItem } from "@/components/ui/bento-grid";
 import { Users, BookOpen, Code, Zap } from "lucide-react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 
 const features = [
