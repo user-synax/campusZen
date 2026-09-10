@@ -183,6 +183,13 @@ postSchema.index({ isDeleted: 1, _id: -1 });
 postSchema.index({ community: 1, _id: -1 });
 postSchema.index({ sourceId: 1 });
 postSchema.index({ source: 1 });
+// P1: source/subreddit/author search — previously unindexed
+postSchema.index({ source: 1, subreddit: 1 });
+postSchema.index({ subreddit: 1, sourceCreatedAt: -1 });
+postSchema.index({ sourceAuthor: 1, createdAt: -1 });
+postSchema.index({ sourceUrl: 1 }, { sparse: true });
+postSchema.index({ isRepost: 1, repostOf: 1 });
+postSchema.index({ source: 1, isDeleted: 1 });
 
 postSchema.virtual("hasPoll").get(function () {
     return this.poll?.options?.length > 0;

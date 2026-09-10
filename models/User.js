@@ -1,8 +1,21 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import {
+    studentVerificationFields,
+    studentVerificationIndexes,
+} from "./shared/userVerification.js";
+import { shopFields, shopIndexes } from "./shared/userShop.js";
+
+/**
+ * User — P1 UserCore (352 → ~200 lines). Verification + Shop extracted to
+ * shared schemas (models/shared/userVerification.js, models/shared/userShop.js)
+ * while keeping single User collection for backwards compat and fast
+ * isVerified+college filtering. Full history lives in StudentVerification.
+ */
 
 const userSchema = new mongoose.Schema(
     {
+        // ── Core identity ──
         name: {
             type: String,
             required: true,
@@ -77,6 +90,8 @@ const userSchema = new mongoose.Schema(
             enum: ["male", "female", "other", "unspecified"],
             default: "unspecified",
         },
+
+        // ── Relations ──
         followers: [
             {
                 type: mongoose.Schema.Types.ObjectId,
@@ -102,7 +117,8 @@ const userSchema = new mongoose.Schema(
                 default: [],
             },
         ],
-        // Founder-related fields (only populated for founder account)
+
+        // ── Founder (only populated for founder account) ──
         founderData: {
             roadmap: {
                 type: [
@@ -119,8 +135,8 @@ const userSchema = new mongoose.Schema(
                 ],
                 default: [],
             },
-            broadcastMessage: String, // current site-wide announcement
-            broadcastId: String, // unique ID per announcement (for dismiss tracking)
+            broadcastMessage: String,
+            broadcastId: String,
             broadcastActive: Boolean,
             broadcastCreatedAt: Date,
             profileViews: { type: Number, default: 0 },
@@ -128,6 +144,8 @@ const userSchema = new mongoose.Schema(
             profileViewsResetAt: Date,
             totalUsersAtJoining: { type: Number, default: 0 },
         },
+
+        // ── Gamification ──
         xp: {
             type: Number,
             default: 0,
@@ -144,76 +162,13 @@ const userSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
-        // ── VP (Viper Coins) Economy ──
-        // Cached, atomically-updated balance. Never read from ledger.
-        vp: {
-            type: Number,
-            default: 0,
-            min: 0,
-        },
-        // ── Shop / Cosmetic Inventory ──
-        // Items the user has purchased. Self-contained snapshot so rendering
-        // works even if the catalog item is later removed.
-        ownedShopItems: [
-            {
-                itemId: { type: mongoose.Schema.Types.ObjectId, ref: "ShopItem" },
-                slug: { type: String },
-                name: { type: String },
-                category: { type: String },
-                rarity: { type: String, default: "common" },
-                price: { type: Number, default: 0 },
-                visual: {
-                    icon: { type: String, default: "Package" },
-                    color: { type: String, default: "#94a3b8" },
-                    className: { type: String, default: "" },
-                    imageUrl: { type: String, default: "" },
-                    frameAssetUrl: { type: String, default: "" },
-                },
-                purchasedAt: { type: Date, default: Date.now },
-            },
-        ],
-        // Currently equipped item per category (category -> owned item's _id).
-        // Only one item equipped per category at a time.
-        equippedShopItems: {
-            type: mongoose.Schema.Types.Mixed,
-            default: {},
-        },
-        // Calendar-day gate for daily login reward (server-checked)
-        lastLoginRewardAt: {
-            type: Date,
-            default: null,
-        },
-        // ── Student Verification System ──
-        isVerified: {
-            type: Boolean,
-            default: false,
-        },
-        verificationStatus: {
-            type: String,
-            enum: ["none", "pending", "verified", "rejected"],
-            default: "none",
-        },
-        verificationType: {
-            type: String,
-            enum: ["college_email", "id_card"],
-        },
-        collegeEmail: {
-            type: String,
-            lowercase: true,
-            trim: true,
-        },
-        collegeIdUrl: {
-            type: String, // Cloudinary URL for uploaded college ID card
-        },
-        verificationRejectedReason: {
-            type: String,
-        },
-        verificationRequestedAt: {
-            type: Date,
-        },
-        verificationApprovedAt: {
-            type: Date,
-        },
+
+        // ── Shop / VP (extracted) ──
+        ...shopFields,
+
+        // ── Student Verification (extracted, denormalized for feed) ──
+        ...studentVerificationFields,
+
         pinnedPost: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Post",
@@ -224,11 +179,11 @@ const userSchema = new mongoose.Schema(
             enum: ["user", "moderator", "admin", "founder"],
             default: "user",
         },
-        // Moderation fields
+        // Moderation
         isBanned: { type: Boolean, default: false },
-        isDeleted: { type: Boolean, default: false }, // soft delete
+        isDeleted: { type: Boolean, default: false },
         deletedAt: { type: Date, default: null },
-        tokenVersion: { type: Number, default: 0 }, // For force logout
+        tokenVersion: { type: Number, default: 0 },
 
         // Mute/Block
         mutedUsers: [
@@ -238,18 +193,16 @@ const userSchema = new mongoose.Schema(
             { type: mongoose.Schema.Types.ObjectId, ref: "User", default: [] },
         ],
 
-        // Chat privacy settings
+        // Chat privacy
         chatPrivacy: {
             type: String,
             enum: ["everyone", "verified", "college", "followers", "none"],
             default: "everyone",
         },
-        // DM enabled setting (user can toggle DM access on/off)
         dmEnabled: {
             type: Boolean,
             default: true,
         },
-        // Chat requests
         receivedChatRequests: [
             {
                 type: mongoose.Schema.Types.ObjectId,
@@ -265,7 +218,7 @@ const userSchema = new mongoose.Schema(
             },
         ],
 
-        // Profile customization
+        // Profile
         interests: {
             type: [String],
             validate: {
@@ -281,7 +234,7 @@ const userSchema = new mongoose.Schema(
             github: { type: String, default: "" },
             website: { type: String, default: "" },
         },
-        // Password reset fields
+        // Password reset
         resetToken: { type: String, default: null },
         resetTokenExpiry: { type: Date, default: null },
         // Google OAuth
@@ -308,7 +261,7 @@ const userSchema = new mongoose.Schema(
             default: "",
         },
     },
-    { timestamps: true },
+    { timestamps: true }
 );
 
 userSchema.methods.comparePassword = async function (plainPassword) {
@@ -321,6 +274,7 @@ userSchema.methods.toSafeObject = function () {
     return userObject;
 };
 
+// ── Core indexes ──
 userSchema.index({ college: 1 });
 userSchema.index({ followers: 1 });
 userSchema.index({ following: 1 });
@@ -328,24 +282,24 @@ userSchema.index({ connections: 1 });
 userSchema.index({ totalXP: -1 });
 userSchema.index({ weeklyXP: -1 });
 userSchema.index({ college: 1, weeklyXP: -1 });
-// VP economy indexes
-userSchema.index({ vp: -1 });
-// Shop inventory indexes
-userSchema.index({ "ownedShopItems.itemId": 1 });
-// Moderation index
 userSchema.index({ isBanned: 1 });
 userSchema.index({ isDeleted: 1, createdAt: -1 });
 userSchema.index({ mutedUsers: 1 });
 userSchema.index({ blockedUsers: 1 });
-// Verification indexes
-userSchema.index({ collegeEmail: 1 }, { unique: true, sparse: true });
-userSchema.index({ verificationStatus: 1, verificationRequestedAt: -1 });
-// Chat privacy indexes
 userSchema.index({ chatPrivacy: 1 });
 userSchema.index({ dmEnabled: 1 });
 userSchema.index({ receivedChatRequests: 1 });
 userSchema.index({ sentChatRequests: 1 });
 
+// ── Verification indexes (from shared) ──
+for (const [fields, opts] of studentVerificationIndexes) {
+    userSchema.index(fields, opts);
+}
+
+// ── Shop indexes (from shared) ──
+for (const [fields, opts] of shopIndexes) {
+    userSchema.index(fields, opts);
+}
 
 const User = mongoose.models.User || mongoose.model("User", userSchema);
 
