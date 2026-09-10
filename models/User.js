@@ -274,6 +274,51 @@ userSchema.methods.toSafeObject = function () {
     return userObject;
 };
 
+// ── Keep Post denormalized fields in sync (P1 global ranking) ──
+userSchema.pre("save", function (next) {
+    this._wasVerifiedChanged = this.isModified("isVerified");
+    this._wasCollegeChanged = this.isModified("college");
+    next();
+});
+userSchema.post("save", async function (doc) {
+    try {
+        if (!doc) return;
+        const changedVerified = doc._wasVerifiedChanged;
+        const changedCollege = doc._wasCollegeChanged;
+        if (!changedVerified && !changedCollege) return;
+        const Post = mongoose.models.Post ? mongoose.model("Post") : null;
+        if (!Post) return;
+        const set = {};
+        if (changedVerified) set.authorIsVerified = !!doc.isVerified;
+        if (changedCollege) set.authorCollege = doc.college || "";
+        if (Object.keys(set).length) {
+            await Post.updateMany({ author: doc._id }, { $set: set });
+        }
+    } catch (e) {
+        console.error("[User] post-save sync Posts failed:", e.message);
+    }
+});
+userSchema.post("findOneAndUpdate", async function (doc) {
+    try {
+        const update = this.getUpdate() || {};
+        const raw = { ...update, ...(update.$set || {}) };
+        const hasVerified = "isVerified" in raw;
+        const hasCollege = "college" in raw;
+        if (!hasVerified && !hasCollege) return;
+        const filter = this.getFilter();
+        const id = doc?._id || filter?._id || filter?.userId;
+        if (!id) return;
+        const Post = mongoose.models.Post ? mongoose.model("Post") : null;
+        if (!Post) return;
+        const set = {};
+        if (hasVerified) set.authorIsVerified = !!raw.isVerified;
+        if (hasCollege) set.authorCollege = raw.college || "";
+        if (Object.keys(set).length) await Post.updateMany({ author: id }, { $set: set });
+    } catch (e) {
+        console.error("[User] post-findOneAndUpdate sync failed:", e.message);
+    }
+});
+
 // ── Core indexes ──
 userSchema.index({ college: 1 });
 userSchema.index({ followers: 1 });

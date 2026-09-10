@@ -159,6 +159,24 @@ const postSchema = new mongoose.Schema(
         sourceCreatedAt: {
             type: Date,
         },
+        // ── Denormalized author fields for global ranking & verifiedOnly (P1 fix) ──
+        // Stored to avoid per-request User lookup; updated via hooks + admin verification
+        authorIsVerified: {
+            type: Boolean,
+            default: false,
+            index: true,
+        },
+        authorCollege: {
+            type: String,
+            default: "",
+            trim: true,
+        },
+        // Precomputed popularity (without decay) for indexing: likes*1 + comments*2 + shares*1.5 + reposts*1.5 + verified*8
+        popularityScore: {
+            type: Number,
+            default: 0,
+            index: true,
+        },
     },
     {
         timestamps: true,
@@ -166,6 +184,32 @@ const postSchema = new mongoose.Schema(
         toObject: { virtuals: true },
     },
 );
+
+// ── Keep denormalized fields in sync ──
+postSchema.pre("save", async function (next) {
+    try {
+        // Only set on new docs or when author changes
+        if (this.isNew || this.isModified("author")) {
+            const User = mongoose.model("User");
+            const authorDoc = await User.findById(this.author).select("isVerified college").lean();
+            if (authorDoc) {
+                this.authorIsVerified = !!authorDoc.isVerified;
+                this.authorCollege = authorDoc.college || "";
+            }
+        }
+        // Compute popularityScore (verified boost included via authorIsVerified)
+        const base =
+            (this.likesCount || 0) * 1 +
+            (this.commentsCount || 0) * 2 +
+            (this.shareCount || 0) * 1.5 +
+            (this.repostsCount || 0) * 1.5 +
+            (this.authorIsVerified ? 8 : 0);
+        this.popularityScore = base;
+        next();
+    } catch (e) {
+        next();
+    }
+});
 
 postSchema.index({ createdAt: -1 });
 postSchema.index({ author: 1, createdAt: -1 });
@@ -190,6 +234,12 @@ postSchema.index({ sourceAuthor: 1, createdAt: -1 });
 postSchema.index({ sourceUrl: 1 }, { sparse: true });
 postSchema.index({ isRepost: 1, repostOf: 1 });
 postSchema.index({ source: 1, isDeleted: 1 });
+// P1: global feed ranking — denormalized verified/college + popularity
+postSchema.index({ authorIsVerified: 1, createdAt: -1 });
+postSchema.index({ authorCollege: 1, createdAt: -1 });
+postSchema.index({ popularityScore: -1, createdAt: -1 });
+postSchema.index({ authorIsVerified: 1, popularityScore: -1 });
+postSchema.index({ isDeleted: 1, authorIsVerified: 1, createdAt: -1 });
 
 postSchema.virtual("hasPoll").get(function () {
     return this.poll?.options?.length > 0;

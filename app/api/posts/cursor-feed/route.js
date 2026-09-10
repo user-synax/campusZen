@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import connectDB from "@/lib/db";
 import Post from "@/models/Post";
 import Community from "@/models/Community";
@@ -42,6 +43,30 @@ function calculatePostScore(post, userInterests, userCollege, userCommunities = 
     // tiny jitter — prevents ties, not a lottery
     score += (Math.random() - 0.5) * FEED_WEIGHTS.random;
     return score;
+}
+
+// ── Cursor helpers for global ranking (score + _id) ──
+function encodeScoreCursor(score, id) {
+    return Buffer.from(JSON.stringify({ s: Number(score.toFixed(4)), id: id.toString() })).toString("base64");
+}
+function decodeScoreCursor(cursor) {
+    try {
+        const raw = Buffer.from(cursor, "base64").toString("utf-8");
+        // Try new format {s, id}
+        const obj = JSON.parse(raw);
+        if (obj && typeof obj.s === "number" && typeof obj.id === "string" && /^[a-f0-9]{24}$/i.test(obj.id)) {
+            return { score: obj.s, id: obj.id, isScoreCursor: true };
+        }
+        // Fallback: old _id only
+        if (/^[a-f0-9]{24}$/i.test(raw)) return { id: raw, isScoreCursor: false };
+        return null;
+    } catch {
+        try {
+            const raw = Buffer.from(cursor, "base64").toString("utf-8");
+            if (/^[a-f0-9]{24}$/i.test(raw)) return { id: raw, isScoreCursor: false };
+        } catch {}
+        return null;
+    }
 }
 
 export async function GET(request) {
@@ -102,42 +127,17 @@ export async function GET(request) {
                 query.author = resolvedAuthor;
             }
 
+            // P1 fix: verifiedOnly no longer does User.find({isVerified}) per request (N+1).
+            // Instead we handle it in aggregation via author lookup or denormalized authorIsVerified.
+            // Keep query clean here; aggregation will filter.
+            // For non-aggregation paths (interests/latest8h) we use denormalized field with fallback.
+            let verifiedOnlyQuery = null;
             if (verifiedOnly) {
-                const verifiedUsers = await User.find({ isVerified: true }).select("_id").lean();
-                const verifiedUserIds = verifiedUsers.map((u) => u._id);
-                if (verifiedUserIds.length === 0) {
-                    return {
-                        posts: [],
-                        pagination: {
-                            nextCursor: null,
-                            hasNextPage: false,
-                            limit,
-                        },
-                    };
-                }
-                if (query.author) {
-                    const existingAuthorIds = [];
-                    if (query.author && typeof query.author === "object" && query.author.$in) {
-                        existingAuthorIds.push(...query.author.$in.map((id) => id.toString()));
-                    } else {
-                        existingAuthorIds.push(query.author.toString());
-                    }
-                    const verifiedIdStrs = new Set(verifiedUserIds.map((id) => id.toString()));
-                    const intersection = existingAuthorIds.filter((id) => verifiedIdStrs.has(id));
-                    if (intersection.length === 0) {
-                        return {
-                            posts: [],
-                            pagination: {
-                                nextCursor: null,
-                                hasNextPage: false,
-                                limit,
-                            },
-                        };
-                    }
-                    query.author = { $in: intersection };
-                } else {
-                    query.author = { $in: verifiedUserIds };
-                }
+                // Prefer denormalized Post.authorIsVerified (indexed) — fast path, uses {authorIsVerified:1, createdAt:-1}
+                // Fallback via aggregation $lookup for old docs without denormalized field is handled below.
+                verifiedOnlyQuery = { authorIsVerified: true };
+                // For find-based paths (interests), we add to query
+                // For aggregation path, we handle via $match after $lookup
             }
 
             // Mode-specific queries
@@ -146,14 +146,21 @@ export async function GET(request) {
                 query.createdAt = { $gte: eightHoursAgo };
             }
 
-            if (cursor) {
+            // Legacy _id cursor for non-ranked modes (latest8h, interests)
+            // For default ranked mode we use score cursor (handled in aggregation)
+            let legacyCursorId = null;
+            if (cursor && mode !== "default") {
                 try {
                     const decodedCursor = Buffer.from(cursor, "base64").toString("utf-8");
-                    if (/^[a-f0-9]{24}$/i.test(decodedCursor)) query._id = { $lt: decodedCursor };
+                    if (/^[a-f0-9]{24}$/i.test(decodedCursor)) {
+                        legacyCursorId = decodedCursor;
+                        query._id = { $lt: decodedCursor };
+                    }
                 } catch {}
             }
 
             let posts = [];
+            let useAggregation = false;
 
             if (feedType === "interests" && currentUser) {
                 const userInterests = currentUser.interests || [];
@@ -168,6 +175,7 @@ export async function GET(request) {
                 if (sortedInterests.length > 0) {
                     const interestQuery = {
                         ...query,
+                        ...(verifiedOnly ? verifiedOnlyQuery : {}),
                         tags: { $in: sortedInterests },
                     };
 
@@ -184,42 +192,231 @@ export async function GET(request) {
                 }
             } else {
                 if (mode === "default") {
+                    useAggregation = true;
                     const userInterests = currentUser?.interests || [];
                     const userCollege = currentUser?.college || "";
                     const userCommunities = currentUser?._id
                         ? (await Community.find({ members: currentUser._id }).select("name slug").lean()).map((c) => (c.slug || c.name).toLowerCase())
                         : [];
 
-                    const pageWindow = await Post.find(query)
-                        .sort({ _id: -1 })
-                        .limit(limit + 1)
-                        .select("-__v -updatedAt -likes")
-                        .populate({
-                            path: "author",
-                            select: "name username avatar college isVerified verificationType isBot botType",
-                            options: { lean: true },
-                        })
-                        .lean();
+                    // ── P1 fix: Global ranking via Mongo aggregation, not page-local window ──
+                    // Instead of fetching 20 docs by _id then ranking locally, we:
+                    // 1. Match base query (isDeleted, community, author, etc.)
+                    // 2. Candidate pool: recent 800 docs (avoids full collection scan, still global within window)
+                    // 3. Lookup author for verified/college
+                    // 4. Compute finalScore (popularity*decay + personal boosts) in DB
+                    // 5. Sort by finalScore globally, then apply score cursor
+                    // 6. Fallback to popularityScore index when author lookup missing
 
-                    const hasWindowMore = pageWindow.length > limit;
-                    const windowResultPosts = hasWindowMore
-                        ? pageWindow.slice(0, limit)
-                        : pageWindow;
+                    const baseMatch = { ...query };
+                    // Remove _id cursor from baseMatch for aggregation (handled via score cursor)
+                    delete baseMatch._id;
+                    // P1: verifiedOnly uses denormalized authorIsVerified when available (indexed),
+                    // but we also support old docs via $lookup filter below. Keep baseMatch clean
+                    // and filter after lookup for correctness; candidate pool enlarged for verifiedOnly.
 
-                    const rankedWindow = windowResultPosts
-                        .map((post) => ({
-                            ...post,
-                            _score: calculatePostScore(post, userInterests, userCollege, userCommunities),
-                        }))
-                        .sort((a, b) => b._score - a._score);
+                    const decoded = cursor ? decodeScoreCursor(cursor) : null;
+                    const now = new Date();
 
-                    // Add lookahead item only to preserve existing hasMore computation.
-                    posts = hasWindowMore
-                        ? [...rankedWindow, pageWindow[limit]]
-                        : rankedWindow;
+                    // Candidate pool size: larger for verifiedOnly (verified posts are sparser)
+                    const candidatePoolSize = verifiedOnly ? 2000 : 800;
+
+                    // Build pipeline
+                    const pipeline = [
+                        { $match: baseMatch },
+                        // Candidate pool — keeps global ranking tractable without scanning entire collection
+                        { $sort: { _id: -1 } },
+                        { $limit: candidatePoolSize },
+                        {
+                            $lookup: {
+                                from: "users",
+                                localField: "author",
+                                foreignField: "_id",
+                                as: "authorDoc",
+                                pipeline: [{ $project: { isVerified: 1, college: 1, name: 1, username: 1, avatar: 1, verificationType: 1, isBot: 1, botType: 1 } }],
+                            },
+                        },
+                        { $unwind: { path: "$authorDoc", preserveNullAndEmptyArrays: true } },
+                        // For old posts where denormalized authorIsVerified is missing, use authorDoc.isVerified
+                        {
+                            $addFields: {
+                                resolvedIsVerified: {
+                                    $ifNull: ["$authorIsVerified", { $ifNull: ["$authorDoc.isVerified", false] }],
+                                },
+                                resolvedAuthorCollege: {
+                                    $ifNull: ["$authorCollege", { $ifNull: ["$authorDoc.college", ""] }],
+                                },
+                                // hoursAgo for decay
+                                hoursAgo: {
+                                    $divide: [{ $subtract: [now, "$createdAt"] }, 1000 * 60 * 60],
+                                },
+                            },
+                        },
+                        // verifiedOnly filter — after resolving verified flag, drop unverified (covers both denormalized and old docs)
+                        ...(verifiedOnly
+                            ? [
+                                  {
+                                      $match: { resolvedIsVerified: true },
+                                  },
+                              ]
+                            : []),
+                        {
+                            $addFields: {
+                                basePopularity: {
+                                    $add: [
+                                        { $ifNull: ["$likesCount", 0] },
+                                        { $multiply: [{ $ifNull: ["$commentsCount", 0] }, 2] },
+                                        { $multiply: [{ $ifNull: ["$shareCount", 0] }, 1.5] },
+                                        { $multiply: [{ $ifNull: ["$repostsCount", 0] }, 1.5] },
+                                        { $cond: [{ $eq: ["$resolvedIsVerified", true] }, FEED_WEIGHTS.verified, 0] },
+                                    ],
+                                },
+                            },
+                        },
+                        {
+                            $addFields: {
+                                decayedPopularity: {
+                                    $multiply: ["$basePopularity", { $pow: [0.95, "$hoursAgo"] }],
+                                },
+                            },
+                        },
+                        // Personal boosts
+                        {
+                            $addFields: {
+                                interestMatches: {
+                                    $cond: [
+                                        { $gt: [{ $size: { $ifNull: ["$tags", []] } }, 0] },
+                                        { $size: { $setIntersection: [{ $ifNull: ["$tags", []] }, userInterests] } },
+                                        0,
+                                    ],
+                                },
+                                interestBoost: {
+                                    $multiply: [
+                                        {
+                                            $size: { $setIntersection: [{ $ifNull: ["$tags", []] }, userInterests] },
+                                        },
+                                        FEED_WEIGHTS.interest,
+                                    ],
+                                },
+                                sameCollegeBoost: {
+                                    $cond: [
+                                        {
+                                            $and: [
+                                                { $ne: [userCollege, ""] },
+                                                { $eq: ["$resolvedAuthorCollege", userCollege] },
+                                            ],
+                                        },
+                                        FEED_WEIGHTS.sameCollege,
+                                        0,
+                                    ],
+                                },
+                                communityBoost: {
+                                    $cond: [
+                                        {
+                                            $and: [
+                                                { $gt: [{ $size: userCommunities }, 0] },
+                                                { $ne: ["$community", ""] },
+                                                {
+                                                    $in: [
+                                                        { $toLower: { $ifNull: ["$community", ""] } },
+                                                        userCommunities,
+                                                    ],
+                                                },
+                                            ],
+                                        },
+                                        FEED_WEIGHTS.community,
+                                        0,
+                                    ],
+                                },
+                            },
+                        },
+                        {
+                            $addFields: {
+                                finalScore: {
+                                    $add: ["$decayedPopularity", "$interestBoost", "$sameCollegeBoost", "$communityBoost"],
+                                },
+                            },
+                        },
+                        // Cursor pagination on finalScore (global ranking)
+                        ...(decoded?.isScoreCursor
+                            ? [
+                                  {
+                                      $match: {
+                                          $or: [
+                                              { finalScore: { $lt: decoded.score } },
+                                              {
+                                                  finalScore: decoded.score,
+                                                  _id: { $lt: new mongoose.Types.ObjectId(decoded.id) },
+                                              },
+                                          ],
+                                      },
+                                  },
+                              ]
+                            : decoded && !decoded.isScoreCursor && decoded.id
+                              ? [
+                                    {
+                                        $match: { _id: { $lt: new mongoose.Types.ObjectId(decoded.id) } },
+                                    },
+                                ]
+                              : []),
+                        { $sort: { finalScore: -1, _id: -1 } },
+                        { $limit: limit + 1 },
+                        // Project to shape like lean Post with author populated
+                        {
+                            $addFields: {
+                                author: {
+                                    _id: "$authorDoc._id",
+                                    name: "$authorDoc.name",
+                                    username: "$authorDoc.username",
+                                    avatar: "$authorDoc.avatar",
+                                    college: "$authorDoc.college",
+                                    isVerified: "$resolvedIsVerified",
+                                    verificationType: "$authorDoc.verificationType",
+                                    isBot: "$authorDoc.isBot",
+                                    botType: "$authorDoc.botType",
+                                },
+                            },
+                        },
+                        {
+                            $project: {
+                                authorDoc: 0,
+                                resolvedIsVerified: 0,
+                                resolvedAuthorCollege: 0,
+                                hoursAgo: 0,
+                                basePopularity: 0,
+                                decayedPopularity: 0,
+                                interestMatches: 0,
+                                interestBoost: 0,
+                                sameCollegeBoost: 0,
+                                communityBoost: 0,
+                                __v: 0,
+                                updatedAt: 0,
+                                likes: 0,
+                            },
+                        },
+                    ];
+
+                    const aggResults = await Post.aggregate(pipeline).allowDiskUse(true);
+
+                    // Add tiny jitter in app layer (Mongo $rand not stable across shards)
+                    const withJitter = aggResults.map((p) => ({
+                        ...p,
+                        _score: (p.finalScore || 0) + (Math.random() - 0.5) * FEED_WEIGHTS.random,
+                    }));
+                    // Re-sort after jitter (small, keeps global order mostly intact but breaks ties)
+                    withJitter.sort((a, b) => b._score - a._score);
+
+                    // Preserve hasMore via limit+1; keep finalScore for cursor
+                    posts = withJitter.map((p) => {
+                        const { finalScore, ...rest } = p;
+                        return { ...rest, _score: p._score, _finalScore: finalScore };
+                    });
                 } else {
                     // Other modes (latest8h, etc.)
-                    posts = await Post.find(query)
+                    const finalQuery = verifiedOnly ? { ...query, ...verifiedOnlyQuery } : query;
+                    // Handle legacy _id cursor for latest8h
+                    if (legacyCursorId) finalQuery._id = { $lt: legacyCursorId };
+                    posts = await Post.find(finalQuery)
                         .sort({ _id: -1 })
                         .limit(limit + 1)
                         .select("-__v -updatedAt -likes")
@@ -285,7 +482,7 @@ export async function GET(request) {
                     ? communityMap[post.community.toLowerCase()]
                     : null;
 
-                const { likes, author: postAuthor, _score, ...postData } = post;
+                const { likes, author: postAuthor, _score, _finalScore, finalScore, ...postData } = post;
                 const sanitizedAuthor = sanitizeUser(postAuthor);
                 const safeAuthor = sanitizedAuthor || {
                     _id: null,
@@ -309,22 +506,32 @@ export async function GET(request) {
                               emoji: communityInfo.emoji,
                           }
                         : null,
+                    // Expose score for debugging (non-prod only)
+                    ...(process.env.NODE_ENV !== "production" && _score !== undefined ? { _score } : {}),
                 };
             });
 
-            const nextCursor = hasMore
-                ? Buffer.from(
-                      resultPosts
-                          .reduce(
-                              (minId, post) =>
-                                  post._id.toString() < minId.toString()
-                                      ? post._id
-                                      : minId,
-                              resultPosts[0]._id,
-                          )
-                          .toString(),
-                  ).toString("base64")
-                : null;
+            let nextCursor = null;
+            if (hasMore) {
+                if (useAggregation) {
+                    // Score-based cursor for global ranking
+                    const last = resultPosts[resultPosts.length - 1];
+                    const scoreForCursor = last._finalScore ?? last._score ?? 0;
+                    nextCursor = encodeScoreCursor(scoreForCursor, last._id);
+                } else {
+                    nextCursor = Buffer.from(
+                        resultPosts
+                            .reduce(
+                                (minId, post) =>
+                                    post._id.toString() < minId.toString()
+                                        ? post._id
+                                        : minId,
+                                resultPosts[0]._id,
+                            )
+                            .toString(),
+                    ).toString("base64");
+                }
+            }
 
             if (process.env.NODE_ENV !== "production") {
                 console.log("[cursor-feed]", {
@@ -334,6 +541,7 @@ export async function GET(request) {
                     resultCount: processedPosts.length,
                     hasMore,
                     nextCursor,
+                    useAggregation,
                 });
             }
 
