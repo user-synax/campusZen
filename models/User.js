@@ -289,16 +289,6 @@ const userSchema = new mongoose.Schema(
         googleAccessToken: { type: String },
         googleRefreshToken: { type: String },
         googleProfile: { type: mongoose.Schema.Types.Mixed },
-        // Appwrite fields
-        appwriteUserId: {
-            type: String,
-            unique: true,
-            sparse: true,
-        },
-        authMigrated: {
-            type: Boolean,
-            default: false,
-        },
         authProvider: {
             type: String,
             enum: ["email", "google"],

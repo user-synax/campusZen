@@ -141,14 +141,13 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-    // JWT-only — supports both direct {email,name} and legacy Appwrite {appwriteUser} payloads
+    // JWT-only — Google OAuth flow only (no Appwrite). Kept for legacy /auth/callback compat.
     try {
         const body = await request.json();
-        const appwriteUser = body.appwriteUser;
-        const emailRaw = body.email || appwriteUser?.email;
+        const emailRaw = body.email;
         const email = emailRaw?.toLowerCase?.();
-        const name = body.name || body.displayName || appwriteUser?.name || email?.split("@")[0] || "User";
-        const avatar = body.avatar || body.picture || appwriteUser?.picture || "";
+        const name = body.name || body.displayName || email?.split("@")[0] || "User";
+        const avatar = body.avatar || body.picture || "";
         if (!email) return NextResponse.json({ error: "Email required" }, { status: 400 });
         await connectDB();
         let user = await User.findOne({ email });

@@ -52,14 +52,10 @@ export default function DevelopersPage() {
 
                 <h2 className="mt-10 text-2xl font-bold">Authentication</h2>
                 <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-                    Most endpoints require a session cookie (Appwrite{" "}
-                    <code className="rounded bg-white/10 px-1">
-                        a_session_&lt;projectId&gt;
-                    </code>{" "}
-                    or the legacy <code className="rounded bg-white/10 px-1">campusx_token</code>
-                    ). Log in with <code className="rounded bg-white/10 px-1">POST /api/auth/login</code>{" "}
-                    (identifier + password). OTP flow:{" "}
-                    <code className="rounded bg-white/10 px-1">POST /api/auth/send-otp</code> then{" "}
+                    Most endpoints require the <code className="rounded bg-white/10 px-1">campusx_token</code> JWT
+                    cookie (jose HS256, global logout via tokenVersion). Log in with{" "}
+                    <code className="rounded bg-white/10 px-1">POST /api/auth/login</code> (identifier + password).
+                    OTP flow: <code className="rounded bg-white/10 px-1">POST /api/auth/send-otp</code> then{" "}
                     <code className="rounded bg-white/10 px-1">POST /api/auth/verify-otp</code>.
                 </p>
 

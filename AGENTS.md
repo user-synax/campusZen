@@ -22,9 +22,7 @@ social platform for Indian college students. The repo is at
 - App Router with parallel route groups: `(auth)`, `(main)`, `(public)`.
 - API route handlers live under `app/api/**/route.js`.
 - Mongoose models in `models/`, shared lib in `lib/`, hooks in `hooks/`.
-- Auth is mid-migration: Appwrite session cookie (`a_session_<projectId>`),
-  legacy JWT cookie (`campusx_token`), and Better Auth coexist. Always verify
-  the session server-side in API routes via `lib/auth.js`.
+- Auth is JWT-only: `campusx_token` (jose HS256, HTTP-only) with `tokenVersion` for global logout and TTL `TokenBlacklist` for single-device logout. Always verify server-side via `lib/auth.js:getCurrentUser`. Appwrite is storage-only (`lib/appwrite.js`); no Appwrite session.
 - Agent-readiness surfaces (all machine-discoverable) live in `lib/` and are
   served by route handlers: `lib/openapi-spec.js`, `lib/llms-txt.js`,
   `lib/markdown-content.js`. Do not inline JSON-LD/markdown there; edit the lib

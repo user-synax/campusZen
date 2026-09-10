@@ -2,140 +2,40 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-    createAppwriteClient,
-    getAppwriteAccount,
-} from "@/lib/appwrite/client";
+
+// Appwrite auth removed - JWT-only via jose. This route is deprecated but kept
+// for legacy deep-links; it now redirects to the Google OAuth entry point.
 
 function AuthCallbackContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const [status, setStatus] = useState("Processing Google Sign-In...");
+    const [status, setStatus] = useState("Redirecting...");
 
     useEffect(() => {
-        const completeSignIn = async () => {
+        const handleLegacyCallback = async () => {
             try {
-                console.log("[Auth Callback] Processing Appwrite OAuth callback...");
-                setStatus("Checking Appwrite session...");
-
-                // Extract params from searchParams or window.location
-                const userIdParam =
-                    searchParams.get("userId") ||
-                    searchParams.get("user_id") ||
-                    (typeof window !== "undefined"
-                        ? new URLSearchParams(window.location.search).get("userId") ||
-                        new URLSearchParams(window.location.search).get("user_id")
-                        : null);
-
-                const secretParam =
-                    searchParams.get("secret") ||
-                    searchParams.get("key") ||
-                    (typeof window !== "undefined"
-                        ? new URLSearchParams(window.location.search).get("secret") ||
-                        new URLSearchParams(window.location.search).get("key")
-                        : null);
-
-                console.log("[Auth Callback] Parameters detected:", {
-                    userIdParam,
-                    hasSecret: !!secretParam,
-                });
-
-                const client = createAppwriteClient();
-                const account = getAppwriteAccount(client);
-
-                // Attempt to create session using Appwrite SDK if secret & userId exist
-                if (userIdParam && secretParam) {
-                    try {
-                        console.log("[Auth Callback] Establishing Appwrite session...");
-                        await account.createSession(userIdParam, secretParam);
-                    } catch (sErr) {
-                        console.warn(
-                            "[Auth Callback] createSession warning:",
-                            sErr?.message || sErr,
-                        );
-                    }
+                // Legacy Appwrite params (userId/secret) are no longer honored.
+                // Google OAuth now uses /api/auth/google/callback?code=...&state=...
+                // If this page is hit, guide user to proper login.
+                const hasLegacyParams = searchParams.get("userId") || searchParams.get("secret");
+                if (hasLegacyParams) {
+                    console.warn("[Auth Callback] Legacy Appwrite params detected - auth is now JWT-only. Redirecting to login.");
                 }
-
-                // Attempt to retrieve user object from Appwrite Client SDK
-                let appwriteUser = null;
-                try {
-                    appwriteUser = await account.get();
-                    console.log(
-                        "[Auth Callback] Appwrite user retrieved from Client SDK:",
-                        appwriteUser?.$id,
-                    );
-                } catch (getErr) {
-                    console.warn(
-                        "[Auth Callback] account.get() client check failed:",
-                        getErr?.message || getErr,
-                    );
-                }
-
-                // Attempt current session check if appwriteUser not resolved yet
-                let currentSession = null;
-                if (!appwriteUser) {
-                    try {
-                        currentSession = await account.getSession("current");
-                        console.log("[Auth Callback] Active session retrieved:", currentSession);
-                    } catch (sessErr) {
-                        console.warn(
-                            "[Auth Callback] getSession('current') failed:",
-                            sessErr?.message || sessErr,
-                        );
-                    }
-                }
-
-                const targetUserId =
-                    appwriteUser?.$id || currentSession?.userId || userIdParam;
-                const targetSecret = secretParam || currentSession?.secret;
-
-                if (!targetUserId && !targetSecret && !appwriteUser) {
-                    console.warn("[Auth Callback] No OAuth credentials found in callback URL.");
-                    setStatus("No OAuth session parameters found. Redirecting to login...");
-                    setTimeout(() => {
-                        router.push("/login?error=oauth_failed");
-                    }, 2000);
-                    return;
-                }
-
-                setStatus("Saving user data to MongoDB & creating session...");
-
-                // Call MongoDB sync endpoint
-                const response = await fetch("/api/auth/google/callback", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        appwriteUser,
-                        userId: targetUserId,
-                        secret: targetSecret,
-                    }),
-                    credentials: "include",
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(
-                        errorData.error || errorData.message || "Failed to sync Appwrite user to MongoDB",
-                    );
-                }
-
-                const result = await response.json();
-                console.log("[Auth Callback] MongoDB sync successful:", result);
-
-                setStatus("Sign in complete! Redirecting...");
-                router.push(result.redirectTo || "/feed");
+                setStatus("This sign-in method is deprecated. Redirecting to login...");
+                setTimeout(() => {
+                    router.push("/login");
+                }, 1200);
+                return;
             } catch (error) {
-                console.error("[Auth Callback] OAuth Error:", error);
+                console.error("[Auth Callback] Error:", error);
                 setStatus(`Authentication error: ${error.message}. Redirecting to login...`);
                 setTimeout(() => {
                     router.push("/login?error=oauth_failed");
-                }, 2500);
+                }, 1500);
             }
         };
 
-        completeSignIn();
+        handleLegacyCallback();
     }, [router, searchParams]);
 
     return (
