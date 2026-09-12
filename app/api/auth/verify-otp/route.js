@@ -21,15 +21,15 @@ export async function POST(request) {
     const { email, otp, purpose = 'verification' } = body
 
     // ── Validate inputs ──
-    if (!email || typeof email !== 'string') {
+    if (!email || typeof email !== 'string' || String(email).trim() === '') {
       return errorResponse(new BadRequestError('Email is required'))
     }
-    if (!otp || typeof otp !== 'string') {
+    if (otp === undefined || otp === null || String(otp).trim() === '') {
       return errorResponse(new BadRequestError('OTP is required'))
     }
 
-    const normalizedEmail = email.toLowerCase().trim()
-    const normalizedOtp = otp.trim()
+    const normalizedEmail = String(email).toLowerCase().trim()
+    const normalizedOtp = String(otp).trim()
 
     if (!/^\d{6}$/.test(normalizedOtp)) {
       return errorResponse(new BadRequestError('OTP must be a 6-digit code'))

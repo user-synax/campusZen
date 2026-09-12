@@ -25,14 +25,15 @@ export async function POST(request) {
 
         const validation = signupSchema.safeParse(body);
         if (!validation.success) {
-            return errorResponse(new BadRequestError("Validation failed", validation.error.errors.map((e) => ({ field: e.path.join("."), message: e.message }))));
+            const zodIssues = validation.error.issues || validation.error.errors || [];
+            return errorResponse(new BadRequestError("Validation failed", zodIssues.map((e) => ({ field: (e.path || []).join("."), message: e.message }))));
         }
 
         const { name, username, email, password, confirmPassword, phone, college, course, year, gender, otp } = validation.data;
 
         await connectDB();
-        const normalizedEmail = email.toLowerCase().trim();
-        const normalizedOtp = otp.trim();
+        const normalizedEmail = String(email).toLowerCase().trim();
+        const normalizedOtp = String(otp).trim();
 
         if (password !== confirmPassword) return errorResponse(new BadRequestError("Passwords do not match"));
 

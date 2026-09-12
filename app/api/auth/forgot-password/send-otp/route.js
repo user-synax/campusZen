@@ -24,11 +24,11 @@ export async function POST(request) {
     const { email } = body
     const purpose = 'forgot_password'
 
-    if (!email || typeof email !== 'string') {
+    if (!email || typeof email !== 'string' || String(email).trim() === '') {
       return errorResponse(new BadRequestError('Email is required'))
     }
 
-    const normalizedEmail = email.toLowerCase().trim()
+    const normalizedEmail = String(email).toLowerCase().trim()
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       return errorResponse(new BadRequestError('Invalid email format'))

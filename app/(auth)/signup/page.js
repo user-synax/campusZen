@@ -194,13 +194,18 @@ export default function SignupPage() {
                     }),
                 });
 
-                const data = await res.json();
-                if (!res.ok)
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    const apiDetails = data?.error?.details;
+                    if (Array.isArray(apiDetails)) {
+                        throw new Error(apiDetails.map((e) => e.message).join(", "));
+                    }
                     throw new Error(
                         data.error?.message ||
                         data.message ||
                         "Failed to send OTP",
                     );
+                }
 
                 setStep(2);
             } else {
@@ -208,31 +213,41 @@ export default function SignupPage() {
                     throw new Error("Please enter the 6-digit OTP code.");
                 }
 
+                const sanitizedOtp = String(otp).trim();
                 const res = await fetch("/api/auth/signup", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ ...formData, otp }),
+                    body: JSON.stringify({ ...formData, otp: sanitizedOtp }),
                 });
 
-                const data = await res.json();
-                if (!res.ok)
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    const apiDetails = data?.error?.details;
+                    if (Array.isArray(apiDetails)) {
+                        const msg = apiDetails.map((e) => e.message).join(", ");
+                        const e = new Error(data.error?.message || "Validation failed");
+                        e.details = apiDetails;
+                        e.message = msg ? `${data.error?.message}: ${msg}` : e.message;
+                        throw e;
+                    }
                     throw new Error(
                         data.error?.message ||
                         data.message ||
                         "Something went wrong",
                     );
+                }
 
                 window.location.href = "/feed";
             }
         } catch (err) {
-            // Zod validation errors might come in an array
-            if (
-                err.message === "Validation failed" &&
-                Array.isArray(err.errors)
-            ) {
+            // Handle both Error objects and API error details
+            const apiDetails = err?.details || err?.errors;
+            if (Array.isArray(apiDetails)) {
+                setError(apiDetails.map((e) => e.message || e).join(", "));
+            } else if (err.message === "Validation failed" && Array.isArray(err.errors)) {
                 setError(err.errors.map((e) => e.message).join(", "));
             } else {
-                setError(err.message);
+                setError(err?.message || "Something went wrong. Please try again.");
             }
         } finally {
             setLoading(false);
@@ -248,20 +263,25 @@ export default function SignupPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     email: formData.email,
+                    username: formData.username,
                     purpose: "signup",
                 }),
             });
-            const data = await res.json();
-            if (!res.ok)
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                const apiDetails = data?.error?.details;
+                if (Array.isArray(apiDetails)) {
+                    throw new Error(apiDetails.map((e) => e.message).join(", "));
+                }
                 throw new Error(
                     data.error?.message ||
                     data.message ||
                     "Failed to resend OTP",
                 );
-            // Optional: show a toast success here
+            }
             setError("A new OTP has been sent to your email.");
         } catch (err) {
-            setError(err.message);
+            setError(err?.message || "Failed to resend OTP");
         } finally {
             setLoading(false);
         }
@@ -866,13 +886,14 @@ export default function SignupPage() {
                                         id="otp"
                                         name="otp"
                                         value={otp}
-                                        onChange={(e) =>
+                                        onChange={(e) => {
+                                            const val = e?.target?.value ?? "";
                                             setOtp(
-                                                e.target.value
+                                                String(val)
                                                     .replace(/\D/g, "")
                                                     .slice(0, 6),
-                                            )
-                                        }
+                                            );
+                                        }}
                                         placeholder="••••••"
                                         className="h-16 rounded-2xl border-2 text-center text-2xl tracking-[0.5em] sm:text-3xl"
                                         autoComplete="one-time-code"

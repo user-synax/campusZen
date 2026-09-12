@@ -26,14 +26,14 @@ export async function POST(request) {
     const { email, otp } = body
     const purpose = 'forgot_password'
 
-    if (!email || typeof email !== 'string') {
+    if (!email || typeof email !== 'string' || String(email).trim() === '') {
       return errorResponse(new BadRequestError('Email is required'))
     }
-    if (!otp || typeof otp !== 'string') {
+    if (otp === undefined || otp === null || String(otp).trim() === '') {
       return errorResponse(new BadRequestError('OTP is required'))
     }
 
-    const normalizedEmail = email.toLowerCase().trim()
+    const normalizedEmail = String(email).toLowerCase().trim()
 
     // ── Rate limiting (Redis-backed) ──
     // Per-IP limit (rotating IPs still bounded per endpoint).
@@ -92,7 +92,7 @@ export async function POST(request) {
     }
 
     // Constant-time comparison against the hashed OTP at rest.
-    const matches = await bcrypt.compare(otp.trim(), otpRecord.otp)
+    const matches = await bcrypt.compare(String(otp).trim(), otpRecord.otp)
     if (!matches) {
       otpRecord.attempts = (otpRecord.attempts || 0) + 1
       if (otpRecord.attempts >= MAX_VERIFY_ATTEMPTS) {
