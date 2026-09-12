@@ -1,8 +1,36 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ensureChatSocket } from "@/lib/chat-socket";
+import {
+    ensureChatSocket,
+    isChatBackendConfigured,
+    getChatBackendUrl,
+} from "@/lib/chat-socket";
 import useUser from "@/hooks/useUser";
+
+/**
+ * Helper: fetch group inbox directly from Express backend when configured,
+ * otherwise fallback to Next shim. Mirrors Task 7 frontend feature flag.
+ */
+export async function fetchGroupInboxDirect() {
+    if (isChatBackendConfigured()) {
+        try {
+            const tokenRes = await fetch("/api/chat-socket-token", { method: "POST" });
+            if (tokenRes.ok) {
+                const { token } = await tokenRes.json();
+                const backendUrl = getChatBackendUrl();
+                const r = await fetch(`${backendUrl}/groups`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (r.ok) return await r.json();
+            }
+        } catch (_) {
+            // fallback to Next shim below
+        }
+    }
+    const r = await fetch("/api/groups");
+    return r.json();
+}
 
 /**
  * Group chat realtime hook. All events are now delivered over the Socket.IO

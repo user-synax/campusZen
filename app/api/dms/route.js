@@ -7,11 +7,40 @@ import { sanitizeMongoInput } from "@/lib/sanitize";
 import { applyRateLimit } from "@/lib/redis-rate-limit";
 import { validateObjectId } from "@/utils/validators";
 import { findOrCreateDMConversation } from "@/lib/dms";
+import { mintChatToken } from "@/lib/chatToken";
 
 /**
  * GET /api/dms - Get current user's DM conversations
+ * Thin shim: when NEXT_PUBLIC_CHAT_BACKEND_URL is configured, proxy to
+ * Express backend via short-lived chat JWT; otherwise fallback to Next logic.
  */
 export async function GET(request) {
+    const backendUrlRaw =
+        process.env.CHAT_BACKEND_URL || process.env.NEXT_PUBLIC_CHAT_BACKEND_URL;
+    if (backendUrlRaw && backendUrlRaw.trim()) {
+        try {
+            const currentUser = await getCurrentUser(request);
+            if (!currentUser) {
+                return NextResponse.json(
+                    { error: "Unauthorized" },
+                    { status: 401 },
+                );
+            }
+            const token = await mintChatToken(currentUser._id);
+            const backendUrl = backendUrlRaw.trim().replace(/\/$/, "");
+            const r = await fetch(`${backendUrl}/conversations`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await r.json().catch(() => ({}));
+            return NextResponse.json(data, { status: r.status });
+        } catch (err) {
+            console.error("[DMs GET shim]", err.message);
+            return NextResponse.json(
+                { error: "Failed to fetch DMs" },
+                { status: 500 },
+            );
+        }
+    }
     try {
         const currentUser = await getCurrentUser(request);
         if (!currentUser) {
@@ -70,8 +99,49 @@ export async function GET(request) {
 
 /**
  * POST /api/dms - Start or get a DM conversation with another user
+ * Thin shim: when backend configured, proxy to Express POST /conversations.
  */
 export async function POST(request) {
+    const backendUrlRaw =
+        process.env.CHAT_BACKEND_URL || process.env.NEXT_PUBLIC_CHAT_BACKEND_URL;
+    if (backendUrlRaw && backendUrlRaw.trim()) {
+        try {
+            const currentUser = await getCurrentUser(request);
+            if (!currentUser) {
+                return NextResponse.json(
+                    { error: "Unauthorized" },
+                    { status: 401 },
+                );
+            }
+            let body;
+            try {
+                body = await request.json();
+            } catch (e) {
+                return NextResponse.json(
+                    { message: "Invalid request body" },
+                    { status: 400 },
+                );
+            }
+            const token = await mintChatToken(currentUser._id);
+            const backendUrl = backendUrlRaw.trim().replace(/\/$/, "");
+            const r = await fetch(`${backendUrl}/conversations`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(body),
+            });
+            const data = await r.json().catch(() => ({}));
+            return NextResponse.json(data, { status: r.status });
+        } catch (err) {
+            console.error("[DMs POST shim]", err.message);
+            return NextResponse.json(
+                { error: "Failed to start DM" },
+                { status: 500 },
+            );
+        }
+    }
     try {
         const currentUser = await getCurrentUser(request);
         if (!currentUser) {

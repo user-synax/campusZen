@@ -1,7 +1,36 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ensureChatSocket } from "@/lib/chat-socket";
+import {
+    ensureChatSocket,
+    isChatBackendConfigured,
+    getChatBackendUrl,
+} from "@/lib/chat-socket";
+
+/**
+ * Helper: fetch DM inbox directly from Express backend when configured,
+ * otherwise fallback to Next shim. Mirrors Task 7 frontend feature flag.
+ * Token is minted via POST /api/chat-socket-token (short-lived 60s JWT).
+ */
+export async function fetchDMInboxDirect() {
+    if (isChatBackendConfigured()) {
+        try {
+            const tokenRes = await fetch("/api/chat-socket-token", { method: "POST" });
+            if (tokenRes.ok) {
+                const { token } = await tokenRes.json();
+                const backendUrl = getChatBackendUrl();
+                const r = await fetch(`${backendUrl}/conversations`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (r.ok) return await r.json();
+            }
+        } catch (_) {
+            // fallback to Next shim below
+        }
+    }
+    const r = await fetch("/api/dms");
+    return r.json();
+}
 
 /**
  * DM chat realtime hook. All events are now delivered over the Socket.IO

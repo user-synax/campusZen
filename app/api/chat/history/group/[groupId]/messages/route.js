@@ -28,7 +28,10 @@ export async function GET(request, { params }) {
             { headers: { Authorization: `Bearer ${token}` } },
         );
         const data = await upstream.json();
-        return NextResponse.json(data, { status: upstream.status });
+        return NextResponse.json(data, {
+            status: upstream.status,
+            headers: { "X-Deprecated": "use backend direct" },
+        });
     } catch (err) {
         return NextResponse.json({ error: "Failed to fetch messages" }, { status: 500 });
     }

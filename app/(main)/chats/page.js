@@ -14,7 +14,11 @@ import useUser from "@/hooks/useUser";
 import { Skeleton } from "@/components/ui/skeleton";
 import { isAdmin } from "@/lib/admin";
 import { useTabData } from "@/hooks/useTabData";
-import { ensureChatSocket } from "@/lib/chat-socket";
+import {
+    ensureChatSocket,
+    isChatBackendConfigured,
+    getChatBackendUrl,
+} from "@/lib/chat-socket";
 
 export default function ChatsPage() {
     const [activeTab, setActiveTab] = useState("dms");
@@ -87,6 +91,26 @@ export default function ChatsPage() {
     } = useTabData(
         "chats-groups",
         async () => {
+            // Thin shim frontend feature flag: when chat backend is configured,
+            // fetch directly from Express via short-lived JWT, else fallback to Next shim.
+            if (isChatBackendConfigured()) {
+                try {
+                    const tokenRes = await fetch("/api/chat-socket-token", { method: "POST" });
+                    if (tokenRes.ok) {
+                        const { token } = await tokenRes.json();
+                        const backendUrl = getChatBackendUrl();
+                        const r = await fetch(`${backendUrl}/groups`, {
+                            headers: { Authorization: `Bearer ${token}` },
+                        });
+                        if (r.ok) {
+                            const data = await r.json();
+                            return data.groups || [];
+                        }
+                    }
+                } catch (e) {
+                    console.debug("[chats] backend groups fetch failed, fallback to Next", e?.message);
+                }
+            }
             const res = await fetch("/api/groups");
             if (!res.ok) throw new Error("Failed to fetch groups");
             const data = await res.json();
@@ -102,6 +126,24 @@ export default function ChatsPage() {
     } = useTabData(
         "chats-dms",
         async () => {
+            if (isChatBackendConfigured()) {
+                try {
+                    const tokenRes = await fetch("/api/chat-socket-token", { method: "POST" });
+                    if (tokenRes.ok) {
+                        const { token } = await tokenRes.json();
+                        const backendUrl = getChatBackendUrl();
+                        const r = await fetch(`${backendUrl}/conversations`, {
+                            headers: { Authorization: `Bearer ${token}` },
+                        });
+                        if (r.ok) {
+                            const data = await r.json();
+                            return data.conversations || [];
+                        }
+                    }
+                } catch (e) {
+                    console.debug("[chats] backend dms fetch failed, fallback to Next", e?.message);
+                }
+            }
             const res = await fetch("/api/dms");
             if (!res.ok) throw new Error("Failed to fetch DMs");
             const data = await res.json();

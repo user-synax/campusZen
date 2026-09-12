@@ -9,11 +9,34 @@ import { sanitizeText, sanitizeMongoInput } from '@/lib/sanitize'
 import { applyRateLimit } from '@/lib/redis-rate-limit'
 import { emitToUsers } from '@/lib/realtime'
 import { validateObjectId } from '@/utils/validators'
+import { mintChatToken } from '@/lib/chatToken'
 
 /**
  * GET /api/groups - Get current user's groups (inbox)
+ * Thin shim: when NEXT_PUBLIC_CHAT_BACKEND_URL is configured, proxy to
+ * Express backend via short-lived chat JWT; otherwise fallback to Next logic.
  */
 export async function GET(request) {
+  const backendUrlRaw =
+    process.env.CHAT_BACKEND_URL || process.env.NEXT_PUBLIC_CHAT_BACKEND_URL
+  if (backendUrlRaw && backendUrlRaw.trim()) {
+    try {
+      const currentUser = await getCurrentUser(request)
+      if (!currentUser) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+      const token = await mintChatToken(currentUser._id)
+      const backendUrl = backendUrlRaw.trim().replace(/\/$/, '')
+      const r = await fetch(`${backendUrl}/groups`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await r.json().catch(() => ({}))
+      return NextResponse.json(data, { status: r.status })
+    } catch (err) {
+      console.error('[Groups GET shim]', err.message)
+      return NextResponse.json({ error: 'Failed to fetch groups' }, { status: 500 })
+    }
+  }
   try {
     const currentUser = await getCurrentUser(request)
     if (!currentUser) {
@@ -53,8 +76,50 @@ export async function GET(request) {
 
 /**
  * POST /api/groups - Create new group
+ * Thin shim: when backend configured, proxy to Express POST /groups.
  */
 export async function POST(request) {
+  const backendUrlRaw =
+    process.env.CHAT_BACKEND_URL || process.env.NEXT_PUBLIC_CHAT_BACKEND_URL
+  if (backendUrlRaw && backendUrlRaw.trim()) {
+    try {
+      const { blocked, response: rateLimitResponse } = await applyRateLimit(
+        request,
+        'group_create_api',
+        5,
+        10 * 60 * 1000
+      )
+      if (blocked) return rateLimitResponse
+      const currentUser = await getCurrentUser(request)
+      if (!currentUser) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+      if (!isAdmin(currentUser)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+      let body
+      try {
+        body = await request.json()
+      } catch (e) {
+        return NextResponse.json({ message: 'Invalid request body' }, { status: 400 })
+      }
+      const token = await mintChatToken(currentUser._id)
+      const backendUrl = backendUrlRaw.trim().replace(/\/$/, '')
+      const r = await fetch(`${backendUrl}/groups`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      })
+      const data = await r.json().catch(() => ({}))
+      return NextResponse.json(data, { status: r.status })
+    } catch (err) {
+      console.error('[Groups POST shim]', err.message)
+      return NextResponse.json({ error: 'Failed to create group' }, { status: 500 })
+    }
+  }
   try {
     // Standard rate limit - 5 requests per 10 minutes
     const { blocked, response: rateLimitResponse } = await applyRateLimit(

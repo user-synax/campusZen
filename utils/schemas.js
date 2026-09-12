@@ -49,7 +49,7 @@ export const signupSchema = z.object({
   course: z.string().max(100).optional().default(''),
   year: z.coerce.number().int().min(1).max(6).optional().default(1),
   gender: z.enum(['male', 'female', 'other', 'unspecified']).optional().default('unspecified'),
-  otp: z.string().length(6, 'OTP must be exactly 6 digits')
+  otp: z.coerce.string().trim().regex(/^\d{6}$/, 'OTP must be exactly 6 digits')
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -124,10 +124,11 @@ export const validateRequest = (schema) => {
       const result = schema.safeParse(body)
       
       if (!result.success) {
+        const zodIssues = result.error.issues || result.error.errors || []
         return {
           valid: false,
-          errors: result.error.errors.map(e => ({
-            field: e.path.join('.'),
+          errors: zodIssues.map(e => ({
+            field: (e.path || []).join('.'),
             message: e.message
           }))
         }

@@ -12,6 +12,12 @@ const userSchema = new mongoose.Schema(
         isVerified: { type: Boolean, default: false },
         equippedShopItems: { type: mongoose.Schema.Types.Mixed, default: {} },
         ownedShopItems: { type: [mongoose.Schema.Types.Mixed], default: [] },
+        // Added for DM/group auth checks — mirrors I:\campusX\models\User.js:196,182,54,177
+        dmEnabled: { type: Boolean, default: true },
+        blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User", default: [] }],
+        college: { type: String, default: "" },
+        role: { type: String, enum: ["user", "moderator", "admin", "founder"], default: "user" },
+        tokenVersion: { type: Number, default: 0 },
     },
     { strict: false, timestamps: false },
 );

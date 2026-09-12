@@ -12,6 +12,8 @@ import { setIo } from "./io.js";
 import { socketAuth } from "./middleware/socketAuth.js";
 import { registerSocket } from "./socket/index.js";
 import historyRouter from "./routes/history.js";
+import conversationsRouter from "./routes/conversations.js";
+import groupsRouter from "./routes/groups.js";
 import emitRouter from "./lib/emit.js";
 
 async function main() {
@@ -64,6 +66,8 @@ async function main() {
     });
 
     app.use("/", historyRouter);
+    app.use("/", conversationsRouter);
+    app.use("/", groupsRouter);
 
     // Internal realtime emit API — the single realtime layer.
     app.use("/api/emit", emitRouter);
