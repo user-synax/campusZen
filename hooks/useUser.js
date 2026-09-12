@@ -73,6 +73,41 @@ export default function useUser() {
       fetchUser(false)
     }
 
+    // Only first mount sets up global keep-alive (avoid duplicate intervals)
+    let isFirst = subscribers.size === 1
+    if (isFirst && typeof window !== "undefined" && !window.__campusx_keepAliveSetup) {
+      window.__campusx_keepAliveSetup = true
+      let keepAliveInterval = null
+      const schedule = () => {
+        if (keepAliveInterval) clearInterval(keepAliveInterval)
+        if (globalUser) {
+          keepAliveInterval = setInterval(() => {
+            if (document.visibilityState === "visible") fetchUser(false)
+          }, 12 * 60 * 60 * 1000) // 12h
+        }
+      }
+      const visibilityHandler = () => {
+        if (document.visibilityState === "visible" && globalUser) {
+          fetchUser(false)
+          schedule()
+        }
+      }
+      document.addEventListener("visibilitychange", visibilityHandler)
+      const onSub = (s) => {
+        if (s.user && !keepAliveInterval) schedule()
+        if (!s.user && keepAliveInterval) { clearInterval(keepAliveInterval); keepAliveInterval = null }
+      }
+      subscribers.add(onSub)
+      if (globalUser) schedule()
+      // Store for cleanup if needed (not strictly necessary for SPA)
+      window.__campusx_keepAliveCleanup = () => {
+        if (keepAliveInterval) clearInterval(keepAliveInterval)
+        document.removeEventListener("visibilitychange", visibilityHandler)
+        subscribers.delete(onSub)
+        window.__campusx_keepAliveSetup = false
+      }
+    }
+
     return () => {
       subscribers.delete(callback)
     }

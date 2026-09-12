@@ -18,6 +18,10 @@ const protectedRoutes = [
 // This is the ONLY place that decides if a cookie counts as "logged in".
 // Previous version checked only presence, so an expired/invalid JWT still
 // redirected /login -> /feed while /api/users/me returned 401 -> stuck loop.
+// NOTE: Rolling session refresh is NOT done here — it requires DB checks
+// (TokenBlacklist, tokenVersion) which are unavailable at the edge. Refresh
+// happens server-side in lib/auth.js#getCurrentUser (called by /api/users/me
+// and other API routes) where blacklist/version are verified before extending.
 async function isValidSession(token) {
     if (!token) return false;
     const secret = process.env.JWT_SECRET;
