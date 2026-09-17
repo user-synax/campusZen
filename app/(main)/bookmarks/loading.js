@@ -6,9 +6,11 @@ export default function BookmarksLoading() {
       <div className="sticky top-0 bg-background/80 backdrop-blur-md border-b border-border p-4 z-10">
         <h1 className="text-xl font-bold tracking-tight">Bookmarks</h1>
       </div>
-      <div className="divide-y divide-border">
+      <div className="feed-stack">
         {Array(5).fill(0).map((_, i) => (
-          <PostSkeleton key={i} />
+          <div key={i} className="post-skeleton-card p-3 sm:p-4">
+            <PostSkeleton />
+          </div>
         ))}
       </div>
     </div>

@@ -673,23 +673,33 @@ export default function ProfileClient({ username: initialUsername }) {
                 <div className="px-6 py-3.5 font-bold text-sm text-foreground">Posts</div>
             </div>
 
-            {/* Content Section */}
-            <div className="relative z-10 flex-1 max-w-3xl w-full mx-auto sm:border-x sm:border-border/40">
+            {/* Content Section — spaced premium cards */}
+            <div className="relative z-10 flex-1 max-w-3xl w-full mx-auto">
                 {postsLoading && posts.length === 0 ? (
-                            [1, 2, 3].map((i) => <PostSkeleton key={i} />)
+                            <div className="feed-stack">
+                                {[1, 2, 3].map((i) => (
+                                    <div key={i} className="post-skeleton-card p-3 sm:p-4">
+                                        <PostSkeleton />
+                                    </div>
+                                ))}
+                            </div>
                         ) : posts.length === 0 ? (
-                            <EmptyState
-                                icon={FileText}
-                                title="No posts yet"
-                                description={
-                                    isOwnProfile
-                                        ? "You haven't posted anything yet."
-                                        : `@${profileUser.username} hasn't posted anything yet.`
-                                }
-                            />
+                            <div className="feed-stack">
+                                <div className="post-skeleton-card p-6 text-center sm:p-8">
+                                    <EmptyState
+                                        icon={FileText}
+                                        title="No posts yet"
+                                        description={
+                                            isOwnProfile
+                                                ? "You haven't posted anything yet."
+                                                : `@${profileUser.username} hasn't posted anything yet.`
+                                        }
+                                    />
+                                </div>
+                            </div>
                         ) : (
                             <>
-                                <div className="divide-y divide-border">
+                                <div className="feed-stack">
                                     {/* Show pinned post first if exists */}
                                     {profileUser?.pinnedPost && (
                                         <PostCard

@@ -10,6 +10,9 @@ import { applyRateLimit } from "@/lib/redis-rate-limit";
 import { sanitizeText } from "@/lib/sanitize";
 import Community from "@/models/Community";
 
+// NOTE: touch this file if the dev server serves a stale Post model
+// (slow filesystems can miss watcher events for models/).
+
 export async function POST(request) {
     try {
         // Rate limit post creation - 10 posts per hour per IP
@@ -47,7 +50,6 @@ export async function POST(request) {
             images,
             isMarkdown,
             contentBlocks,
-            tags,
         } = body;
 
         await connectDB();
@@ -96,21 +98,11 @@ export async function POST(request) {
             };
         }
 
-        // Validate tags
-        let validTags = [];
-        if (tags && Array.isArray(tags)) {
-            validTags = tags
-                .map((tag) => sanitizeText(tag))
-                .filter((tag) => tag.length > 0)
-                .slice(0, 5); // Max 5 tags
-        }
-
         const postData = {
             content: sanitizedContent,
             community: sanitizeText(community) || "",
             poll: pollData,
             hashtags,
-            tags: validTags,
             images: Array.isArray(images) ? images : [],
             linkPreview: linkPreview?.url ? { url: linkPreview.url } : null,
             isMarkdown: isMarkdown === true,

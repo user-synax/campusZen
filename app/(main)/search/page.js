@@ -582,7 +582,7 @@ export default function SearchPage() {
                                                         Top posts for <span className="font-medium text-foreground">&quot;{debouncedQuery}&quot;</span>
                                                     </span>
                                                 </div>
-                                                <div className="divide-y divide-border/60">
+                                                <div className="flex flex-col gap-3 sm:gap-4 px-3 sm:px-4 py-4">
                                                     {postResults.map((post) => (
                                                         <PostCard
                                                             key={post._id}
@@ -666,7 +666,7 @@ export default function SearchPage() {
                                             <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" />
                                             <span className="text-xs text-muted-foreground">Media posts for &quot;{debouncedQuery}&quot;</span>
                                         </div>
-                                        <div className="divide-y divide-border/60">
+                                        <div className="flex flex-col gap-3 sm:gap-4 px-3 sm:px-4 py-4">
                                             {mediaPosts.map((post) => (
                                                 <PostCard
                                                     key={post._id}

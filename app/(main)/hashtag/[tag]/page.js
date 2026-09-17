@@ -116,12 +116,16 @@ export default function HashtagPage({ params }) {
         </div>
       </div>
 
-      {/* Posts feed */}
-      <div className="divide-y divide-border">
+      {/* Posts feed — spaced premium cards */}
+      <div className="feed-stack">
         {loading && page === 1 ? (
-          Array(4).fill(0).map((_, i) => <PostSkeleton key={i} />)
+          Array(4).fill(0).map((_, i) => (
+            <div key={i} className="post-skeleton-card p-3 sm:p-4">
+              <PostSkeleton />
+            </div>
+          ))
         ) : posts.length === 0 ? (
-          <div className="py-20">
+          <div className="post-skeleton-card p-6 text-center sm:p-8">
             <EmptyState
               icon={Hash}
               title={`No posts for #${tag}`}

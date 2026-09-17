@@ -186,7 +186,10 @@ const postSchema = new mongoose.Schema(
 );
 
 // ── Keep denormalized fields in sync ──
-postSchema.pre("save", async function (next) {
+// NOTE: async pre hook — no `next` param (Mongoose 9 removed the callback
+// for async middleware; calling it throws `TypeError: next is not a function`
+// and 500s every post creation). Return/throw instead.
+postSchema.pre("save", async function () {
     try {
         // Only set on new docs or when author changes
         if (this.isNew || this.isModified("author")) {
@@ -205,9 +208,8 @@ postSchema.pre("save", async function (next) {
             (this.repostsCount || 0) * 1.5 +
             (this.authorIsVerified ? 8 : 0);
         this.popularityScore = base;
-        next();
-    } catch (e) {
-        next();
+    } catch {
+        // Best-effort denormalization — never block the save.
     }
 });
 

@@ -25,10 +25,12 @@ export default function ProfileLoading() {
         </div>
       </div>
 
-      {/* Posts Skeleton */}
-      <div className="divide-y divide-border mt-4">
+      {/* Posts Skeleton — spaced cards */}
+      <div className="feed-stack">
         {Array(3).fill(0).map((_, i) => (
-          <PostSkeleton key={i} />
+          <div key={i} className="post-skeleton-card p-3 sm:p-4">
+            <PostSkeleton />
+          </div>
         ))}
       </div>
     </div>

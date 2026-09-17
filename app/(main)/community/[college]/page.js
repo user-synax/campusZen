@@ -134,36 +134,42 @@ export default function CollegeCommunityPage() {
         />
       )}
 
-      {/* Posts Section */}
-      <div className="flex-1">
+      {/* Posts Section — spaced premium cards */}
+      <div className="feed-stack">
         {!isAuthenticated ? (
-          <EmptyState 
-            icon={GraduationCap} 
-            title={`${displayName} community`} 
-            description="Log in to view discussions and join the conversation with your college mates." 
-          />
+          <div className="post-skeleton-card p-6 text-center sm:p-8">
+            <EmptyState 
+              icon={GraduationCap} 
+              title={`${displayName} community`} 
+              description="Log in to view discussions and join the conversation with your college mates." 
+            />
+          </div>
         ) : postsLoading && posts.length === 0 ? (
-          [1, 2, 3].map(i => <PostSkeleton key={i} />)
+          [1, 2, 3].map(i => (
+            <div key={i} className="post-skeleton-card p-3 sm:p-4">
+              <PostSkeleton />
+            </div>
+          ))
         ) : posts.length === 0 ? (
-          <EmptyState 
-            icon={GraduationCap} 
-            title={`Welcome to ${displayName}`} 
-            description="Be the first to share something with your college community!" 
-          />
+          <div className="post-skeleton-card p-6 text-center sm:p-8">
+            <EmptyState 
+              icon={GraduationCap} 
+              title={`Welcome to ${displayName}`} 
+              description="Be the first to share something with your college community!" 
+            />
+          </div>
         ) : (
           <>
-            <div className="divide-y divide-border">
-              {posts.map(post => (
-                <PostCard 
-                  key={post._id} 
-                  post={post} 
-                  currentUserId={currentUser?._id} 
-                  currentUser={currentUser}
-                  onDelete={handleDeletePost} 
-                  onLike={handleLikePost} 
-                />
-              ))}
-            </div>
+            {posts.map(post => (
+              <PostCard 
+                key={post._id} 
+                post={post} 
+                currentUserId={currentUser?._id} 
+                currentUser={currentUser}
+                onDelete={handleDeletePost} 
+                onLike={handleLikePost} 
+              />
+            ))}
             
             <div ref={sentinelRef}>
               <InfiniteScrollSentinel 

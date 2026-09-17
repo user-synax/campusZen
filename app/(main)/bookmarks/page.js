@@ -156,12 +156,16 @@ export default function BookmarksPage() {
         </p>
       </div>
 
-      {/* Bookmarked posts */}
-      <div className="mt-2">
+      {/* Bookmarked posts — spaced premium cards */}
+      <div className="feed-stack">
         {initialLoading && posts.length === 0 ? (
-          Array(3).fill(0).map((_, i) => <PostSkeleton key={i} />)
+          Array(3).fill(0).map((_, i) => (
+            <div key={i} className="post-skeleton-card p-3 sm:p-4">
+              <PostSkeleton />
+            </div>
+          ))
         ) : posts.length === 0 ? (
-          <div className="mt-20">
+          <div className="post-skeleton-card p-6 text-center sm:p-8">
             <EmptyState
               icon={Bookmark}
               title="No saved posts yet"
@@ -170,19 +174,17 @@ export default function BookmarksPage() {
           </div>
         ) : (
           <>
-            <div className="divide-y divide-border">
-              {posts.map(post => (
-                <PostCard 
-                  key={post._id} 
-                  post={post} 
-                  currentUserId={currentUser?._id} 
-                  currentUser={currentUser}
-                  onBookmarkToggle={handleBookmarkToggle}
-                  onDelete={handleDeletePost}
-                  onLike={handleLikePost}
-                />
-              ))}
-            </div>
+            {posts.map(post => (
+              <PostCard 
+                key={post._id} 
+                post={post} 
+                currentUserId={currentUser?._id} 
+                currentUser={currentUser}
+                onBookmarkToggle={handleBookmarkToggle}
+                onDelete={handleDeletePost}
+                onLike={handleLikePost}
+              />
+            ))}
             
             <div ref={sentinelRef}>
               <InfiniteScrollSentinel 
