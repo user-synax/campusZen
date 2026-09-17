@@ -1,0 +1,232 @@
+/* CampusZen sidebar — DESIGN.md (alpha) premium nav.
+   Palette: canvas #090909, surface-1 #141414, surface-2 #1c1c1c,
+   hairline-soft #1a1a1a, ink #fff, ink-muted #999.
+   Accent-blue #4ba9e1 is used ONLY for the selected indicator bar
+   + notification badges (spec: links, focus, selected indicators).
+   Motion: shared tokens only, transform/opacity/border-color lanes —
+   no layout, no blur, no lift. */
+
+/* ── Shell: flat canvas, quiet hairline edge ────────────────── */
+.side-shell {
+  background: hsl(var(--background));
+  border-right: 1px solid hsl(var(--border) / 0.4);
+}
+
+.dark .side-shell {
+  background: var(--color-canvas);
+  border-right-color: var(--color-hairline-soft);
+}
+
+/* ── Nav item: pill row, border reserved so active never shifts ─ */
+.side-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border-radius: 100px;
+  border: 1px solid transparent;
+  color: hsl(var(--foreground) / 0.78);
+  transition:
+    background-color var(--duration-fast) var(--ease-smooth-out),
+    border-color var(--duration-fast) var(--ease-smooth-out),
+    color var(--duration-fast) var(--ease-smooth-out),
+    transform var(--duration-fast) var(--ease-smooth-out);
+}
+
+.dark .side-item {
+  color: color-mix(in srgb, var(--color-ink) 78%, transparent);
+}
+
+.side-item:hover {
+  background: hsl(var(--accent) / 0.55);
+  border-color: hsl(var(--border) / 0.5);
+  color: hsl(var(--foreground));
+}
+
+.dark .side-item:hover {
+  background: var(--color-surface-1);
+  border-color: var(--color-hairline-soft);
+  color: var(--color-ink);
+}
+
+@media (min-width: 1024px) {
+  .side-item:hover {
+    transform: translateX(2px);
+  }
+}
+
+.side-item:active {
+  transform: scale(0.98);
+  transition-duration: var(--duration-quick);
+}
+
+.side-item:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-post-ring-focus, 0 0 0 1px rgba(75, 169, 225, 0.35));
+}
+
+/* ── Selected: surface-2 pill + accent-blue indicator bar ───── */
+.side-item[data-active="true"] {
+  background: hsl(var(--accent));
+  border-color: hsl(var(--border) / 0.6);
+  color: hsl(var(--foreground));
+  font-weight: 600;
+}
+
+.dark .side-item[data-active="true"] {
+  background: var(--color-surface-2);
+  border-color: var(--color-hairline-soft);
+  color: var(--color-ink);
+}
+
+.side-item::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 50%;
+  width: 3px;
+  height: 20px;
+  border-radius: 9999px;
+  background: var(--color-accent-blue);
+  transform: translateY(-50%) scaleY(0);
+  transform-origin: center;
+  opacity: 0;
+  transition:
+    transform var(--duration-fast) var(--ease-smooth-out),
+    opacity var(--duration-fast) var(--ease-smooth-out);
+}
+
+.side-item[data-active="true"]::before {
+  transform: translateY(-50%) scaleY(1);
+  opacity: 1;
+}
+
+/* ── Icon: color + scale only ───────────────────────────────── */
+.side-icon {
+  transition:
+    transform var(--duration-fast) var(--ease-smooth-out),
+    color var(--duration-fast) var(--ease-smooth-out);
+}
+
+.side-item:hover .side-icon {
+  transform: scale(1.08);
+}
+
+.side-item[data-active="true"] .side-icon {
+  transform: scale(1.05);
+}
+
+/* ── Badge: accent-blue dot, tabular numerals, mount pop ────── */
+.side-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 16px;
+  height: 16px;
+  padding-inline: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: var(--color-accent-blue);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border: 2px solid hsl(var(--background));
+  animation: side-badge-pop var(--duration-very-slow) var(--ease-bounce);
+}
+
+.dark .side-badge {
+  border-color: var(--color-canvas);
+}
+
+@keyframes side-badge-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* ── Section labels: micro caps, ink-muted ──────────────────── */
+.side-section-label {
+  padding-inline: 12px;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground) / 0.6);
+}
+
+.dark .side-section-label {
+  color: color-mix(in srgb, var(--color-ink-muted) 60%, transparent);
+}
+
+/* ── Bottom profile mini-card ───────────────────────────────── */
+.side-profile {
+  border-radius: 16px;
+  border: 1px solid transparent;
+  transition:
+    background-color var(--duration-fast) var(--ease-smooth-out),
+    border-color var(--duration-fast) var(--ease-smooth-out);
+}
+
+.side-profile:hover {
+  background: hsl(var(--accent) / 0.55);
+  border-color: hsl(var(--border) / 0.5);
+}
+
+.dark .side-profile:hover {
+  background: var(--color-surface-1);
+  border-color: var(--color-hairline-soft);
+}
+
+/* ── Icon buttons (theme, palette, more): quiet circle ──────── */
+.side-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid hsl(var(--border) / 0.6);
+  color: hsl(var(--muted-foreground));
+  transition:
+    background-color var(--duration-fast) var(--ease-smooth-out),
+    border-color var(--duration-fast) var(--ease-smooth-out),
+    color var(--duration-fast) var(--ease-smooth-out),
+    transform var(--duration-fast) var(--ease-smooth-out);
+}
+
+.side-icon-btn:hover {
+  background: hsl(var(--accent) / 0.6);
+  border-color: hsl(var(--border));
+  color: hsl(var(--foreground));
+  transform: scale(1.05);
+}
+
+.dark .side-icon-btn:hover {
+  background: var(--color-surface-1);
+  border-color: var(--color-hairline);
+  color: var(--color-ink);
+}
+
+.side-icon-btn:active {
+  transform: scale(0.94);
+  transition-duration: var(--duration-quick);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .side-item,
+  .side-item::before,
+  .side-icon,
+  .side-profile,
+  .side-icon-btn {
+    transition: none;
+  }
+  .side-item:hover {
+    transform: none;
+  }
+  .side-badge {
+    animation: none;
+  }
+}

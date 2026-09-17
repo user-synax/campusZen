@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import {
     Home,
     GraduationCap,
@@ -64,6 +64,47 @@ import {
     DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 
+function isNavActive(pathname, href) {
+    if (!pathname || !href) return false;
+    return pathname === href || (href !== "/feed" && pathname.startsWith(href));
+}
+
+// Extracted + memoized: declaring inside Sidebar recreated the component
+// every render (state reset, lint react-hooks/static-components) and
+// re-mounted every row on each keystroke elsewhere in the tree.
+const SidebarNavItem = memo(function SidebarNavItem({ item, isActive }) {
+    const Icon = item.icon;
+    return (
+        <Link
+            href={item.href}
+            title={item.label}
+            aria-label={item.label}
+            aria-current={isActive ? "page" : undefined}
+            className="group block hover:cursor-pointer"
+        >
+            <div data-active={isActive} className="side-item">
+                <div className="relative shrink-0 ml-1">
+                    <Icon
+                        className={cn(
+                            "side-icon w-[18px] h-[18px]",
+                            isActive ? "text-foreground" : "text-foreground/75 group-hover:text-foreground",
+                        )}
+                        strokeWidth={isActive ? 2.4 : 1.9}
+                    />
+                    {item.badge > 0 && (
+                        <span className="side-badge">
+                            <AnimatedCount value={item.badge} max={9} />
+                        </span>
+                    )}
+                </div>
+                <span className="hidden lg:block text-[15px] leading-none tracking-[-0.15px] pr-2">
+                    {item.label}
+                </span>
+            </div>
+        </Link>
+    );
+});
+
 export default function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
@@ -102,6 +143,8 @@ export default function Sidebar() {
 
     const adminNavItems = isAdminUser ? baseAdminItems : [];
 
+    const activeFor = (href) => isNavActive(pathname, href);
+
     const proFeatures = [
         { icon: Palette, title: "Custom Themes", description: "Create and apply custom color schemes and premium presets" },
         { icon: Zap, title: "Animated Profile Headers", description: "Beautiful animated gradient profile banners" },
@@ -111,51 +154,9 @@ export default function Sidebar() {
         { icon: Rocket, title: "Early Access", description: "Try new features first" },
     ];
 
-    const NavItem = ({ item, index }) => {
-        const isActive = pathname === item.href || (item.href !== "/feed" && pathname.startsWith(item.href));
-        const Icon = item.icon;
-        return (
-            <Link href={item.href} className="group block hover:cursor-pointer" style={{ "--i": index }}>
-                <div
-                    className={cn(
-                        "relative flex items-center gap-3.5 px-3.5 py-2.5 rounded-full transition-all hover:cursor-pointer",
-                        "duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)]",
-                        "hover:bg-accent/70 hover:translate-x-[1px]",
-                        "active:scale-[0.98] active:duration-[var(--duration-quick)]",
-                        isActive
-                            ? "bg-accent font-semibold text-foreground shadow-sm border border-border/40"
-                            : "font-normal text-foreground/80 hover:text-foreground hover:bg-accent/40 border border-transparent",
-                    )}
-                >
-                    {/* Active indicator — premium dot, 3px bar */}
-                    {isActive && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-foreground rounded-full animate-[activeBar_var(--duration-fast)_var(--ease-smooth-out)]" />
-                    )}
-                    <div className="relative shrink-0 ml-1">
-                        <Icon
-                            className={cn(
-                                "w-[18px] h-[18px] transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)]",
-                                isActive ? "text-foreground scale-[1.04]" : "text-foreground/75 group-hover:text-foreground group-hover:scale-[1.02]",
-                            )}
-                            strokeWidth={isActive ? 2.4 : 1.9}
-                        />
-                        {item.badge > 0 && (
-                            <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] px-1 bg-[#4ba9e1] text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-background shadow-sm animate-[badgePop_var(--duration-very-slow)_var(--ease-bounce)]">
-                                <AnimatedCount value={item.badge} max={9} />
-                            </span>
-                        )}
-                    </div>
-                    <span className="hidden lg:block text-[15px] leading-none tracking-tight pr-2">
-                        {item.label}
-                    </span>
-                </div>
-            </Link>
-        );
-    };
-
     return (
         <>
-            <aside className="fixed left-0 top-0 h-screen w-[68px] lg:w-[260px] bg-background z-40 hidden md:flex flex-col border-r border-border/40">
+            <aside className="side-shell fixed left-0 top-0 h-screen w-[68px] lg:w-[260px] z-40 hidden md:flex flex-col">
                 {/* Logo — compact */}
                 <div className="shrink-0 px-2.5 lg:px-3 pt-3 pb-1">
                     <Link href="/feed" className="inline-flex items-center gap-2 px-2 py-1.5 rounded-full hover:bg-accent/60 hover:cursor-pointer transition-colors duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] group">
@@ -168,36 +169,36 @@ export default function Sidebar() {
                     <div className="space-y-0.5">
                         {primaryNavItems.map((item, i) => (
                             <div key={item.href} className="t-stagger-line" style={{ "--i": i }}>
-                                <NavItem item={item} index={i} />
+                                <SidebarNavItem item={item} isActive={activeFor(item.href)} />
                             </div>
                         ))}
                     </div>
 
                     <div className="pt-2.5 mt-2.5 border-t border-border/30 hidden lg:block">
-                        <p className="px-3 mb-1.5 text-[11px] font-semibold text-muted-foreground/60 tracking-wide">More</p>
+                        <p className="side-section-label">More</p>
                         <div className="space-y-0.5">
-                            {moreItems.map((item, i) => (
-                                <NavItem key={item.href} item={item} index={i + 5} />
+                            {moreItems.map((item) => (
+                                <SidebarNavItem key={item.href} item={item} isActive={activeFor(item.href)} />
                             ))}
                         </div>
                     </div>
                     <div className="lg:hidden pt-2 border-t border-border/30">
                         {moreItems.map((item) => (
-                            <NavItem key={item.href} item={item} />
+                            <SidebarNavItem key={item.href} item={item} isActive={activeFor(item.href)} />
                         ))}
                     </div>
 
                     <div className="pt-2.5 border-t border-border/30 space-y-0.5">
                         {bottomNavItems.map((item) => (
-                            <NavItem key={item.href} item={item} />
+                            <SidebarNavItem key={item.href} item={item} isActive={activeFor(item.href)} />
                         ))}
                     </div>
 
                     {adminNavItems.length > 0 && (
                         <div className="pt-2.5 border-t border-border/30">
-                            <p className="hidden lg:block px-3 mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40">Admin</p>
+                            <p className="side-section-label hidden lg:block">Admin</p>
                             {adminNavItems.map((item) => (
-                                <NavItem key={item.href} item={item} />
+                                <SidebarNavItem key={item.href} item={item} isActive={activeFor(item.href)} />
                             ))}
                         </div>
                     )}
@@ -217,8 +218,8 @@ export default function Sidebar() {
                             {/* Profile row — profile + 3-dots circle separated, same horizontal */}
                             <div className="flex items-center gap-2">
                                 <Link href={`/profile/${user.username}`} className="flex-1 min-w-0 block hover:cursor-pointer">
-                                    <div className="flex items-center gap-2.5 p-2 rounded-full hover:bg-accent/70 hover:cursor-pointer transition-colors duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] group">
-                                        <Avatar className="h-8 w-8 shrink-0 ring-1 ring-border/50 group-hover:ring-border transition-all duration-[var(--duration-fast)]">
+                                    <div className="side-profile group flex items-center gap-2.5 p-2 hover:cursor-pointer">
+                                        <Avatar className="h-8 w-8 shrink-0 ring-1 ring-border/50 group-hover:ring-border transition-colors duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)]">
                                             <AvatarImage src={user.avatar} alt={user.name} />
                                             <AvatarFallback className="bg-accent font-bold text-xs">{user.name?.charAt(0)?.toUpperCase()}</AvatarFallback>
                                         </Avatar>
@@ -231,7 +232,7 @@ export default function Sidebar() {
                                 {/* 3-dots — separated circle */}
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <button className="hidden lg:flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background hover:bg-accent hover:border-border hover:cursor-pointer transition-all duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] text-muted-foreground hover:text-foreground hover:scale-[1.04] active:scale-[0.96] shadow-sm">
+                                        <button aria-label="Account menu" className="side-icon-btn hidden lg:flex h-8 w-8 shrink-0 hover:cursor-pointer">
                                             <MoreHorizontal className="w-4 h-4" />
                                         </button>
                                     </DropdownMenuTrigger>
@@ -254,7 +255,7 @@ export default function Sidebar() {
                             {/* Logout — under profile, full width */}
                             <button
                                 onClick={handleLogout}
-                                className="hidden lg:flex w-full items-center gap-2.5 px-3 py-2 rounded-full hover:bg-accent/60 border border-transparent hover:border-border/40 hover:cursor-pointer transition-all duration-[var(--duration-fast)] text-[13px] font-medium text-muted-foreground hover:text-foreground"
+                                className="hidden lg:flex w-full items-center gap-2.5 px-3 py-2 rounded-full border border-transparent hover:cursor-pointer transition-colors duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent/60 hover:border-border/40"
                             >
                                 <LogOut className="w-4 h-4" />
                                 Log out
@@ -263,7 +264,7 @@ export default function Sidebar() {
                             <div className="lg:hidden flex items-center justify-center gap-2">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <button className="w-8 h-8 rounded-full border border-border/60 flex items-center justify-center hover:bg-accent hover:cursor-pointer transition-colors">
+                                        <button aria-label="Account menu" className="side-icon-btn w-8 h-8 hover:cursor-pointer">
                                             <MoreHorizontal className="w-4 h-4" />
                                         </button>
                                     </DropdownMenuTrigger>
@@ -283,7 +284,7 @@ export default function Sidebar() {
                     <div className="hidden lg:flex items-center gap-1 px-0.5">
                         <button
                             onClick={toggleTheme}
-                            className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-full border border-border/60 hover:border-border hover:bg-accent/60 hover:cursor-pointer transition-all duration-[var(--duration-fast)] text-muted-foreground hover:text-foreground"
+                            className="side-icon-btn flex-1 gap-1.5 h-8 hover:cursor-pointer"
                             aria-label="Toggle theme"
                         >
                             <span className="t-icon-swap" data-state={theme === "dark" ? "b" : "a"}>
@@ -296,7 +297,7 @@ export default function Sidebar() {
                         {user?.isPro ? (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <button className="h-8 w-8 rounded-full border border-border/60 hover:border-primary/30 hover:bg-[var(--color-soft-lilac)]/30 hover:cursor-pointer flex items-center justify-center text-muted-foreground hover:text-[#4ba9e1] transition-all duration-[var(--duration-fast)]">
+                                    <button aria-label="Pick theme" className="side-icon-btn h-8 w-8 hover:cursor-pointer">
                                         <Palette className="w-3.5 h-3.5" />
                                     </button>
                                 </DropdownMenuTrigger>
@@ -321,7 +322,8 @@ export default function Sidebar() {
                         ) : (
                             <button
                                 onClick={() => setShowUpgradeModal(true)}
-                                className="h-8 w-8 rounded-full border border-border/60 hover:border-primary/30 hover:bg-[var(--color-soft-lilac)]/20 hover:cursor-pointer flex items-center justify-center text-muted-foreground hover:text-[#4ba9e1] transition-all duration-[var(--duration-fast)] relative"
+                                aria-label="Unlock premium themes"
+                                className="side-icon-btn h-8 w-8 hover:cursor-pointer relative"
                             >
                                 <Palette className="w-3.5 h-3.5" />
                                 <Lock className="w-2 h-2 absolute -bottom-0.5 -right-0.5 bg-background rounded-full p-0.5" />
@@ -341,7 +343,7 @@ export default function Sidebar() {
             </aside>
 
             <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
-                <DialogContent className="sm:max-w-[440px] rounded-[14px] shadow-md border-border/50 p-0 overflow-hidden">
+                <DialogContent className="sm:max-w-[440px] rounded-[20px] shadow-md border-border/50 p-0 overflow-hidden">
                     <div className="px-5 pt-5 pb-2">
                         <DialogHeader>
                             <div className="flex items-center gap-2.5">
@@ -357,7 +359,7 @@ export default function Sidebar() {
                     </div>
                     <div className="px-5 py-3 grid grid-cols-1 gap-2 max-h-[45vh] overflow-y-auto custom-scrollbar">
                         {proFeatures.map((f) => (
-                            <div key={f.title} className="flex gap-2.5 p-2.5 rounded-[12px] border border-border/50 hover:border-[var(--color-soft-lilac)]/60 hover:bg-[var(--color-soft-lilac)]/10 hover:cursor-pointer transition-colors duration-[var(--duration-fast)]">
+                            <div key={f.title} className="flex gap-2.5 p-2.5 rounded-[15px] border border-border/50 hover:cursor-pointer transition-colors duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] hover:bg-accent/50 hover:border-border/70">
                                 <f.icon className="w-4 h-4 text-[#4ba9e1] mt-0.5 shrink-0" />
                                 <div>
                                     <p className="text-[13px] font-semibold leading-none">{f.title}</p>
@@ -373,18 +375,6 @@ export default function Sidebar() {
                     </div>
                 </DialogContent>
             </Dialog>
-
-            <style>{`
-                @keyframes badgePop {
-                    0% { transform: scale(0.6); filter: blur(var(--blur-small)); }
-                    60% { transform: scale(1.08); filter: blur(0); }
-                    100% { transform: scale(1); }
-                }
-                @keyframes activeBar {
-                    from { transform: translateY(-50%) scaleY(0.3); opacity: 0; }
-                    to { transform: translateY(-50%) scaleY(1); opacity: 1; }
-                }
-            `}</style>
         </>
     );
 }

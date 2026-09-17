@@ -67,7 +67,7 @@ function ImageCell({ url, ratio, onClick }) {
                 decoding="async"
                 sizes="(max-width: 640px) 100vw, 640px"
                 className="object-cover"
-                quality={80}
+                quality={75}
                 onError={(e) => { e.currentTarget.style.display = "none"; }}
             />
         </button>

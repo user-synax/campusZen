@@ -2,6 +2,7 @@
 @import "./transitions.css";
 @import "./styles/campus-sections.css";
 @import "./styles/post-cards.css"; /* must exist before dev boot; restart dev if resolver cached a miss */
+@import "./styles/sidebar.css";
 
 /* DESIGN.md (alpha) — premium palette extracted from snippet.
    Canvas/surface/hairline/ink own the post UI. Accent blue is
