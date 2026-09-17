@@ -19,7 +19,7 @@ export default function PostImageGrid({ images }) {
 
     if (capped.length === 1) {
         return (
-            <div className="mt-3 rounded-[12px] sm:rounded-[15px] overflow-hidden border border-border">
+            <div className="post-media mt-0 overflow-hidden">
                 <ImageCell url={capped[0]} ratio="16/9" onClick={() => openImage(capped[0])} />
             </div>
         );
@@ -27,7 +27,7 @@ export default function PostImageGrid({ images }) {
 
     if (capped.length === 2) {
         return (
-            <div className="mt-3 grid grid-cols-2 gap-0.5 rounded-[12px] sm:rounded-[15px] overflow-hidden border border-border">
+            <div className="post-media mt-0 grid grid-cols-2 gap-[2px] overflow-hidden">
                 {capped.map((url, i) => (
                     <ImageCell key={i} url={url} ratio="1/1" onClick={() => openImage(url)} />
                 ))}
@@ -37,9 +37,9 @@ export default function PostImageGrid({ images }) {
 
     const [first, ...rest] = capped;
     return (
-        <div className="mt-3 rounded-[12px] sm:rounded-[15px] overflow-hidden border border-border flex flex-col gap-0.5">
+        <div className="post-media mt-0 flex flex-col gap-[2px] overflow-hidden">
             <ImageCell url={first} ratio="16/9" onClick={() => openImage(first)} />
-            <div className="grid grid-cols-2 gap-0.5">
+            <div className="grid grid-cols-2 gap-[2px]">
                 {rest.map((url, i) => (
                     <ImageCell key={i} url={url} ratio="1/1" onClick={() => openImage(url)} />
                 ))}
@@ -50,13 +50,13 @@ export default function PostImageGrid({ images }) {
 
 function ImageCell({ url, ratio, onClick }) {
     const paddingMap = { "16/9": "pb-[56.25%]", "1/1": "pb-[100%]" };
-    // X caps single-image height at 510px, keep 16/9 but max-h
+    // Cap single-image height at 510px, keep 16/9 but max-h
     const capClass = ratio === "16/9" ? "max-h-[510px]" : "";
     return (
         <button
             type="button"
             onClick={onClick}
-            className={`relative w-full ${paddingMap[ratio]} ${capClass} block overflow-hidden bg-accent/10 hover:opacity-[0.96] hover:cursor-pointer transition-opacity duration-[var(--duration-fast)]`}
+            className={`relative w-full ${paddingMap[ratio]} ${capClass} block overflow-hidden bg-secondary/60 hover:opacity-[0.97] hover:cursor-pointer transition-opacity duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)]`}
             aria-label="View image"
         >
             <Image
@@ -64,9 +64,10 @@ function ImageCell({ url, ratio, onClick }) {
                 alt="Post image"
                 fill
                 loading="lazy"
-                sizes="(max-width: 680px) 100vw, 680px"
+                decoding="async"
+                sizes="(max-width: 640px) 100vw, 640px"
                 className="object-cover"
-                quality={85}
+                quality={80}
                 onError={(e) => { e.currentTarget.style.display = "none"; }}
             />
         </button>

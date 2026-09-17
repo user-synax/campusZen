@@ -267,63 +267,60 @@ async function PostStructuredData({ postId }) {
 
 function PostDetailSkeleton() {
     return (
-        <div className="flex flex-col min-h-screen bg-background">
+        <div className="flex min-h-screen flex-col">
             {/* Back nav */}
             <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-xl border-b border-border/50 px-4 py-3 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-accent/60 animate-pulse" />
-                <div className="w-20 h-4 rounded-md bg-accent/60 animate-pulse" />
+                <div className="post-skeleton-bar post-skeleton-pulse w-8 h-8 rounded-full" />
+                <div className="post-skeleton-bar post-skeleton-pulse w-20 h-4 rounded-md" />
             </div>
 
-            <div className="w-full max-w-2xl mx-auto px-4 py-5 space-y-4">
-                {/* Author row */}
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-accent/60 animate-pulse shrink-0" />
-                    <div className="flex flex-col gap-1.5 flex-1">
-                        <div className="w-32 h-3.5 rounded-md bg-accent/60 animate-pulse" />
-                        <div className="w-20 h-3 rounded-md bg-accent/40 animate-pulse" />
+            <div className="detail-column">
+                <div className="detail-card p-4 sm:p-5 space-y-4">
+                    {/* Author row */}
+                    <div className="flex items-center gap-3">
+                        <div className="post-skeleton-bar post-skeleton-pulse w-10 h-10 rounded-full shrink-0" />
+                        <div className="flex flex-col gap-1.5 flex-1">
+                            <div className="post-skeleton-bar post-skeleton-pulse w-32 h-3.5 rounded-md" />
+                            <div className="post-skeleton-bar post-skeleton-pulse w-20 h-3 rounded-md" />
+                        </div>
+                        <div className="post-skeleton-bar post-skeleton-pulse w-16 h-7 rounded-full" />
                     </div>
-                    <div className="w-16 h-7 rounded-full bg-accent/40 animate-pulse" />
-                </div>
 
-                {/* Post body */}
-                <div className="space-y-2 pt-1">
-                    <div className="w-full h-4 rounded-md bg-accent/60 animate-pulse" />
-                    <div className="w-[92%] h-4 rounded-md bg-accent/60 animate-pulse" />
-                    <div className="w-[78%] h-4 rounded-md bg-accent/60 animate-pulse" />
-                    <div className="w-[85%] h-4 rounded-md bg-accent/50 animate-pulse" />
-                    <div className="w-[60%] h-4 rounded-md bg-accent/40 animate-pulse" />
-                </div>
+                    {/* Post body */}
+                    <div className="space-y-2 pt-1">
+                        <div className="post-skeleton-bar post-skeleton-pulse w-full h-4 rounded-md" />
+                        <div className="post-skeleton-bar post-skeleton-pulse w-[92%] h-4 rounded-md" />
+                        <div className="post-skeleton-bar post-skeleton-pulse w-[78%] h-4 rounded-md" />
+                    </div>
 
-                {/* Image placeholder */}
-                <div className="w-full h-48 sm:h-56 rounded-2xl bg-accent/40 animate-pulse" />
+                    {/* Image placeholder */}
+                    <div className="post-skeleton-bar post-skeleton-pulse w-full h-48 sm:h-56 rounded-[15px]" />
 
-                {/* Action bar */}
-                <div className="flex items-center gap-2 pt-1 border-t border-border/40">
-                    {[...Array(3)].map((_, i) => (
-                        <div
-                            key={i}
-                            className="w-16 h-8 rounded-full bg-accent/50 animate-pulse"
-                        />
-                    ))}
+                    {/* Action bar */}
+                    <div className="flex items-center gap-2 pt-3 border-t border-border/40">
+                        {[...Array(3)].map((_, i) => (
+                            <div
+                                key={i}
+                                className="post-skeleton-bar post-skeleton-pulse w-16 h-8 rounded-full"
+                            />
+                        ))}
+                    </div>
                 </div>
 
                 {/* Comment composer */}
-                <div className="flex gap-3 items-center pt-2">
-                    <div className="w-8 h-8 rounded-full bg-accent/60 animate-pulse shrink-0" />
-                    <div className="flex-1 h-10 rounded-2xl bg-accent/50 animate-pulse" />
+                <div className="composer-card p-4 flex gap-3 items-center">
+                    <div className="post-skeleton-bar post-skeleton-pulse w-8 h-8 rounded-full shrink-0" />
+                    <div className="post-skeleton-bar post-skeleton-pulse flex-1 h-10 rounded-full" />
                 </div>
 
                 {/* Comments */}
                 {[...Array(3)].map((_, i) => (
-                    <div
-                        key={i}
-                        className="flex gap-3 pt-3 border-t border-border/30"
-                    >
-                        <div className="w-8 h-8 rounded-full bg-accent/50 animate-pulse shrink-0" />
+                    <div key={i} className="comment-card p-4 flex gap-3">
+                        <div className="post-skeleton-bar post-skeleton-pulse w-8 h-8 rounded-full shrink-0" />
                         <div className="flex-1 space-y-2">
-                            <div className="w-24 h-3 rounded-md bg-accent/50 animate-pulse" />
-                            <div className="w-full h-3 rounded-md bg-accent/40 animate-pulse" />
-                            <div className="w-3/4 h-3 rounded-md bg-accent/30 animate-pulse" />
+                            <div className="post-skeleton-bar post-skeleton-pulse w-24 h-3 rounded-md" />
+                            <div className="post-skeleton-bar post-skeleton-pulse w-full h-3 rounded-md" />
+                            <div className="post-skeleton-bar post-skeleton-pulse w-3/4 h-3 rounded-md" />
                         </div>
                     </div>
                 ))}

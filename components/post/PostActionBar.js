@@ -6,6 +6,32 @@ import { LikeButton } from "@/components/spectrumui/like-button";
 import ShareButton from "./ShareButton";
 import { cn } from "@/lib/utils";
 
+function ActionItem({ icon: Icon, count, active, hover, onClick, label }) {
+    return (
+        <button
+            onClick={onClick}
+            aria-label={label}
+            className={cn(
+                "group flex items-center gap-1 text-[13px] hover:cursor-pointer transition-colors duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] min-h-[36px] sm:min-h-0",
+                active ? "text-[#f91880]" : "text-muted-foreground",
+                hover === "blue" && "hover:text-[#4ba9e1]",
+                hover === "green" && "hover:text-[#00ba7c]",
+                hover === "pink" && "hover:text-[#f91880]",
+            )}
+        >
+            <span className={cn(
+                "w-9 h-9 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-colors duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)]",
+                hover === "blue" && "group-hover:bg-[#4ba9e1]/10",
+                hover === "green" && "group-hover:bg-[#00ba7c]/10",
+                hover === "pink" && (active ? "bg-[#f91880]/10" : "group-hover:bg-[#f91880]/10"),
+            )}>
+                <Icon className={cn("w-[18px] h-[18px]", active && "fill-current")} />
+            </span>
+            <span className="min-w-[12px] text-left tabular-nums text-[13px]">{count > 0 ? (count > 999 ? `${(count / 1000).toFixed(1)}k` : count) : ""}</span>
+        </button>
+    );
+}
+
 export default function PostActionBar({
     post,
     currentUser,
@@ -28,32 +54,8 @@ export default function PostActionBar({
     const replyCount = commentsCount ?? post.commentsCount ?? 0;
     const bookmarkActive = localBookmarked;
 
-    const Item = ({ icon: Icon, count, active, hover, onClick, label }) => (
-        <button
-            onClick={onClick}
-            aria-label={label}
-            className={cn(
-                "group flex items-center gap-1 sm:gap-1.5 text-[13px] hover:cursor-pointer transition-colors duration-[var(--duration-fast)]",
-                active ? "text-[#f91880]" : "text-muted-foreground",
-                hover === "blue" && "hover:text-[#4ba9e1]",
-                hover === "green" && "hover:text-[#00ba7c]",
-                hover === "pink" && "hover:text-[#f91880]",
-            )}
-        >
-            <span className={cn(
-                "w-8 h-8 rounded-full flex items-center justify-center -ml-1 sm:-ml-2 transition-colors duration-[var(--duration-fast)]",
-                hover === "blue" && "group-hover:bg-[#4ba9e1]/10",
-                hover === "green" && "group-hover:bg-[#00ba7c]/10",
-                hover === "pink" && (active ? "bg-[#f91880]/10" : "group-hover:bg-[#f91880]/10"),
-            )}>
-                <Icon className={cn("w-[18px] h-[18px]", active && "fill-current")} />
-            </span>
-            <span className="min-w-[12px] text-left tabular-nums text-[13px]">{count > 0 ? (count > 999 ? `${(count/1000).toFixed(1)}k` : count) : ""}</span>
-        </button>
-    );
-
     return (
-        <div className="flex items-center justify-between mt-2 w-full gap-0 text-muted-foreground overflow-hidden select-none">
+        <div className="post-actions flex items-center justify-between w-full gap-0 text-muted-foreground overflow-hidden select-none">
             {/* Like */}
             <div className="flex-1 flex justify-center">
                 <LikeButton
@@ -67,7 +69,7 @@ export default function PostActionBar({
 
             {/* Comment */}
             <div className="flex-1 flex justify-center">
-                <Item icon={MessageCircle} count={replyCount} hover="blue" label="Comment" onClick={(e) => { e.stopPropagation(); onToggleComments?.(); }} />
+                <ActionItem icon={MessageCircle} count={replyCount} hover="blue" label="Comment" onClick={(e) => { e.stopPropagation(); onToggleComments?.(); }} />
             </div>
 
             {/* Share */}

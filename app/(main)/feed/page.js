@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Search, Flame, Users } from "lucide-react";
+import { FileText } from "lucide-react";
 import { useCallback, useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import PostCard from "@/components/post/PostCard";
@@ -14,11 +14,9 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { useRealtime } from "@/hooks/useRealtime";
 import InfiniteScrollSentinel from "@/components/shared/InfiniteScrollSentinel";
 import PushPromptManager from "@/components/notifications/PushPromptManager";
-import Link from "next/link";
 import CommunitySwitcher from "@/components/feed/CommunitySwitcher";
 import VerifiedFilterToggle from "@/components/feed/VerifiedFilterToggle";
 import VerificationNudgeBanner from "@/components/shared/VerificationNudgeBanner";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const PostComposer = dynamic(() => import("@/components/post/PostComposer"), {
     ssr: false,
@@ -172,15 +170,14 @@ export default function FeedPage() {
                     </div>
                 </div>
 
-                <div className="relative flex border-b border-border/40">
-                    <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ background: "var(--gradient-lilac-bleed)" }} />
+                <div className="relative flex">
                     {tabs.map((tab) => {
                         const isActive = activeTab === tab.id;
                         return (
                             <button
                                 key={tab.id}
                                 onClick={() => handleTabChange(tab.id)}
-                                className={`relative flex-1 flex items-center justify-center py-2.5 text-[13px] hover:cursor-pointer transition-colors duration-[var(--duration-fast)] ${isActive ? "font-semibold text-foreground" : "font-medium text-muted-foreground hover:text-foreground hover:bg-accent/30"}`}
+                                className={`relative flex-1 flex items-center justify-center py-2.5 text-[13px] hover:cursor-pointer transition-colors duration-[var(--duration-fast)] ${isActive ? "font-semibold text-foreground" : "font-medium text-muted-foreground hover:text-foreground"}`}
                             >
                                 <span>{tab.label}</span>
                                 {isActive && (
@@ -190,63 +187,48 @@ export default function FeedPage() {
                         );
                     })}
                 </div>
-
-                <div className="hidden sm:flex items-center gap-2.5 px-3 py-2 border-b border-border/30 bg-card/40">
-                    <Avatar className="h-7 w-7 shrink-0">
-                        <AvatarImage src={currentUser?.avatar} alt={currentUser?.name} />
-                        <AvatarFallback className="bg-accent text-[11px] font-bold">{currentUser?.name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
-                    </Avatar>
-                    <span className="text-[13px] text-muted-foreground">What&apos;s happening?</span>
-                    <span className="ml-auto text-[11px] font-semibold text-foreground bg-accent border border-border/50 px-2.5 py-1 rounded-full hidden lg:inline-flex items-center gap-1">
-                        CampusZen
-                    </span>
-                </div>
             </header>
 
-            {/* Center feed — widened, responsive, no virtualizer jank on mobile */}
-            <div className="flex-1 w-full max-w-[680px] mx-auto sm:border-x border-border/40 bg-background overflow-hidden">
-                {/* Composer — X-style */}
-                <div className="border-b border-border/40 bg-background hover:bg-background transition-colors">
-                    <PostComposer onPostCreated={handlePostCreated} defaultCommunity={selectedCommunity} />
-                </div>
+            {/* Center feed — premium card stack: 12–16px gaps, 20px radius */}
+            <div className="flex-1 w-full max-w-[640px] mx-auto">
+                <div className="feed-stack">
+                    {/* Composer — rounded card */}
+                    <div className="composer-card overflow-hidden">
+                        <PostComposer noBorder onPostCreated={handlePostCreated} defaultCommunity={selectedCommunity} />
+                    </div>
 
-                <VerificationNudgeBanner />
+                    <VerificationNudgeBanner />
 
-                <PushPromptManager newNotification={newNotification} />
+                    <PushPromptManager newNotification={newNotification} />
 
-                {/* Timeline — simple list, no absolute virtualization (fixes mobile overflow) */}
-                <div className="flex-1 min-w-0 overflow-hidden">
-                    {loading && posts.length === 0 ? (
-                        <div className="divide-y divide-border/30">
-                            {Array(4).fill(0).map((_, i) => (
-                                <div key={i} className="p-3 sm:p-4 animate-[fadeIn_var(--duration-slow)_var(--ease-smooth-out)]" style={{ animationDelay: `${i * 40}ms` }}>
-                                    <PostSkeleton />
-                                </div>
-                            ))}
-                        </div>
-                    ) : posts.length === 0 ? (
-                        <div className="pt-6 sm:pt-10 px-3 sm:px-4">
-                            <div className="rounded-[14px] border border-border bg-card p-6 sm:p-8 text-center shadow-sm">
-                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-accent border border-border/50 flex items-center justify-center mx-auto mb-3">
+                    {/* Timeline — spaced cards, no dividers */}
+                    <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
+                        {loading && posts.length === 0 ? (
+                            <>
+                                {Array(4).fill(0).map((_, i) => (
+                                    <div key={i} className="post-skeleton-card p-3 sm:p-4">
+                                        <PostSkeleton />
+                                    </div>
+                                ))}
+                            </>
+                        ) : posts.length === 0 ? (
+                            <div className="post-skeleton-card p-6 text-center sm:p-8">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-secondary border border-border/60 flex items-center justify-center mx-auto mb-3">
                                     <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground" />
                                 </div>
                                 <EmptyState icon={FileText} title={emptyTitle} description={emptyDescription} />
                             </div>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="divide-y divide-border/30">
+                        ) : (
+                            <>
                                 {posts.map((post) => (
-                                    <div key={post._id} className="group/post hover:bg-accent/[0.03] dark:hover:bg-accent/20 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] hover:cursor-pointer overflow-hidden">
-                                        <PostCardWithState post={post} currentUserId={currentUser?._id} currentUser={currentUser} onDelete={deletePost} onLike={likePost} onBookmark={bookmarkPost} />
-                                    </div>
+                                    <PostCardWithState key={post._id} post={post} currentUserId={currentUser?._id} currentUser={currentUser} onDelete={deletePost} onLike={likePost} onBookmark={bookmarkPost} />
                                 ))}
-                            </div>
-                            <div ref={sentinelRef} className="py-2">
-                                <InfiniteScrollSentinel loading={loading} hasMore={hasMore} error={error} onRetry={loadMore} />
-                            </div>
-                        </>
-                    )}
+                                <div ref={sentinelRef} className="py-2">
+                                    <InfiniteScrollSentinel loading={loading} hasMore={hasMore} error={error} onRetry={loadMore} />
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
 

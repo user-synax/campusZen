@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * PostCard — X-like professional, compact, no AI slop.
- * Uses Framer dark canvas: canvas #090909, card #141414, hairline #262626,
- * white pill primary, blue #4ba9e1 only for links.
- * Premium vs direct: premium shows subtle crown pill, no gradient.
+ * PostCard — DESIGN.md (alpha) premium card.
+ * Canvas #090909, surface-1 #141414, hairline-soft #1a1a1a borders,
+ * ink / ink-muted hierarchy, accent-blue #4ba9e1 for links only.
+ * 20px radius, 12–16px stack gap (parent .feed-stack), no lift on hover.
  */
 
 import { memo } from "react";
@@ -39,16 +39,15 @@ const PostCard = memo(function PostCard({
 }) {
     const router = useRouter();
     const isPremium = post.author?.isPro;
-    const isDirect = !isPremium;
 
     return (
         <article
             onClick={() => router.push(`/post/${post._id}`)}
-            className="group relative flex gap-3 px-3 sm:px-4 py-3 border-b border-border hover:bg-accent/30 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] cursor-pointer hover:cursor-pointer overflow-hidden"
+            className="post-card group relative flex gap-3 px-3 py-3.5 sm:px-4 sm:py-4 cursor-pointer overflow-hidden"
         >
-            {/* Premium subtle left accent — not gradient, just hairline wash */}
+            {/* Premium quiet edge — no gradient */}
             {isPremium && (
-                <span className="pointer-events-none absolute left-0 top-0 bottom-0 w-[2px] bg-primary/20" />
+                <span aria-hidden className="post-premium-edge" />
             )}
 
             {/* Avatar — 40px X-like */}
@@ -68,25 +67,25 @@ const PostCard = memo(function PostCard({
                             onClick={(e) => e.stopPropagation()}
                             className="flex items-center gap-1 min-w-0 hover:cursor-pointer group/name"
                         >
-                            <span className="font-semibold text-[15px] tracking-tight truncate group-hover/name:underline decoration-1 underline-offset-2">
+                            <span className="font-semibold text-[15px] tracking-[-0.15px] truncate group-hover/name:underline decoration-1 underline-offset-2">
                                 {post.author.name}
                             </span>
                             {post.author?.isVerified && (
                                 <VerifiedBadge size="sm" verificationType={post.author.verificationType} />
                             )}
                             {isPremium && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground px-1.5 py-0.5 text-[10px] font-bold tracking-wide border border-border/50">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-bold tracking-wide border border-border/60 text-foreground">
                                     <Crown className="w-3 h-3" />
                                     Premium
                                 </span>
                             )}
                         </Link>
-                        <span className="text-muted-foreground truncate hidden sm:inline text-[14px]">@{post.author.username}</span>
-                        <span className="text-muted-foreground hidden sm:inline">·</span>
+                        <span className="post-meta truncate hidden sm:inline">@{post.author.username}</span>
+                        <span className="post-meta hidden sm:inline">·</span>
                         <Link
                             href={`/post/${post._id}`}
                             onClick={(e) => e.stopPropagation()}
-                            className="text-muted-foreground hover:underline hover:cursor-pointer shrink-0 text-[14px]"
+                            className="post-meta hover:underline hover:cursor-pointer shrink-0"
                         >
                             <FormattedTime date={post.createdAt} />
                         </Link>
@@ -96,7 +95,7 @@ const PostCard = memo(function PostCard({
                             </span>
                         )}
                         {post.community && (
-                            <Badge variant="outline" className="hidden sm:inline-flex text-[11px] h-5 px-1.5 font-medium border-border bg-secondary/50 max-w-[110px] truncate">
+                            <Badge variant="outline" className="hidden sm:inline-flex text-[11px] h-5 px-2 font-medium rounded-full border-border bg-secondary/60 max-w-[140px] truncate">
                                 {post.communityInfo?.name || post.community}
                             </Badge>
                         )}
@@ -104,7 +103,7 @@ const PostCard = memo(function PostCard({
 
                     {/* Menu — context-menu (right-click/long-press + click) */}
                     <div onClick={(e) => e.stopPropagation()} className="shrink-0 -mr-1 -mt-1">
-                        <PostOptionsMenu post={post} currentUser={currentUser} onPostDeleted={onDelete} onPostUpdated={(p) => (post.content = p.content)} />
+                        <PostOptionsMenu post={post} currentUser={currentUser} onPostDeleted={onDelete} onPostUpdated={() => window.dispatchEvent(new CustomEvent("cx-refresh-feed"))} />
                     </div>
                 </div>
 
@@ -114,32 +113,32 @@ const PostCard = memo(function PostCard({
                 )}
                 {/* Community mobile */}
                 {post.community && (
-                    <div className="sm:hidden mt-1">
-                        <Badge variant="outline" className="text-[11px] h-5 px-1.5 font-medium border-border bg-secondary/50 truncate max-w-[180px]">
+                    <div className="sm:hidden mt-1.5">
+                        <Badge variant="outline" className="text-[11px] h-5 px-2 font-medium rounded-full border-border bg-secondary/60 truncate max-w-[180px]">
                             {post.communityInfo?.name || post.community}
                         </Badge>
                     </div>
                 )}
 
-                {/* Content — 15px, no gradient */}
-                <div className="mt-1.5 min-w-0 overflow-hidden break-words">
+                {/* Content — 15px Inter voice */}
+                <div className="post-body mt-1.5 min-w-0 overflow-hidden break-words">
                     <PostContent content={post.content} isMarkdown={post.isMarkdown} />
                 </div>
 
                 {post.contentBlocks?.length > 0 && (
-                    <div onClick={(e) => e.stopPropagation()} className="mt-2">
+                    <div onClick={(e) => e.stopPropagation()} className="mt-2.5">
                         <ContentBlockRenderer blocks={post.contentBlocks} className="mt-0" />
                     </div>
                 )}
 
                 {post.images?.length > 0 && (
-                    <div onClick={(e) => e.stopPropagation()} className="mt-2">
+                    <div onClick={(e) => e.stopPropagation()} className="mt-2.5">
                         <PostImageGrid images={post.images} />
                     </div>
                 )}
 
                 {post.poll?.options?.length > 0 && (
-                    <div onClick={(e) => e.stopPropagation()} className="mt-3">
+                    <div onClick={(e) => e.stopPropagation()} className="mt-2.5">
                         <PollDisplay
                             poll={post.poll}
                             postId={post._id}
@@ -149,8 +148,8 @@ const PostCard = memo(function PostCard({
                     </div>
                 )}
 
-                {/* Action bar — X-like, evenly spaced, 13px counts */}
-                <div onClick={(e) => e.stopPropagation()} className="mt-2 -ml-1">
+                {/* Action bar — quiet divider, evenly spaced */}
+                <div onClick={(e) => e.stopPropagation()} className="mt-3 border-t border-border/40 pt-1">
                     <PostActionBar
                         post={post}
                         currentUser={currentUser}
@@ -164,7 +163,7 @@ const PostCard = memo(function PostCard({
                 </div>
 
                 {showComments && (
-                    <div onClick={(e) => e.stopPropagation()} className="mt-3 border-t border-border/50 pt-3">
+                    <div onClick={(e) => e.stopPropagation()} className="mt-2 border-t border-border/40 pt-3">
                         <CommentSection
                             postId={post._id}
                             currentUser={currentUser}

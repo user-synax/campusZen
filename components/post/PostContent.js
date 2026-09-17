@@ -36,13 +36,13 @@ export default function PostContent({
 
     if (isMarkdown) {
         return (
-            <div>
-                <MarkdownRenderer content={displayContent} className="text-[15px] leading-relaxed" />
+            <div className="post-body">
+                <MarkdownRenderer content={displayContent} className="text-[15px] leading-[1.45]" />
                 {!expanded && shouldTruncate && "..."}
                 {shouldTruncate && (
                     <button
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpanded(!expanded); }}
-                        className="inline text-[13px] text-[#4ba9e1] hover:underline font-medium ml-1 hover:cursor-pointer"
+                        className="post-link inline text-[13px] font-medium ml-1 hover:cursor-pointer"
                     >
                         {expanded ? "Show less" : "Show more"}
                     </button>
@@ -52,12 +52,12 @@ export default function PostContent({
     }
 
     return (
-        <div>
-            <div className="whitespace-pre-wrap break-words text-[15px] leading-[1.45] text-foreground">
+        <div className="post-body">
+            <div className="whitespace-pre-wrap break-words text-foreground">
                 {renderContentWithMentions(displayContent).map((segment, i) => {
                     if (segment.type === "hashtag") {
                         return (
-                            <Link key={i} href={`/hashtag/${segment.value}`} className="text-[#4ba9e1] hover:underline" onClick={(e) => e.stopPropagation()}>
+                            <Link key={i} href={`/hashtag/${segment.value}`} className="post-link" onClick={(e) => e.stopPropagation()}>
                                 #{segment.value}
                             </Link>
                         );
@@ -65,7 +65,7 @@ export default function PostContent({
                         return <UserMention key={i} username={segment.value} />;
                     } else if (segment.type === "url") {
                         return (
-                            <a key={i} href={segment.value} target="_blank" rel="noopener noreferrer" className="text-[#4ba9e1] hover:underline break-all" onClick={(e) => e.stopPropagation()}>
+                            <a key={i} href={segment.value} target="_blank" rel="noopener noreferrer" className="post-link break-all" onClick={(e) => e.stopPropagation()}>
                                 {segment.value}
                             </a>
                         );
@@ -76,14 +76,14 @@ export default function PostContent({
                 {!expanded && shouldTruncate && "..."}
             </div>
             {urls.length > 0 && (
-                <div className="mt-2 space-y-2">
+                <div className="mt-2.5 space-y-2.5">
                     {urls.map((url, i) => (
                         <LinkPreview key={i} url={url} />
                     ))}
                 </div>
             )}
             {shouldTruncate && (
-                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpanded(!expanded); }} className="inline text-[13px] text-[#4ba9e1] hover:underline font-medium ml-1 hover:cursor-pointer">
+                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpanded(!expanded); }} className="post-link inline text-[13px] font-medium ml-1 hover:cursor-pointer">
                     {expanded ? "Show less" : "Show more"}
                 </button>
             )}

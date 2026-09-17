@@ -20,33 +20,33 @@ export default function CommentItem({ comment, currentUserId, onDelete }) {
   const isOwner = comment.author?._id === currentUserId || comment.author === currentUserId
 
   return (
-    <div className="flex gap-3 group animate-in fade-in slide-in-from-bottom-1 duration-300">
-      <Avatar className="h-8 w-8 mt-0.5">
+    <div className="flex gap-3 group">
+      <Avatar className="h-8 w-8 mt-0.5 shrink-0">
         <AvatarImage src={comment.author?.avatar} alt={comment.author?.name} />
         <AvatarFallback>{comment.author?.name?.charAt(0)?.toUpperCase()}</AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0">
-        <div className="rounded-2xl px-4 py-2 inline-block max-w-full bg-secondary/40">
-          <div className="flex items-center gap-2 mb-0.5">
+        <div className="comment-bubble px-4 py-2.5 inline-block max-w-full">
+          <div className="flex items-center gap-2 mb-0.5 min-w-0">
             <Link 
               href={`/profile/${comment.author?.username}`} 
-              className="hover:underline flex items-center gap-1"
+              className="hover:underline flex items-center gap-1 min-w-0"
             >
-              <span className="text-xs font-bold text-foreground">{comment.author?.name || 'User'}</span>
+              <span className="text-[13px] font-bold tracking-[-0.13px] text-foreground truncate">{comment.author?.name || 'User'}</span>
               {comment.author?.isVerified && (
                 <VerifiedBadge size="sm" verificationType={comment.author.verificationType} />
               )}
             </Link>
-            <FormattedTime date={comment.createdAt} className="text-[10px] text-muted-foreground" />
+            <FormattedTime date={comment.createdAt} className="text-[11px] text-muted-foreground shrink-0 tabular-nums" />
           </div>
-          <div className="text-sm wrap-break-words leading-relaxed text-foreground/90">
+          <div className="text-[14px] wrap-break-words leading-[1.45] tracking-[-0.14px] text-foreground/90">
             {renderContentWithMentions(comment.content).map((segment, i) => {
               if (segment.type === 'hashtag') {
                 return (
                   <Link 
                     key={i} 
                     href={`/hashtag/${segment.value}`}
-                    className="text-blue-400 hover:text-blue-300 hover:underline"
+                    className="post-link"
                     onClick={(e) => e.stopPropagation()}
                   >
                     #{segment.value}
@@ -68,8 +68,9 @@ export default function CommentItem({ comment, currentUserId, onDelete }) {
       {!comment.isOptimistic && isOwner && (
         <button 
           onClick={() => onDelete?.(comment._id)} 
-          className="opacity-0 group-hover:opacity-100 p-1.5 text-muted-foreground hover:text-destructive transition-all self-start mt-1" 
+          className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-2 -m-1 text-muted-foreground hover:text-destructive transition-opacity duration-[var(--duration-fast)] self-start mt-1" 
           title="Delete comment"
+          aria-label="Delete comment"
         >
           <X className="w-3.5 h-3.5" />
         </button>

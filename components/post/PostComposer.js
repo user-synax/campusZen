@@ -141,7 +141,6 @@ export default function PostComposer({
     const [showPoll, setShowPoll] = useState(false);
     const [pollOptions, setPollOptions] = useState(["", ""]);
     const [isUploadingImages, setIsUploadingImages] = useState(false);
-    const [tags, setTags] = useState([]);
     const [isBlocked, setIsBlocked] = useState(false);
     const [blockedViolations, setBlockedViolations] = useState([]);
 
@@ -466,11 +465,11 @@ export default function PostComposer({
     return (
         <div
             className={cn(
-                "px-3 sm:px-4 py-3 transition-colors duration-300 overflow-hidden",
+                "px-3 sm:px-4 py-3.5 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] overflow-hidden bg-transparent",
                 isBlocked
-                    ? "bg-red-500/10 border-red-500/30"
-                    : "bg-background/50",
-                !noBorder && "border-b border-border",
+                    ? "bg-red-500/[0.06]"
+                    : "bg-transparent",
+                !noBorder && "border-b border-border/40",
             )}
         >
             {/* Warning banner if content blocked */}
@@ -617,18 +616,6 @@ export default function PostComposer({
                                 )}
                             </div>
                         )}
-                    </div>
-
-                    {/* Tags */}
-                    <div className="mt-2.5">
-                        <MultiSelect
-                            options={TAG_OPTIONS}
-                            selected={tags}
-                            onChange={setTags}
-                            placeholder="Select tags..."
-                            maxSelected={5}
-                            disabled={isLoading || isUploadingImages}
-                        />
                     </div>
 
                     {/* Link Preview */}

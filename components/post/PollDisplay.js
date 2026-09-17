@@ -102,26 +102,26 @@ export default function PollDisplay({ poll, postId, currentUserId, isExpired }) 
   const showResults = !!userVotedOptionId || liveExpired
 
   return (
-    <div className="mt-3 space-y-2 border border-border rounded-[12px] p-3 bg-card hover:border-border/80 transition-colors">
+    <div className="post-insert mt-0 space-y-2 p-3">
       {results.map((option) => (
         <div key={option._id} className="relative">
           {showResults ? (
             <div className="space-y-1">
               <div className="flex justify-between text-sm relative z-10 px-2">
                 <span className={cn(
-                  "flex items-center gap-1 truncate pr-4",
-                  option._id === userVotedOptionId ? 'font-bold text-primary' : 'text-foreground'
+                  "flex items-center gap-1 truncate pr-4 tracking-[-0.14px]",
+                  option._id === userVotedOptionId ? 'font-bold text-foreground' : 'text-foreground'
                 )}>
                   {option._id === userVotedOptionId && <Check className="w-3 h-3 flex-shrink-0" />}
                   {option.text}
                 </span>
-                <span className="text-xs font-medium text-muted-foreground">{option.percentage}%</span>
+                <span className="text-xs font-medium text-muted-foreground tabular-nums">{option.percentage}%</span>
               </div>
-              <div className="h-8 bg-accent/30 rounded-md overflow-hidden relative">
+              <div className="h-8 bg-secondary rounded-[10px] overflow-hidden relative">
                 <div 
                   className={cn(
-                    "h-full rounded-r-sm transition-all duration-1000 ease-out",
-                    option._id === userVotedOptionId ? 'bg-primary/20' : 'bg-muted-foreground/10'
+                    "h-full transition-[width] duration-[var(--duration-slow)] ease-[var(--ease-smooth-out)]",
+                    option._id === userVotedOptionId ? 'bg-[#4ba9e1]/25' : 'bg-muted-foreground/10'
                   )}
                   style={{ width: `${option.percentage}%` }}
                 />
@@ -131,7 +131,7 @@ export default function PollDisplay({ poll, postId, currentUserId, isExpired }) 
             <button 
               onClick={() => handleVote(option._id)} 
               disabled={isVoting} 
-              className="w-full text-left px-4 py-2.5 rounded-md border border-border hover:border-primary hover:bg-primary/5 transition-all text-sm font-medium disabled:opacity-50"
+              className="w-full text-left px-4 py-2.5 rounded-[10px] border border-border hover:border-[#4ba9e1]/50 hover:bg-[#4ba9e1]/5 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-smooth-out)] text-sm font-medium disabled:opacity-50 hover:cursor-pointer min-h-[44px] sm:min-h-0"
             > 
               {option.text} 
             </button>
@@ -139,7 +139,7 @@ export default function PollDisplay({ poll, postId, currentUserId, isExpired }) 
         </div>
       ))}
       <div className="flex items-center justify-between px-1 pt-1">
-        <p className="text-[10px] text-muted-foreground">
+        <p className="post-meta tabular-nums">
           {totalVotes} vote{totalVotes !== 1 ? 's' : ''} · {getTimeUntilExpiry()}
         </p>
       </div>

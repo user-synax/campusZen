@@ -1,36 +1,40 @@
 @import "tailwindcss";
 @import "./transitions.css";
-@import "./transitions-extra.css";
 @import "./styles/campus-sections.css";
+@import "./styles/post-cards.css"; /* must exist before dev boot; restart dev if resolver cached a miss */
 
-/* transitions-polish motion tokens + Framer professional palette (no violet gradient) */
+/* DESIGN.md (alpha) — premium palette extracted from snippet.
+   Canvas/surface/hairline/ink own the post UI. Accent blue is
+   links + focus only. No gradients as surfaces. */
 :root {
-  --duration-stagger: 40ms;
-  --duration-micro: 80ms;
-  --duration-quick: 150ms;
-  --duration-fast: 250ms;
-  --duration-medium: 350ms;
-  --duration-slow: 400ms;
-  --duration-very-slow: 500ms;
-  --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-in-out: ease-in-out;
-  --ease-out: ease-out;
-  --ease-linear: linear;
-  --ease-bounce: cubic-bezier(0.34, 1.36, 0.64, 1);
-  --ease-bounce-strong: cubic-bezier(0.34, 3.85, 0.64, 1);
-  --distance-micro: 4px;
-  --distance-small: 6px;
-  --distance-base: 8px;
-  --distance-medium: 12px;
-  --distance-large: 30px;
-  --scale-large: 0.96;
-  --scale-medium: 0.97;
-  --scale-small: 0.98;
-  --scale-tiny: 0.99;
-  --blur-small: 2px;
-  --blur-medium: 3px;
-  --blur-large: 8px;
-  /* Framer — professional, no purple AI slop */
+  --color-canvas: #090909;
+  --color-surface-1: #141414;
+  --color-surface-2: #1c1c1c;
+  --color-hairline: #262626;
+  --color-hairline-soft: #1a1a1a;
+  --color-ink: #ffffff;
+  --color-ink-muted: #999999;
+  --color-accent-blue: #4ba9e1;
+  --color-success: #22c55e;
+  --color-danger: #f45d6f;
+  --color-gradient-magenta: #d44df0;
+  --color-gradient-violet: #6a4cf5;
+  --color-gradient-orange: #ff7a3d;
+  --color-gradient-coral: #ff5577;
+
+  --font-display: "Geist", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --radius-post: 20px;
+  --radius-post-inner: 15px;
+  --radius-post-pill: 100px;
+
+  --shadow-post-floating: rgba(255, 255, 255, 0.1) 0 0 0 0.5px, rgba(0, 0, 0, 0.25) 0px 10px 30px 0px;
+  --shadow-post-ring-focus: rgba(75, 169, 225, 0.15) 0px 0px 0px 1px;
+}
+
+/* Framer professional palette — motion tokens live in transitions.css */
+:root {
   --color-electric-violet: #4ba9e1; /* repurposed as accent-blue for links/focus */
   --color-deep-iris: #3a8fcc;
   --color-soft-lilac: #1c1c1c; /* surface-2 */
@@ -82,6 +86,18 @@
     --color-campus-blue: #4ba9e1;
     --color-student-orange: #4ba9e1;
     --color-zen-green: #4ba9e1;
+
+    /* DESIGN.md alpha — direct utilities: bg-canvas, bg-surface-1, etc. */
+    --color-canvas: #090909;
+    --color-surface-1: #141414;
+    --color-surface-2: #1c1c1c;
+    --color-hairline: #262626;
+    --color-hairline-soft: #1a1a1a;
+    --color-ink: #ffffff;
+    --color-ink-muted: #999999;
+    --color-accent-blue: #4ba9e1;
+    --color-success: #22c55e;
+    --color-danger: #f45d6f;
 }
 
 @layer base {

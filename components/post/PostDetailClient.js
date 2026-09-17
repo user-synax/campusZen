@@ -191,18 +191,19 @@ export default function PostDetailClient({ postId }) {
     const isOwnPost = currentUser?._id === post.author?._id || currentUser?._id?.toString() === post.author?._id?.toString();
 
     return (
-        <div className="flex flex-col min-h-screen bg-background pb-16">
-            {/* Header — X-like back */}
+        <div className="flex min-h-screen flex-col pb-16">
+            {/* Header */}
             <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-xl border-b border-border px-2 h-[53px] flex items-center gap-6">
-                <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full h-8 w-8 hover:bg-accent hover:cursor-pointer">
+                <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full h-8 w-8 hover:cursor-pointer">
                     <ArrowLeft className="w-5 h-5" />
                 </Button>
-                <h1 className="font-bold text-[15px]">Post</h1>
+                <h1 className="font-bold text-[15px] tracking-[-0.15px]">Post</h1>
             </div>
 
-            {/* Post — premium vs direct */}
-            <article className="px-4 pt-3 pb-2 border-b border-border">
-                {/* Author row — X detail has larger avatar and follow */}
+            <div className="detail-column">
+            {/* Post — premium rounded card */}
+            <article className="detail-card px-4 pt-4 pb-2 sm:px-5">
+                {/* Author row */}
                 <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                         <Link href={`/profile/${post.author.username}`} className="shrink-0 hover:cursor-pointer">
@@ -210,14 +211,14 @@ export default function PostDetailClient({ postId }) {
                         </Link>
                         <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
-                                <Link href={`/profile/${post.author.username}`} className="font-bold text-[15px] hover:underline leading-none hover:cursor-pointer">
+                                <Link href={`/profile/${post.author.username}`} className="font-bold text-[15px] tracking-[-0.15px] hover:underline leading-none hover:cursor-pointer truncate">
                                     {post.author.name}
                                 </Link>
                                 {isPremiumPost && (
-                                    <span className="hidden sm:inline-flex items-center rounded-full bg-primary text-primary-foreground px-1.5 py-0.5 text-[10px] font-bold gap-1">Premium</span>
+                                    <span className="hidden sm:inline-flex items-center rounded-full bg-secondary border border-border/60 px-1.5 py-0.5 text-[10px] font-bold gap-1">Premium</span>
                                 )}
                             </div>
-                            <div className="flex items-center gap-1 text-[14px] text-muted-foreground">
+                            <div className="post-meta mt-1 flex items-center gap-1">
                                 <span className="truncate">@{post.author.username}</span>
                                 <span>·</span>
                                 <span className="shrink-0"><FormattedTime date={post.createdAt} /></span>
@@ -234,16 +235,16 @@ export default function PostDetailClient({ postId }) {
                     </div>
                 </div>
 
-                {/* Content — larger on detail (17px X-like) */}
-                <div className="mt-3 text-[17px] leading-[1.45] break-words whitespace-pre-wrap">
+                {/* Content — larger on detail */}
+                <div className="post-body-lg mt-3 break-words whitespace-pre-wrap">
                     {post.isMarkdown || containsMarkdown(post.content) ? (
                         <MarkdownRenderer content={post.content} className="text-[17px] leading-[1.45]" />
                     ) : (
                         <div className="whitespace-pre-wrap break-words">
                             {renderContentWithMentions(post.content || "").map((segment, i) => {
-                                if (segment.type === "hashtag") return <Link key={i} href={`/hashtag/${segment.value}`} className="text-[#4ba9e1] hover:underline">#{segment.value}</Link>;
+                                if (segment.type === "hashtag") return <Link key={i} href={`/hashtag/${segment.value}`} className="post-link hover:underline">#{segment.value}</Link>;
                                 if (segment.type === "mention") return <UserMention key={i} username={segment.value} />;
-                                if (segment.type === "url") return <a key={i} href={segment.value} target="_blank" rel="noopener noreferrer" className="text-[#4ba9e1] hover:underline break-all">{segment.value}</a>;
+                                if (segment.type === "url") return <a key={i} href={segment.value} target="_blank" rel="noopener noreferrer" className="post-link hover:underline break-all">{segment.value}</a>;
                                 return <span key={i}>{segment.value}</span>;
                             })}
                         </div>
@@ -256,7 +257,7 @@ export default function PostDetailClient({ postId }) {
                     </div>
                 )}
 
-                <div className="mt-3 space-y-3">
+                <div className="mt-3 space-y-2.5">
                     {urls.length > 0 ? urls.map((url, i) => <LinkPreview key={i} url={url} />) : post.linkPreview ? <LinkPreview url={post.linkPreview.url} /> : null}
                 </div>
 
@@ -266,31 +267,31 @@ export default function PostDetailClient({ postId }) {
                     </div>
                 )}
 
-                {/* Date row — X detail shows time · date · views */}
-                <div className="mt-4 py-3 border-y border-border flex items-center gap-1.5 text-[14px] text-muted-foreground">
+                {/* Date row */}
+                <div className="post-meta mt-4 py-3 border-y border-border/40 flex items-center gap-1.5">
                     <FormattedTime date={post.createdAt} type="full" />
                     <span>·</span>
-                    <span className="font-medium text-foreground">{likesCount}</span> Likes
+                    <span className="font-semibold text-foreground tabular-nums">{likesCount}</span> Likes
                     <span className="mx-1">·</span>
-                    <span className="font-medium text-foreground">{post.commentsCount ?? comments.length}</span> Replies
+                    <span className="font-semibold text-foreground tabular-nums">{post.commentsCount ?? comments.length}</span> Replies
                 </div>
 
-                {/* Action bar — X detail large */}
+                {/* Action bar */}
                 <div className="flex items-center justify-around py-1 -mx-2">
-                    <button onClick={() => document.getElementById('comment-input')?.focus()} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-full hover:bg-[#4ba9e1]/10 hover:text-[#4ba9e1] text-muted-foreground hover:cursor-pointer transition-colors duration-[var(--duration-fast)]">
+                    <button onClick={() => document.getElementById('comment-input')?.focus()} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-full hover:bg-[#4ba9e1]/10 hover:text-[#4ba9e1] text-muted-foreground hover:cursor-pointer transition-colors duration-[var(--duration-fast)]" aria-label="Reply">
                         <MessageCircle className="w-5 h-5" />
                     </button>
                     <div className="flex-1 flex justify-center">
                         <LikeButton liked={isLiked} count={0} onLikedChange={handleLike} size="md" />
                     </div>
-                    <button onClick={handleShare} className="flex-1 flex items-center justify-center py-2 rounded-full hover:bg-[#00ba7c]/10 hover:text-[#00ba7c] text-muted-foreground hover:cursor-pointer transition-colors">
+                    <button onClick={handleShare} className="flex-1 flex items-center justify-center py-2 rounded-full hover:bg-[#00ba7c]/10 hover:text-[#00ba7c] text-muted-foreground hover:cursor-pointer transition-colors duration-[var(--duration-fast)]" aria-label="Share">
                         <Share2 className="w-5 h-5" />
                     </button>
                 </div>
             </article>
 
-            {/* Reply composer — X-like */}
-            <div className="px-4 py-3 border-b border-border flex gap-3">
+            {/* Reply composer — rounded card */}
+            <div className="composer-card px-4 py-3 flex gap-3">
                 <UserAvatar user={currentUser} size="sm" />
                 <div className="flex-1 flex gap-2">
                     <Input
@@ -300,7 +301,7 @@ export default function PostDetailClient({ postId }) {
                         onChange={(e) => setNewComment(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleAddComment()}
                         disabled={!currentUser || isSubmittingComment}
-                        className="flex-1 bg-accent/30 border-transparent focus-visible:ring-1 focus-visible:ring-[#4ba9e1]/30 rounded-full h-10 text-[14px] hover:cursor-text"
+                        className="flex-1 bg-secondary/60 border-transparent focus-visible:ring-1 focus-visible:ring-[#4ba9e1]/40 rounded-full h-10 text-[14px] hover:cursor-text"
                     />
                     <Button
                         onClick={handleAddComment}
@@ -312,19 +313,20 @@ export default function PostDetailClient({ postId }) {
                 </div>
             </div>
 
-            {/* Comments */}
-            <div className="divide-y divide-border/30">
+            {/* Comments — spaced cards */}
+            <div className="flex flex-col gap-3 sm:gap-4">
                 {comments.length === 0 ? (
-                    <div className="text-center py-10 px-4">
+                    <div className="comment-card px-4 py-10 text-center">
                         <p className="text-[14px] text-muted-foreground">No replies yet. Be the first!</p>
                     </div>
                 ) : (
                     comments.map((comment) => (
-                        <div key={comment._id} className="px-4 py-3 hover:bg-accent/20 transition-colors">
+                        <div key={comment._id} className="comment-card px-4 py-3">
                             <CommentItem comment={comment} currentUserId={currentUser?._id} onDelete={handleDeleteComment} />
                         </div>
                     ))
                 )}
+            </div>
             </div>
         </div>
     );

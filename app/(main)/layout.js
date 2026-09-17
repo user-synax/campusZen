@@ -147,7 +147,7 @@ export default function MainLayout({ children }) {
                         )}
 
                         <div
-                            className={`w-full ${isStudyRoom ? "max-w-7xl mx-auto" : isWhiteboard ? "" : "max-w-[680px] sm:border-x"} border-border ${isChatRoom ? "flex-1 h-full overflow-hidden" : isWhiteboard ? "flex-1 h-full" : "min-h-screen"} bg-background sm:bg-background/50 sm:backdrop-blur-sm ${!isStudyRoom && !isWhiteboard ? "mx-auto self-center" : ""}`}
+                            className={`w-full ${isStudyRoom ? "max-w-7xl mx-auto" : isWhiteboard ? "" : "max-w-[680px]"} border-transparent ${isChatRoom ? "flex-1 h-full overflow-hidden" : isWhiteboard ? "flex-1 h-full" : "min-h-screen"} bg-background ${!isStudyRoom && !isWhiteboard ? "mx-auto self-center" : ""}`}
                         >
                             {children}
                         </div>

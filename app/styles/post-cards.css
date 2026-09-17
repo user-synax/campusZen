@@ -1,0 +1,235 @@
+/* CampusZen post feed — DESIGN.md (alpha) premium cards.
+   Palette: canvas #090909, surface-1 #141414, surface-2 #1c1c1c,
+   hairline #262626, hairline-soft #1a1a1a, ink #fff, ink-muted #999,
+   accent-blue #4ba9e1 (links + focus only).
+   Rules: flat cards, border-color shift on hover (no lift), 20px radius,
+   12–16px stack gap, Inter body voice, motion on shared tokens only. */
+
+.feed-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 12px 24px;
+}
+
+@media (min-width: 640px) {
+  .feed-stack {
+    gap: 16px;
+    padding: 16px 16px 32px;
+  }
+}
+
+/* ── Card shell ─────────────────────────────────────────────── */
+.post-card,
+.composer-card,
+.detail-card,
+.comment-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.7);
+  border-radius: 20px;
+  transition:
+    border-color var(--duration-fast) var(--ease-smooth-out),
+    background-color var(--duration-fast) var(--ease-smooth-out);
+  /* Fast feed: skip offscreen paint, reserve height to avoid shift */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 240px;
+}
+
+.dark .post-card,
+.dark .composer-card,
+.dark .detail-card {
+  background: var(--color-surface-1);
+  border-color: var(--color-hairline-soft);
+}
+
+.dark .comment-card {
+  background: var(--color-surface-1);
+  border-color: var(--color-hairline-soft);
+}
+
+.post-card:hover,
+.composer-card:hover,
+.detail-card:hover {
+  border-color: hsl(var(--border));
+}
+
+.dark .post-card:hover,
+.dark .composer-card:hover,
+.dark .detail-card:hover {
+  border-color: var(--color-hairline);
+}
+
+.post-card:focus-within,
+.detail-card:focus-within {
+  border-color: hsl(var(--border));
+}
+
+.dark .post-card:focus-within {
+  box-shadow: var(--shadow-post-ring-focus);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-card,
+  .composer-card,
+  .detail-card,
+  .comment-card {
+    transition: none;
+    content-visibility: visible;
+  }
+}
+
+/* ── Post typography (Inter voice, tight tracking) ──────────── */
+.post-body {
+  font-family: var(--font-body, "Inter", system-ui, sans-serif);
+  font-size: 15px;
+  line-height: 1.45;
+  letter-spacing: -0.15px;
+  font-feature-settings: "cv01", "cv05", "cv09", "cv11", "ss03", "ss07", "dlig";
+  overflow-wrap: anywhere;
+}
+
+.post-body-lg {
+  font-size: 17px;
+  line-height: 1.45;
+  letter-spacing: -0.15px;
+}
+
+.post-meta {
+  font-size: 13px;
+  line-height: 1.2;
+  letter-spacing: -0.13px;
+  color: hsl(var(--muted-foreground));
+}
+
+.dark .post-meta {
+  color: var(--color-ink-muted);
+}
+
+.post-link {
+  color: var(--color-accent-blue);
+  text-decoration: none;
+}
+.post-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ── Inner media: always rounded, never bleed ───────────────── */
+.post-media {
+  border-radius: 15px;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border) / 0.6);
+}
+
+.dark .post-media {
+  border-color: var(--color-hairline-soft);
+}
+
+.post-media img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ── Poll / link preview inherit card radius ────────────────── */
+.post-insert {
+  border-radius: 15px;
+  border: 1px solid hsl(var(--border) / 0.6);
+  background: hsl(var(--accent) / 0.35);
+}
+
+.dark .post-insert {
+  background: var(--color-surface-2);
+  border-color: var(--color-hairline-soft);
+}
+
+/* ── Action row: quiet icons, blue/green/pink hovers only ───── */
+.post-actions {
+  user-select: none;
+}
+
+/* ── Comment bubble ─────────────────────────────────────────── */
+.comment-bubble {
+  border-radius: 15px;
+  background: hsl(var(--accent) / 0.5);
+  border: 1px solid transparent;
+}
+
+.dark .comment-bubble {
+  background: var(--color-surface-2);
+  border-color: var(--color-hairline-soft);
+}
+
+/* ── Skeletons: surface-2 pulse, same radius as cards ───────── */
+.post-skeleton-card {
+  border-radius: 20px;
+  border: 1px solid hsl(var(--border) / 0.6);
+  background: hsl(var(--card));
+  overflow: hidden;
+}
+
+.dark .post-skeleton-card {
+  background: var(--color-surface-1);
+  border-color: var(--color-hairline-soft);
+}
+
+.post-skeleton-bar {
+  border-radius: 6px;
+  background: hsl(var(--accent));
+}
+
+.dark .post-skeleton-bar {
+  background: var(--color-surface-2);
+}
+
+.post-skeleton-bar.is-pulsing,
+.post-skeleton-pulse {
+  animation: post-skel-pulse var(--pulse-dur, 1000ms) ease-in-out infinite;
+}
+
+@keyframes post-skel-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-skeleton-bar.is-pulsing,
+  .post-skeleton-pulse {
+    animation: none;
+  }
+}
+
+/* ── Premium marker: 2px quiet edge, no gradient ────────────── */
+.post-premium-edge {
+  position: absolute;
+  left: 0;
+  top: 20px;
+  bottom: 20px;
+  width: 2px;
+  border-radius: 9999px;
+  background: hsl(var(--primary) / 0.25);
+}
+
+/* ── Detail page column ─────────────────────────────────────── */
+.detail-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 12px 48px;
+  width: 100%;
+  max-width: 640px;
+  margin-inline: auto;
+}
+
+@media (min-width: 640px) {
+  .detail-column {
+    gap: 16px;
+    padding: 16px 16px 64px;
+  }
+}
+
+/* Images decode async to keep scroll at 60fps */
+.post-media img,
+.post-card img {
+  content-visibility: auto;
+}
